@@ -436,6 +436,96 @@ const options = {
                     }
                 }
             },
+            "/api/users/admin/create": {
+                post: {
+                    summary: "Create a new user (Admin only)",
+                    tags: ["Users"],
+                    security: [
+                        {
+                            bearerAuth: []
+                        }
+                    ],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/CreateUserInput" },
+                                example: {
+                                    fullName: "John Doe",
+                                    emailId: "john.doe@example.com",
+                                    password: "password123",
+                                    roleId: "a3f7a3fa-9b7c-4a9f-a1a1-1234567890ab"
+                                }
+                            }
+                        }
+                    },
+                    responses: {
+                        "201": {
+                            description: "User created successfully by admin",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "number", example: 201 },
+                                            message: { type: "string", example: "User created successfully by admin" },
+                                            data: { $ref: "#/components/schemas/User" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Validation error",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "401": {
+                            description: "Unauthorized - Invalid or missing token",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "403": {
+                            description: "Forbidden - Admin privileges required",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "404": {
+                            description: "Role not found",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "409": {
+                            description: "Email already exists",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Failed to create user",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/api/users/{id}": {
                 get: {
                     summary: "Get a user by ID",
@@ -616,6 +706,14 @@ const options = {
             }
         },
         components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                    description: "Enter JWT token obtained from login endpoint"
+                }
+            },
             schemas: {
                 Role: {
                     type: "object",

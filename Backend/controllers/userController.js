@@ -215,6 +215,86 @@ export const deleteUser = async (req, res) => {
     }
 };
 
+export const createUserByAdmin = async (req, res) => {
+    try {
+        const { fullName, emailId, password, roleId } = req.body;
+
+        if (!fullName || typeof fullName !== "string" || fullName.trim() === "") {
+            return sendResponse(res, 400, "fullName is required");
+        }
+
+        if (!emailId || typeof emailId !== "string" || emailId.trim() === "") {
+            return sendResponse(res, 400, "emailId is required");
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailId.trim())) {
+            return sendResponse(res, 400, "Invalid email format");
+        }
+
+        if (!password || typeof password !== "string" || password.trim() === "") {
+            return sendResponse(res, 400, "password is required");
+        }
+
+        if (!roleId || typeof roleId !== "string" || roleId.trim() === "") {
+            return sendResponse(res, 400, "roleId is required");
+        }
+
+        // Check if emailId already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { emailId: emailId.trim().toLowerCase() }
+        });
+
+        if (existingUser) {
+            return sendResponse(res, 409, "Email already exists");
+        }
+
+        // Check if role exists
+        const roleExists = await prisma.role.findUnique({
+            where: { roleId: roleId.trim() }
+        });
+
+        if (!roleExists) {
+            return sendResponse(res, 404, "Role not found");
+        }
+
+        const id = randomUUID();
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
+
+        // Create user with admin's userId as updatedBy
+        const newUser = await prisma.user.create({
+            data: {
+                userId: id,
+                fullName: fullName.trim(),
+                emailId: emailId.trim().toLowerCase(),
+                password: hashedPassword,
+                roleId: roleId.trim(),
+                updatedBy: req.user.userId // Admin who created the user
+            },
+            select: {
+                userId: true,
+                fullName: true,
+                emailId: true,
+                roleId: true,
+                createdAt: true,
+                role: {
+                    select: {
+                        roleId: true,
+                        roleName: true
+                    }
+                }
+            }
+        });
+
+        return sendResponse(res, 201, "User created successfully by admin", newUser);
+    } catch (error) {
+        console.error("createUserByAdmin error:", error);
+        return sendResponse(res, 500, "Failed to create user", { error: error.message });
+    }
+};
+
 export const login = async (req, res) => {
     try {
         const { emailId, password } = req.body;
