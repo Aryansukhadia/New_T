@@ -1,0 +1,19 @@
+model TopMeasurement {
+  topMeasurementId String  @id
+  length           Decimal @db.Decimal(10, 2)
+  shoulder         Decimal @db.Decimal(10, 2)
+  sleeveLength     Decimal @db.Decimal(10, 2)
+  sleeveBottom     Decimal @db.Decimal(10, 2)
+  chest            Decimal @db.Decimal(10, 2)
+  waist            Decimal @db.Decimal(10, 2)
+  hip              Decimal @db.Decimal(10, 2)
+  neck             Decimal @db.Decimal(10, 2)
+  isDeleted        Boolean  @default(false)
+  updatedBy        String?
+  updatedAt        DateTime? @updatedAt
+  createdAt        DateTime @default(now())
+
+  updater      User?   @relation(fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+}
+
+

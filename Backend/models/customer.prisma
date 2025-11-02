@@ -1,0 +1,20 @@
+model Customer {
+  customerId String   @id
+  fullName   String
+  emailId    String
+  mobileNo   String
+  address    String
+  reference  String
+  isDeleted  Boolean  @default(false)
+  updatedBy  String?
+  updatedAt  DateTime? @updatedAt
+  createdAt  DateTime @default(now())
+  topMeasurementId    String?
+  bottomMeasurementId String?
+
+  updater User? @relation(fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  topMeasurement    TopMeasurement?   @relation(fields: [topMeasurementId], references: [topMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+  bottomMeasurement BottomMeasurement? @relation(fields: [bottomMeasurementId], references: [bottomMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+}
+
+
