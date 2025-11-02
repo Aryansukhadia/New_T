@@ -276,6 +276,65 @@ const options = {
                     }
                 }
             },
+            "/api/users/login": {
+                post: {
+                    summary: "User login",
+                    tags: ["Users"],
+                    requestBody: {
+                        required: true,
+                        content: {
+                            "application/json": {
+                                schema: { $ref: "#/components/schemas/LoginInput" },
+                                example: {
+                                    emailId: "john.doe@example.com",
+                                    password: "password123"
+                                }
+                            }
+                        }
+                    },
+                    responses: {
+                        "200": {
+                            description: "Login successful",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: { type: "number", example: 200 },
+                                            message: { type: "string", example: "Login successful" },
+                                            data: { $ref: "#/components/schemas/LoginResponse" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Validation error",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "401": {
+                            description: "Invalid credentials or deactivated account",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Failed to login",
+                            content: {
+                                "application/json": {
+                                    schema: { $ref: "#/components/schemas/ErrorResponse" }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "/api/users": {
                 get: {
                     summary: "Get all users",
@@ -691,6 +750,56 @@ const options = {
                         }
                     },
                     description: "Only fullName can be updated by users. Email and password cannot be changed through this endpoint."
+                },
+                LoginInput: {
+                    type: "object",
+                    required: ["emailId", "password"],
+                    properties: {
+                        emailId: {
+                            type: "string",
+                            format: "email",
+                            example: "john.doe@example.com",
+                            description: "User email address"
+                        },
+                        password: {
+                            type: "string",
+                            example: "password123",
+                            description: "User password"
+                        }
+                    }
+                },
+                LoginResponse: {
+                    type: "object",
+                    properties: {
+                        userId: {
+                            type: "string",
+                            format: "uuid",
+                            example: "a3f7a3fa-9b7c-4a9f-a1a1-1234567890ab",
+                            description: "User ID"
+                        },
+                        fullName: {
+                            type: "string",
+                            example: "John Doe",
+                            description: "User full name"
+                        },
+                        emailId: {
+                            type: "string",
+                            format: "email",
+                            example: "john.doe@example.com",
+                            description: "User email address"
+                        },
+                        roleName: {
+                            type: "string",
+                            example: "Admin",
+                            description: "Role name of the user"
+                        },
+                        token: {
+                            type: "string",
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                            description: "JWT authentication token containing userId and roleId"
+                        }
+                    },
+                    required: ["userId", "fullName", "emailId", "roleName", "token"]
                 },
                 ErrorResponse: {
                     type: "object",

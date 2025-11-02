@@ -2,6 +2,7 @@ import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import { generateToken } from "../utils/jwt.js";
 
 export const addUser = async (req, res) => {
     try {
@@ -211,5 +212,70 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
         console.error("deleteUser error:", error);
         return sendResponse(res, 500, "Failed to delete user", { error: error.message });
+    }
+};
+
+export const login = async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+
+        if (!emailId || typeof emailId !== "string" || emailId.trim() === "") {
+            return sendResponse(res, 400, "emailId is required");
+        }
+
+        if (!password || typeof password !== "string" || password.trim() === "") {
+            return sendResponse(res, 400, "password is required");
+        }
+
+        // Find user by emailId
+        const user = await prisma.user.findUnique({
+            where: {
+                emailId: emailId.trim().toLowerCase()
+            },
+            include: {
+                role: {
+                    select: {
+                        roleId: true,
+                        roleName: true
+                    }
+                }
+            }
+        });
+
+        if (!user) {
+            return sendResponse(res, 401, "Invalid email or password");
+        }
+
+        // Check if user is deleted
+        if (user.isDeleted) {
+            return sendResponse(res, 401, "User account is deactivated");
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password.trim(), user.password);
+
+        if (!isPasswordValid) {
+            return sendResponse(res, 401, "Invalid email or password");
+        }
+
+        // Generate JWT token with userId and roleId
+        const token = generateToken({
+            userId: user.userId,
+            roleId: user.roleId
+        });
+
+        // Return user info and token
+        const userData = {
+            userId: user.userId,
+            fullName: user.fullName,
+            emailId: user.emailId,
+            roleName: user.role.roleName,
+            token: token
+        };
+
+        return sendResponse(res, 200, "Login successful", userData);
+    } catch (error) {
+        console.error("login error:", error);
+        return sendResponse(res, 500, "Failed to login", { error: error.message });
     }
 };
