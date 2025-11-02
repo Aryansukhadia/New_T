@@ -25,7 +25,8 @@ model Role {
 
 model User {
   userId    String   @id
-  username  String   @unique
+  fullName  String
+  emailId   String   @unique 
   password  String
   roleId    String
   isDeleted Boolean  @default(false)
