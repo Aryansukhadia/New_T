@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import sendResponse from './utils/response.js';
 import pool, { connectDB } from './dbConnect/database.js';
+import apiRoutes from './routes/index.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './docs/swagger.js';
 
 dotenv.config();
 
@@ -13,10 +16,12 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api', apiRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Test route
 app.get('/', (req, res) => {
-    sendResponse(res, 200, 'Hello World!');
+    sendResponse(res, 200, 'Server is running......');
 });
 
 
@@ -43,6 +48,7 @@ const startServer = async () => {
 
     app.listen(port, () => {
         console.log(`Server listening at http://localhost:${port}`);
+        console.log(`API documentation available at http://localhost:${port}/api-docs`);
     });
 };
 

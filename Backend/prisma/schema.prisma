@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role { 
+  roleId    String    @id
+  roleName  String
+  isDeleted Boolean   @default(false)
+  updatedBy String?
+  updatedAt DateTime? @updatedAt
+  createdAt DateTime  @default(now())
+
+  users     User[]
+  customers Customer[]
+  updater   User?     @relation("RoleUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+}
+
+model User {
+  userId    String   @id
+  username  String   @unique
+  password  String
+  roleId    String
+  isDeleted Boolean  @default(false)
+  updatedBy String?
+  updatedAt DateTime? @updatedAt
+  createdAt DateTime @default(now())
+
+  role         Role              @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Restrict)
+  updater      User?             @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  updatedUsers User[]            @relation("UserUpdater")
+  updatedRoles Role[]            @relation("RoleUpdater")
+  customers    Customer[]
+  topMeasurements    TopMeasurement[]
+  bottomMeasurements BottomMeasurement[]
+}
+
+model Customer {
+  customerId String   @id
+  fullName   String
+  emailId    String
+  mobileNo   String
+  address    String
+  reference  String
+  roleId     String?
+  isDeleted  Boolean  @default(false)
+  updatedBy  String?
+  updatedAt  DateTime? @updatedAt
+  createdAt  DateTime @default(now())
+  topMeasurementId    String?
+  bottomMeasurementId String?
+
+  role             Role?              @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: SetNull)
+  updater          User?              @relation(fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  topMeasurement   TopMeasurement?    @relation(fields: [topMeasurementId], references: [topMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+  bottomMeasurement BottomMeasurement? @relation(fields: [bottomMeasurementId], references: [bottomMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+}
+
+model TopMeasurement {
+  topMeasurementId String  @id
+  length           Decimal @db.Decimal(10, 2)
+  shoulder         Decimal @db.Decimal(10, 2)
+  sleeveLength     Decimal @db.Decimal(10, 2)
+  sleeveBottom     Decimal @db.Decimal(10, 2)
+  chest            Decimal @db.Decimal(10, 2)
+  waist            Decimal @db.Decimal(10, 2)
+  hip              Decimal @db.Decimal(10, 2)
+  neck             Decimal @db.Decimal(10, 2)
+  isDeleted        Boolean @default(false)
+  updatedBy        String?
+  updatedAt        DateTime? @updatedAt
+  createdAt        DateTime @default(now())
+
+  updater   User?      @relation(fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  customers Customer[]
+}
+
+model BottomMeasurement {
+  bottomMeasurementId String  @id
+  length              Decimal @db.Decimal(10, 2)
+  waist               Decimal @db.Decimal(10, 2)
+  hip                 Decimal @db.Decimal(10, 2)
+  thigh               Decimal @db.Decimal(10, 2)
+  knee                Decimal @db.Decimal(10, 2)
+  calf                Decimal @db.Decimal(10, 2)
+  bottom              Decimal @db.Decimal(10, 2)
+  langot              Decimal @db.Decimal(10, 2)
+  isDeleted           Boolean @default(false)
+  updatedBy           String?
+  updatedAt           DateTime? @updatedAt
+  createdAt           DateTime @default(now())
+
+  updater   User?      @relation(fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  customers Customer[]
+}
+
