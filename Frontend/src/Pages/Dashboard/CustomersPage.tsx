@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   getCustomersService,
@@ -27,6 +28,7 @@ import {
   FaEdit,
   FaTrash,
   FaUserPlus,
+  FaRuler,
 } from 'react-icons/fa';
 
 const PageContainer = styled.div`
@@ -132,7 +134,7 @@ const ActionCell = styled(TableCell)`
   gap: 8px;
 `;
 
-const IconButton = styled.button<{ variant?: 'edit' | 'delete' }>`
+const IconButton = styled.button<{ variant?: 'edit' | 'delete' | 'measurement' }>`
   padding: 10px;
   border: none;
   border-radius: 8px;
@@ -165,6 +167,17 @@ const IconButton = styled.button<{ variant?: 'edit' | 'delete' }>`
           background: #ffcdd2;
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
+        }
+      `;
+    }
+    if (props.variant === 'measurement') {
+      return `
+        background: #fff3e0;
+        color: #f57c00;
+        &:hover {
+          background: #ffe0b2;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(245, 124, 0, 0.2);
         }
       `;
     }
@@ -268,6 +281,7 @@ const CustomersPage = () => {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
+  const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<CreateCustomerRequest>({
@@ -352,6 +366,10 @@ const CustomersPage = () => {
   const handleOpenDeleteModal = (customer: Customer) => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleManageMeasurements = (customer: Customer) => {
+    navigate(`/dashboard/measurements/manage/${customer.customerId}`);
   };
 
   const handleCloseModal = () => {
@@ -534,6 +552,13 @@ const CustomersPage = () => {
                   <TableCell>{customer.reference || '—'}</TableCell>
                   <TableCell>{formatDate(customer.createdAt)}</TableCell>
                   <ActionCell>
+                    <IconButton
+                      variant="measurement"
+                      onClick={() => handleManageMeasurements(customer)}
+                      title="Manage Measurements"
+                    >
+                      <FaRuler />
+                    </IconButton>
                     <IconButton
                       variant="edit"
                       onClick={() => handleOpenEditModal(customer)}

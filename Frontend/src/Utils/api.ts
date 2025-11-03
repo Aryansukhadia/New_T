@@ -123,6 +123,25 @@ export const API_CONFIG: ApiConfig = {
             method: 'DELETE',
             baseUrl: NODEJS_BASE_URL,
         },
+
+        // ============================================
+        // MEASUREMENT ENDPOINTS
+        // ============================================
+        addMeasurement: {
+            path: '/measurements',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getCustomerMeasurements: {
+            path: '/measurements/{customerId}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        editMeasurement: {
+            path: '/measurements',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 

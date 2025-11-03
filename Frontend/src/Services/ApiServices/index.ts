@@ -10,6 +10,7 @@ export * from './authServices';
 export * from './userServices';
 export * from './roleServices';
 export * from './customerServices';
+export * from './measurementServices';
 
 // Helpers
 export * from './authHelpers';
