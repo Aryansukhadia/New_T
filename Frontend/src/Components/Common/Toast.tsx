@@ -24,9 +24,9 @@ const slideOut = keyframes`
   }
 `;
 
-const ToastContainer = styled.div`
+export const ToastContainer = styled.div`
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   z-index: 9999;
   display: flex;

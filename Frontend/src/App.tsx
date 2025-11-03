@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastProvider } from './Utils/ToastContext';
+import ToastDisplay from './Components/Common/ToastProvider';
 import Login from './Pages/Login';
 import Register from './Pages/Register';
 import DashboardLayout from './Components/Layout/DashboardLayout';
@@ -27,35 +29,38 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <ToastProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Dashboard Routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<DashboardHome />} />
-          <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-          <Route path="roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
-          <Route path="customers" element={<CustomersPage />} />
-          <Route path="measurements" element={<MeasurementsPage />} />
-          <Route path="reports" element={<ReportsPage />} />
-          <Route path="financials" element={<FinancialsPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-        </Route>
+          {/* Dashboard Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DashboardHome />} />
+            <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+            <Route path="roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="measurements" element={<MeasurementsPage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="financials" element={<FinancialsPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+          </Route>
 
-        {/* Redirect root to dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-    </Router>
+          {/* Redirect root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+        <ToastDisplay />
+      </Router>
+    </ToastProvider>
   );
 }
 

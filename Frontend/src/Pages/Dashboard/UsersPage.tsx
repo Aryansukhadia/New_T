@@ -11,7 +11,8 @@ import {
   type Role,
 } from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
-import { FormGroup, Label, Input, Select, Button, ErrorMessage, SuccessMessage, LoadingSpinner } from '../../Components/Common/FormComponents';
+import { FormGroup, Label, Input, Select, Button, LoadingSpinner } from '../../Components/Common/FormComponents';
+import { useToast } from '../../Utils/ToastContext';
 import { FaUsers, FaUser, FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaEdit, FaTrash } from 'react-icons/fa';
 
 const PageContainer = styled.div`
@@ -252,9 +253,8 @@ const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -295,7 +295,7 @@ const UsersPage = () => {
       }
     } catch (err: unknown) {
       console.error('Error fetching users:', err);
-      setError('Failed to load users');
+      showError('Failed to load users', 'Error');
     } finally {
       setLoading(false);
     }
@@ -322,8 +322,6 @@ const UsersPage = () => {
       password: '',
       roleId: '',
     });
-    setError('');
-    setSuccess('');
     setIsModalOpen(true);
   };
 
@@ -336,8 +334,6 @@ const UsersPage = () => {
       password: '', // Don't populate password for edit
       roleId: user.roleId,
     });
-    setError('');
-    setSuccess('');
     setIsModalOpen(true);
   };
 
@@ -349,8 +345,6 @@ const UsersPage = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
-    setError('');
-    setSuccess('');
   };
 
   const handleCloseDeleteModal = () => {
@@ -364,14 +358,10 @@ const UsersPage = () => {
       ...prev,
       [name]: value,
     }));
-    setError('');
-    setSuccess('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setFormLoading(true);
 
     try {
@@ -382,13 +372,13 @@ const UsersPage = () => {
         });
 
         if (response.success === 200) {
-          setSuccess('User updated successfully!');
+          showSuccess('User updated successfully!', 'Success');
           await fetchUsers();
           setTimeout(() => {
             handleCloseModal();
           }, 1500);
         } else {
-          setError(response.message || 'Failed to update user');
+          showError(response.message || 'Failed to update user', 'Update Failed');
         }
       } else {
         // Create new user
@@ -400,21 +390,21 @@ const UsersPage = () => {
         });
 
         if (response.success === 201) {
-          setSuccess('User created successfully!');
+          showSuccess('User created successfully!', 'Success');
           await fetchUsers();
           setTimeout(() => {
             handleCloseModal();
           }, 1500);
         } else {
-          setError(response.message || 'Failed to create user');
+          showError(response.message || 'Failed to create user', 'Create Failed');
         }
       }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || 'An error occurred');
+        showError(axiosError.response?.data?.message || 'An error occurred', 'Error');
       } else {
-        setError('An unexpected error occurred');
+        showError('An unexpected error occurred', 'Error');
       }
     } finally {
       setFormLoading(false);
@@ -425,27 +415,25 @@ const UsersPage = () => {
     if (!userToDelete) return;
 
     setFormLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       const response = await deleteUserService(userToDelete.userId);
 
       if (response.success === 200) {
-        setSuccess('User deleted successfully!');
+        showSuccess('User deleted successfully!', 'Success');
         await fetchUsers();
         setTimeout(() => {
           handleCloseDeleteModal();
         }, 1500);
       } else {
-        setError(response.message || 'Failed to delete user');
+        showError(response.message || 'Failed to delete user', 'Delete Failed');
       }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || 'Failed to delete user');
+        showError(axiosError.response?.data?.message || 'Failed to delete user', 'Delete Failed');
       } else {
-        setError('An unexpected error occurred');
+        showError('An unexpected error occurred', 'Error');
       }
     } finally {
       setFormLoading(false);
@@ -476,8 +464,6 @@ const UsersPage = () => {
         />
       </SearchBar>
 
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {success && <SuccessMessage>{success}</SuccessMessage>}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -562,8 +548,6 @@ const UsersPage = () => {
         }
       >
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>{success}</SuccessMessage>}
 
           <FormGroup>
             <Label htmlFor="fullName">
@@ -687,12 +671,10 @@ const UsersPage = () => {
           </>
         }
       >
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
-        {!success && (
+        {userToDelete && (
           <p>
-            Are you sure you want to delete user <strong>{userToDelete?.fullName}</strong> (
-            {userToDelete?.emailId})? This action cannot be undone.
+            Are you sure you want to delete user <strong>{userToDelete.fullName}</strong> (
+            {userToDelete.emailId})? This action cannot be undone.
           </p>
         )}
       </Modal>

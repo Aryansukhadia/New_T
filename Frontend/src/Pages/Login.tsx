@@ -10,19 +10,20 @@ import {
   Label,
   Input,
   Button,
-  ErrorMessage,
   LoadingSpinner,
   LinkText,
 } from '../Components/Common/FormComponents';
+import { useToast } from '../Utils/ToastContext';
 import { loginService, setAuthToken, setUserInfo } from '../Services/ApiServices';
+import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
   const [formData, setFormData] = useState({
     emailId: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,12 +32,10 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -47,17 +46,21 @@ const Login = () => {
         setAuthToken(response.data.token);
         setUserInfo(response.data);
 
+        showSuccess('Login successful! Redirecting...', 'Success');
+
         // Redirect to dashboard
-        navigate('/dashboard');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
       } else {
-        setError(response.message || 'Login failed');
+        showError(response.message || 'Login failed', 'Login Failed');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || 'Login failed. Please try again.');
+      if (axios.isAxiosError(err)) {
+        const errorMsg = err.response?.data?.message || 'Login failed. Please try again.';
+        showError(errorMsg, 'Login Failed');
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        showError('An unexpected error occurred. Please try again.', 'Error');
       }
     } finally {
       setLoading(false);
@@ -69,8 +72,6 @@ const Login = () => {
       <FormCard>
         <FormTitle>Welcome Back</FormTitle>
         <FormSubtitle>Sign in to your account</FormSubtitle>
-
-        {error && <ErrorMessage>{error}</ErrorMessage>}
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>

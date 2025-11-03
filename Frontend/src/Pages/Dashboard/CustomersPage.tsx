@@ -10,15 +10,12 @@ import {
   type UpdateCustomerRequest,
 } from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
-import Toast from '../../Components/Common/Toast';
-import { useToast } from '../../Utils/useToast';
+import { useToast } from '../../Utils/ToastContext';
 import {
   FormGroup,
   Label,
   Input,
   Button,
-  ErrorMessage,
-  SuccessMessage,
   LoadingSpinner,
 } from '../../Components/Common/FormComponents';
 import {
@@ -259,17 +256,6 @@ const ModalButtonSecondary = styled.button`
   }
 `;
 
-const ToastContainer = styled.div`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: none;
-`;
-
 const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
@@ -280,11 +266,9 @@ const CustomersPage = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  const { toasts, showSuccess, showError, removeToast } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState<CreateCustomerRequest>({
     fullName: '',
@@ -349,8 +333,6 @@ const CustomersPage = () => {
       address: '',
       reference: null,
     });
-    setError('');
-    setSuccess('');
     setIsModalOpen(true);
   };
 
@@ -364,8 +346,6 @@ const CustomersPage = () => {
       address: customer.address,
       reference: customer.reference || null,
     });
-    setError('');
-    setSuccess('');
     setIsModalOpen(true);
   };
 
@@ -377,8 +357,6 @@ const CustomersPage = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedCustomer(null);
-    setError('');
-    setSuccess('');
   };
 
   const handleCloseDeleteModal = () => {
@@ -392,14 +370,10 @@ const CustomersPage = () => {
       ...prev,
       [name]: name === 'reference' ? (value === '' ? null : value) : value,
     }));
-    setError('');
-    setSuccess('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setFormLoading(true);
 
     try {
@@ -416,7 +390,6 @@ const CustomersPage = () => {
         const response = await updateCustomerService(selectedCustomer.customerId, updateData);
 
         if (response.success === 200) {
-          setSuccess('Customer updated successfully!');
           showSuccess(response.message || 'Customer updated successfully!', 'Success');
           await fetchCustomers();
           setTimeout(() => {
@@ -424,7 +397,6 @@ const CustomersPage = () => {
           }, 1000);
         } else {
           const errorMsg = response.message || 'Failed to update customer';
-          setError(errorMsg);
           showError(errorMsg, 'Update Failed');
         }
       } else {
@@ -440,7 +412,6 @@ const CustomersPage = () => {
         const response = await createCustomerService(createData);
 
         if (response.success === 201) {
-          setSuccess('Customer created successfully!');
           showSuccess(response.message || 'Customer created successfully!', 'Success');
           await fetchCustomers();
           setTimeout(() => {
@@ -448,7 +419,6 @@ const CustomersPage = () => {
           }, 1000);
         } else {
           const errorMsg = response.message || 'Failed to create customer';
-          setError(errorMsg);
           showError(errorMsg, 'Create Failed');
         }
       }
@@ -456,11 +426,9 @@ const CustomersPage = () => {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
         const errorMsg = axiosError.response?.data?.message || 'An error occurred';
-        setError(errorMsg);
         showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
       } else {
         const errorMsg = 'An unexpected error occurred';
-        setError(errorMsg);
         showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
       }
     } finally {
@@ -472,14 +440,11 @@ const CustomersPage = () => {
     if (!customerToDelete) return;
 
     setFormLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       const response = await deleteCustomerService(customerToDelete.customerId);
 
       if (response.success === 200) {
-        setSuccess('Customer deleted successfully!');
         showSuccess(response.message || 'Customer deleted successfully!', 'Success');
         await fetchCustomers();
         setTimeout(() => {
@@ -487,18 +452,15 @@ const CustomersPage = () => {
         }, 1000);
       } else {
         const errorMsg = response.message || 'Failed to delete customer';
-        setError(errorMsg);
         showError(errorMsg, 'Delete Failed');
       }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
         const errorMsg = axiosError.response?.data?.message || 'Failed to delete customer';
-        setError(errorMsg);
         showError(errorMsg, 'Delete Failed');
       } else {
         const errorMsg = 'An unexpected error occurred';
-        setError(errorMsg);
         showError(errorMsg, 'Delete Failed');
       }
     } finally {
@@ -515,242 +477,224 @@ const CustomersPage = () => {
   };
 
   return (
-    <>
-      {/* Toast Container */}
-      {toasts.length > 0 && (
-        <ToastContainer>
-          {toasts.map((toast) => (
-            <Toast key={toast.id} toast={toast} onClose={removeToast} />
-          ))}
-        </ToastContainer>
+    <PageContainer>
+      <PageHeader>
+        <PageTitle>Customer Management</PageTitle>
+        <ActionButton onClick={handleOpenCreateModal}>
+          <FaUserPlus style={{ marginRight: '8px' }} />
+          Add New Customer
+        </ActionButton>
+      </PageHeader>
+
+      <SearchBar>
+        <SearchInput
+          type="text"
+          placeholder="Search customers by name, email, mobile, address, or reference..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </SearchBar>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <LoadingSpinner />
+        </div>
+      ) : filteredCustomers.length === 0 ? (
+        <EmptyState>
+          <EmptyStateIcon>
+            <FaUsers />
+          </EmptyStateIcon>
+          <EmptyStateText>
+            {searchTerm
+              ? 'No customers found matching your search'
+              : 'No customers found. Add your first customer to get started!'}
+          </EmptyStateText>
+        </EmptyState>
+      ) : (
+        <TableContainer>
+          <Table>
+            <TableHeader>
+              <TableRow isHeader>
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>Email</TableHeaderCell>
+                <TableHeaderCell>Mobile</TableHeaderCell>
+                <TableHeaderCell>Address</TableHeaderCell>
+                <TableHeaderCell>Reference</TableHeaderCell>
+                <TableHeaderCell>Created At</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <tbody>
+              {filteredCustomers.map((customer) => (
+                <TableRow key={customer.customerId}>
+                  <TableCell>{customer.fullName}</TableCell>
+                  <TableCell>{customer.emailId}</TableCell>
+                  <TableCell>{customer.mobileNo}</TableCell>
+                  <TableCell>{customer.address}</TableCell>
+                  <TableCell>{customer.reference || '—'}</TableCell>
+                  <TableCell>{formatDate(customer.createdAt)}</TableCell>
+                  <ActionCell>
+                    <IconButton
+                      variant="edit"
+                      onClick={() => handleOpenEditModal(customer)}
+                      title="Edit Customer"
+                    >
+                      <FaEdit />
+                    </IconButton>
+                    <IconButton
+                      variant="delete"
+                      onClick={() => handleOpenDeleteModal(customer)}
+                      title="Delete Customer"
+                    >
+                      <FaTrash />
+                    </IconButton>
+                  </ActionCell>
+                </TableRow>
+              ))}
+            </tbody>
+          </Table>
+        </TableContainer>
       )}
 
-      <PageContainer>
-        <PageHeader>
-          <PageTitle>Customer Management</PageTitle>
-          <ActionButton onClick={handleOpenCreateModal}>
-            <FaUserPlus style={{ marginRight: '8px' }} />
-            Add New Customer
-          </ActionButton>
-        </PageHeader>
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={isEditMode ? 'Edit Customer' : 'Create New Customer'}
+        size="large"
+        footer={
+          <>
+            <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
+            <ModalButton onClick={handleSubmit} disabled={formLoading}>
+              {formLoading ? (
+                <LoadingSpinner />
+              ) : isEditMode ? (
+                <>
+                  <FaEdit /> Update Customer
+                </>
+              ) : (
+                <>
+                  <FaUserPlus /> Create Customer
+                </>
+              )}
+            </ModalButton>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
 
-        <SearchBar>
-          <SearchInput
-            type="text"
-            placeholder="Search customers by name, email, mobile, address, or reference..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </SearchBar>
+          <FormGroup>
+            <Label htmlFor="fullName">
+              <FaUser />
+              Full Name
+            </Label>
+            <Input
+              type="text"
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleFormChange}
+              placeholder="Enter full name (e.g., John Doe)"
+              required
+              disabled={formLoading}
+            />
+          </FormGroup>
 
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
+          <FormGroup>
+            <Label htmlFor="emailId">
+              <FaEnvelope />
+              Email Address
+            </Label>
+            <Input
+              type="email"
+              id="emailId"
+              name="emailId"
+              value={formData.emailId}
+              onChange={handleFormChange}
+              placeholder="Enter email address (e.g., john.doe@example.com)"
+              required
+              disabled={formLoading}
+            />
+          </FormGroup>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <LoadingSpinner />
-          </div>
-        ) : filteredCustomers.length === 0 ? (
-          <EmptyState>
-            <EmptyStateIcon>
-              <FaUsers />
-            </EmptyStateIcon>
-            <EmptyStateText>
-              {searchTerm
-                ? 'No customers found matching your search'
-                : 'No customers found. Add your first customer to get started!'}
-            </EmptyStateText>
-          </EmptyState>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHeader>
-                <TableRow isHeader>
-                  <TableHeaderCell>Name</TableHeaderCell>
-                  <TableHeaderCell>Email</TableHeaderCell>
-                  <TableHeaderCell>Mobile</TableHeaderCell>
-                  <TableHeaderCell>Address</TableHeaderCell>
-                  <TableHeaderCell>Reference</TableHeaderCell>
-                  <TableHeaderCell>Created At</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
-                </TableRow>
-              </TableHeader>
-              <tbody>
-                {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.customerId}>
-                    <TableCell>{customer.fullName}</TableCell>
-                    <TableCell>{customer.emailId}</TableCell>
-                    <TableCell>{customer.mobileNo}</TableCell>
-                    <TableCell>{customer.address}</TableCell>
-                    <TableCell>{customer.reference || '—'}</TableCell>
-                    <TableCell>{formatDate(customer.createdAt)}</TableCell>
-                    <ActionCell>
-                      <IconButton
-                        variant="edit"
-                        onClick={() => handleOpenEditModal(customer)}
-                        title="Edit Customer"
-                      >
-                        <FaEdit />
-                      </IconButton>
-                      <IconButton
-                        variant="delete"
-                        onClick={() => handleOpenDeleteModal(customer)}
-                        title="Delete Customer"
-                      >
-                        <FaTrash />
-                      </IconButton>
-                    </ActionCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
-          </TableContainer>
+          <FormGroup>
+            <Label htmlFor="mobileNo">
+              <FaPhone />
+              Mobile Number
+            </Label>
+            <Input
+              type="tel"
+              id="mobileNo"
+              name="mobileNo"
+              value={formData.mobileNo}
+              onChange={handleFormChange}
+              placeholder="Enter mobile number (e.g., +1234567890)"
+              required
+              disabled={formLoading}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="address">
+              <FaMapMarkerAlt />
+              Address
+            </Label>
+            <Input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleFormChange}
+              placeholder="Enter complete address"
+              required
+              disabled={formLoading}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="reference">
+              Reference (Optional)
+            </Label>
+            <Input
+              type="text"
+              id="reference"
+              name="reference"
+              value={formData.reference || ''}
+              onChange={handleFormChange}
+              placeholder="Enter reference information (optional)"
+              disabled={formLoading}
+            />
+          </FormGroup>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        title="Delete Customer"
+        footer={
+          <>
+            <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
+            <Button
+              onClick={handleDelete}
+              disabled={formLoading}
+              style={{ background: '#dc3545', marginTop: 0 }}
+            >
+              {formLoading ? <LoadingSpinner /> : 'Delete'}
+            </Button>
+          </>
+        }
+      >
+        {customerToDelete && (
+          <p>
+            Are you sure you want to delete customer <strong>{customerToDelete.fullName}</strong> (
+            {customerToDelete.emailId})? This action will soft delete the customer and cannot be
+            undone.
+          </p>
         )}
-
-        {/* Create/Edit Modal */}
-        <Modal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          title={isEditMode ? 'Edit Customer' : 'Create New Customer'}
-          size="large"
-          footer={
-            <>
-              <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
-              <ModalButton onClick={handleSubmit} disabled={formLoading}>
-                {formLoading ? (
-                  <LoadingSpinner />
-                ) : isEditMode ? (
-                  <>
-                    <FaEdit /> Update Customer
-                  </>
-                ) : (
-                  <>
-                    <FaUserPlus /> Create Customer
-                  </>
-                )}
-              </ModalButton>
-            </>
-          }
-        >
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
-            {success && <SuccessMessage>{success}</SuccessMessage>}
-
-            <FormGroup>
-              <Label htmlFor="fullName">
-                <FaUser />
-                Full Name
-              </Label>
-              <Input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleFormChange}
-                placeholder="Enter full name (e.g., John Doe)"
-                required
-                disabled={formLoading}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="emailId">
-                <FaEnvelope />
-                Email Address
-              </Label>
-              <Input
-                type="email"
-                id="emailId"
-                name="emailId"
-                value={formData.emailId}
-                onChange={handleFormChange}
-                placeholder="Enter email address (e.g., john.doe@example.com)"
-                required
-                disabled={formLoading}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="mobileNo">
-                <FaPhone />
-                Mobile Number
-              </Label>
-              <Input
-                type="tel"
-                id="mobileNo"
-                name="mobileNo"
-                value={formData.mobileNo}
-                onChange={handleFormChange}
-                placeholder="Enter mobile number (e.g., +1234567890)"
-                required
-                disabled={formLoading}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="address">
-                <FaMapMarkerAlt />
-                Address
-              </Label>
-              <Input
-                type="text"
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleFormChange}
-                placeholder="Enter complete address"
-                required
-                disabled={formLoading}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="reference">
-                Reference (Optional)
-              </Label>
-              <Input
-                type="text"
-                id="reference"
-                name="reference"
-                value={formData.reference || ''}
-                onChange={handleFormChange}
-                placeholder="Enter reference information (optional)"
-                disabled={formLoading}
-              />
-            </FormGroup>
-          </form>
-        </Modal>
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={isDeleteModalOpen}
-          onClose={handleCloseDeleteModal}
-          title="Delete Customer"
-          footer={
-            <>
-              <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-              <Button
-                onClick={handleDelete}
-                disabled={formLoading}
-                style={{ background: '#dc3545', marginTop: 0 }}
-              >
-                {formLoading ? <LoadingSpinner /> : 'Delete'}
-              </Button>
-            </>
-          }
-        >
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>{success}</SuccessMessage>}
-          {!success && (
-            <p>
-              Are you sure you want to delete customer <strong>{customerToDelete?.fullName}</strong> (
-              {customerToDelete?.emailId})? This action will soft delete the customer and cannot be
-              undone.
-            </p>
-          )}
-        </Modal>
-      </PageContainer>
-    </>
+      </Modal>
+    </PageContainer>
   );
 };
 

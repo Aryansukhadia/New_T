@@ -11,15 +11,16 @@ import {
   Input,
   Select,
   Button,
-  ErrorMessage,
-  SuccessMessage,
   LoadingSpinner,
   LinkText,
 } from '../Components/Common/FormComponents';
+import { useToast } from '../Utils/ToastContext';
 import { registerService, getRolesService, type Role } from '../Services/ApiServices';
+import axios from 'axios';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { showError, showSuccess } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
     emailId: '',
@@ -27,8 +28,6 @@ const Register = () => {
     roleId: '',
   });
   const [roles, setRoles] = useState<Role[]>([]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingRoles, setLoadingRoles] = useState(true);
 
@@ -55,33 +54,29 @@ const Register = () => {
       ...prev,
       [name]: value,
     }));
-    setError('');
-    setSuccess('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
 
     try {
       const response = await registerService(formData);
 
       if (response.success === 201 && response.data) {
-        setSuccess('Account created successfully! Redirecting to login...');
+        showSuccess('Account created successfully! Redirecting to login...', 'Success');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
-        setError(response.message || 'Registration failed');
+        showError(response.message || 'Registration failed', 'Registration Failed');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        setError(axiosError.response?.data?.message || 'Registration failed. Please try again.');
+      if (axios.isAxiosError(err)) {
+        const errorMsg = err.response?.data?.message || 'Registration failed. Please try again.';
+        showError(errorMsg, 'Registration Failed');
       } else {
-        setError('An unexpected error occurred. Please try again.');
+        showError('An unexpected error occurred. Please try again.', 'Error');
       }
     } finally {
       setLoading(false);
@@ -93,9 +88,6 @@ const Register = () => {
       <FormCard>
         <FormTitle>Create Account</FormTitle>
         <FormSubtitle>Sign up to get started</FormSubtitle>
-
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
 
         <Form onSubmit={handleSubmit}>
           <FormGroup>
