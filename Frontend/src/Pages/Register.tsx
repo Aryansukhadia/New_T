@@ -16,9 +16,7 @@ import {
   LoadingSpinner,
   LinkText,
 } from '../Components/Common/FormComponents';
-import { registerService } from '../ApiDetails/AuthApi';
-import { getRolesService } from '../ApiDetails/RoleApi';
-import type { Role } from '../ApiDetails/RoleApi';
+import { registerService, getRolesService, type Role } from '../Services/ApiServices';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -69,7 +67,7 @@ const Register = () => {
 
     try {
       const response = await registerService(formData);
-      
+
       if (response.success === 201 && response.data) {
         setSuccess('Account created successfully! Redirecting to login...');
         setTimeout(() => {
@@ -95,10 +93,10 @@ const Register = () => {
       <FormCard>
         <FormTitle>Create Account</FormTitle>
         <FormSubtitle>Sign up to get started</FormSubtitle>
-        
+
         {error && <ErrorMessage>{error}</ErrorMessage>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
-        
+
         <Form onSubmit={handleSubmit}>
           <FormGroup>
             <Label htmlFor="fullName">Full Name</Label>

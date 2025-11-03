@@ -14,7 +14,7 @@ import {
   LoadingSpinner,
   LinkText,
 } from '../Components/Common/FormComponents';
-import { loginService, setAuthToken, setUserInfo } from '../ApiDetails/AuthApi';
+import { loginService, setAuthToken, setUserInfo } from '../Services/ApiServices';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,12 +41,12 @@ const Login = () => {
 
     try {
       const response = await loginService(formData);
-      
+
       if (response.success === 200 && response.data) {
         // Store token and user info
         setAuthToken(response.data.token);
         setUserInfo(response.data);
-        
+
         // Redirect to dashboard
         navigate('/dashboard');
       } else {
@@ -69,9 +69,9 @@ const Login = () => {
       <FormCard>
         <FormTitle>Welcome Back</FormTitle>
         <FormSubtitle>Sign in to your account</FormSubtitle>
-        
+
         {error && <ErrorMessage>{error}</ErrorMessage>}
-        
+
         <Form onSubmit={handleSubmit}>
           <FormGroup>
             <Label htmlFor="emailId">Email Address</Label>

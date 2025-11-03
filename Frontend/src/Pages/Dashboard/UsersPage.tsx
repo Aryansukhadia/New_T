@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { getUsersService, updateUserService, deleteUserService, createUserByAdminService } from '../../ApiDetails/UserApi';
-import { getRolesService } from '../../ApiDetails/RoleApi';
-import type { UserResponse } from '../../ApiDetails/AuthApi';
-import type { Role } from '../../ApiDetails/RoleApi';
+import {
+  getUsersService,
+  updateUserService,
+  deleteUserService,
+  createUserByAdminService,
+  getRolesService,
+  getUserInfo,
+  type UserResponse,
+  type Role,
+} from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
 import { FormGroup, Label, Input, Select, Button, ErrorMessage, SuccessMessage, LoadingSpinner } from '../../Components/Common/FormComponents';
-import { getUserInfo } from '../../ApiDetails/AuthApi';
 import { FaUsers, FaUser, FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaEdit, FaTrash } from 'react-icons/fa';
 
 const PageContainer = styled.div`

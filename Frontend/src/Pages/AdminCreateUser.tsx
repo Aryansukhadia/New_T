@@ -15,9 +15,7 @@ import {
   SuccessMessage,
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
-import { createUserByAdminService } from '../ApiDetails/AuthApi';
-import { getRolesService } from '../ApiDetails/RoleApi';
-import type { Role } from '../ApiDetails/RoleApi';
+import { createUserByAdminService, getRolesService, type Role } from '../Services/ApiServices';
 
 const AdminCreateUser = () => {
   const navigate = useNavigate();
@@ -69,7 +67,7 @@ const AdminCreateUser = () => {
 
     try {
       const response = await createUserByAdminService(formData);
-      
+
       if (response.success === 201 && response.data) {
         setSuccess('User created successfully!');
         // Reset form
@@ -99,10 +97,10 @@ const AdminCreateUser = () => {
       <FormCard>
         <FormTitle>Create New User</FormTitle>
         <FormSubtitle>Admin - Create a new user account</FormSubtitle>
-        
+
         {error && <ErrorMessage>{error}</ErrorMessage>}
         {success && <SuccessMessage>{success}</SuccessMessage>}
-        
+
         <Form onSubmit={handleSubmit}>
           <FormGroup>
             <Label htmlFor="fullName">Full Name</Label>
@@ -171,8 +169,8 @@ const AdminCreateUser = () => {
           </Button>
         </Form>
 
-        <Button 
-          onClick={() => navigate(-1)} 
+        <Button
+          onClick={() => navigate(-1)}
           style={{ marginTop: '12px', background: '#6c757d' }}
         >
           Go Back

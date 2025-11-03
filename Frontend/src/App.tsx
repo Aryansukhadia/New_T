@@ -10,7 +10,7 @@ import MeasurementsPage from './Pages/Dashboard/MeasurementsPage';
 import ReportsPage from './Pages/Dashboard/ReportsPage';
 import FinancialsPage from './Pages/Dashboard/FinancialsPage';
 import OrdersPage from './Pages/Dashboard/OrdersPage';
-import { isAuthenticated, isAdmin } from './ApiDetails/AuthApi';
+import { isAuthenticated, isAdmin } from './Services/ApiServices';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +31,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+
         {/* Dashboard Routes */}
         <Route
           path="/dashboard"

@@ -1,13 +1,11 @@
-import apiInstance from '../Utils/ApiUtils';
-import type { ApiResponse } from '../Utils/ApiUtils';
+import apiInstance from '../../Utils/ApiUtils';
+import type { ApiResponse } from '../../Utils/ApiUtils';
+import { getApiUrl } from '../../Utils/api';
 
 // ============================================
-// CUSTOMER API SERVICES
+// CUSTOMER TYPES
 // ============================================
 
-/**
- * Customer Interface
- */
 export interface Customer {
   customerId: string;
   fullName: string;
@@ -24,9 +22,6 @@ export interface Customer {
   bottomMeasurementId: string | null;
 }
 
-/**
- * Create Customer Request
- */
 export interface CreateCustomerRequest {
   fullName: string;
   emailId: string;
@@ -35,9 +30,6 @@ export interface CreateCustomerRequest {
   reference?: string | null;
 }
 
-/**
- * Update Customer Request
- */
 export interface UpdateCustomerRequest {
   fullName?: string;
   emailId?: string;
@@ -46,6 +38,10 @@ export interface UpdateCustomerRequest {
   reference?: string | null;
 }
 
+// ============================================
+// CUSTOMER SERVICES
+// ============================================
+
 /**
  * Get All Customers Service
  * GET /api/customers
@@ -53,7 +49,9 @@ export interface UpdateCustomerRequest {
  * @returns Promise with list of customers
  */
 export const getCustomersService = async (): Promise<ApiResponse<Customer[]>> => {
-  const response = await apiInstance.get<ApiResponse<Customer[]>>('/customers');
+  const response = await apiInstance.get<ApiResponse<Customer[]>>(
+    getApiUrl('getCustomers')
+  );
   return response.data;
 };
 
@@ -64,8 +62,12 @@ export const getCustomersService = async (): Promise<ApiResponse<Customer[]>> =>
  * @param customerId - Customer ID
  * @returns Promise with customer data
  */
-export const getCustomerByIdService = async (customerId: string): Promise<ApiResponse<Customer>> => {
-  const response = await apiInstance.get<ApiResponse<Customer>>(`/customers/${customerId}`);
+export const getCustomerByIdService = async (
+  customerId: string
+): Promise<ApiResponse<Customer>> => {
+  const response = await apiInstance.get<ApiResponse<Customer>>(
+    getApiUrl('getCustomerById', { id: customerId })
+  );
   return response.data;
 };
 
@@ -79,7 +81,10 @@ export const getCustomerByIdService = async (customerId: string): Promise<ApiRes
 export const createCustomerService = async (
   customerData: CreateCustomerRequest
 ): Promise<ApiResponse<Customer>> => {
-  const response = await apiInstance.post<ApiResponse<Customer>>('/customers', customerData);
+  const response = await apiInstance.post<ApiResponse<Customer>>(
+    getApiUrl('createCustomer'),
+    customerData
+  );
   return response.data;
 };
 
@@ -96,7 +101,7 @@ export const updateCustomerService = async (
   customerData: UpdateCustomerRequest
 ): Promise<ApiResponse<Customer>> => {
   const response = await apiInstance.put<ApiResponse<Customer>>(
-    `/customers/${customerId}`,
+    getApiUrl('updateCustomer', { id: customerId }),
     customerData
   );
   return response.data;
@@ -109,8 +114,12 @@ export const updateCustomerService = async (
  * @param customerId - Customer ID
  * @returns Promise with success message
  */
-export const deleteCustomerService = async (customerId: string): Promise<ApiResponse<null>> => {
-  const response = await apiInstance.delete<ApiResponse<null>>(`/customers/${customerId}`);
+export const deleteCustomerService = async (
+  customerId: string
+): Promise<ApiResponse<null>> => {
+  const response = await apiInstance.delete<ApiResponse<null>>(
+    getApiUrl('deleteCustomer', { id: customerId })
+  );
   return response.data;
 };
 

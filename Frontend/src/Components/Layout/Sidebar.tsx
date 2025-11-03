@@ -1,16 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { removeAuthToken, getUserInfo } from '../../ApiDetails/AuthApi';
-import type { LoginResponse } from '../../ApiDetails/AuthApi';
-import { 
-  FaChartBar, 
-  FaUsers, 
-  FaUserLock, 
-  FaUser, 
-  FaRuler, 
-  FaChartLine, 
-  FaDollarSign, 
-  FaShoppingCart, 
+import { removeAuthToken, getUserInfo, type LoginResponse } from '../../Services/ApiServices';
+import {
+  FaChartBar,
+  FaUsers,
+  FaUserLock,
+  FaUser,
+  FaRuler,
+  FaChartLine,
+  FaDollarSign,
+  FaShoppingCart,
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight
@@ -180,14 +179,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   ];
 
   // Filter menu items based on user role
-  const allowedMenuItems = menuItems.filter(item => 
+  const allowedMenuItems = menuItems.filter(item =>
     item.roles.some(role => {
       const roleLower = role.toLowerCase();
       const userRoleLower = userRole.toLowerCase();
       // Match exact or check if userRole contains the role name (for "staff members" matching "staff")
-      return roleLower === userRoleLower || 
-             userRoleLower.includes(roleLower) || 
-             roleLower.includes(userRoleLower);
+      return roleLower === userRoleLower ||
+        userRoleLower.includes(roleLower) ||
+        roleLower.includes(userRoleLower);
     })
   );
 
@@ -204,7 +203,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           {isOpen ? <FaChevronLeft /> : <FaChevronRight />}
         </ToggleButton>
       </SidebarHeader>
-      
+
       {userInfo && (
         <UserInfo isOpen={isOpen}>
           <UserName>{userInfo.fullName}</UserName>

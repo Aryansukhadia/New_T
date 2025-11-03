@@ -8,7 +8,7 @@ import {
   type Customer,
   type CreateCustomerRequest,
   type UpdateCustomerRequest,
-} from '../../ApiDetails/CustomerApi';
+} from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
 import Toast from '../../Components/Common/Toast';
 import { useToast } from '../../Utils/useToast';

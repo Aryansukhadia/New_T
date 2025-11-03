@@ -1,9 +1,25 @@
-import apiInstance from '../Utils/ApiUtils';
-import type { ApiResponse } from '../Utils/ApiUtils';
-import type { UserResponse, RegisterRequest } from './AuthApi';
+import apiInstance from '../../Utils/ApiUtils';
+import type { ApiResponse } from '../../Utils/ApiUtils';
+import { getApiUrl } from '../../Utils/api';
 
 // ============================================
-// USER API SERVICES
+// USER TYPES
+// ============================================
+
+export interface UserResponse {
+  userId: string;
+  fullName: string;
+  emailId: string;
+  roleId: string;
+  createdAt: string;
+  role: {
+    roleId: string;
+    roleName: string;
+  };
+}
+
+// ============================================
+// USER SERVICES
 // ============================================
 
 /**
@@ -13,7 +29,9 @@ import type { UserResponse, RegisterRequest } from './AuthApi';
  * @returns Promise with list of users
  */
 export const getUsersService = async (): Promise<ApiResponse<UserResponse[]>> => {
-  const response = await apiInstance.get<ApiResponse<UserResponse[]>>('/users');
+  const response = await apiInstance.get<ApiResponse<UserResponse[]>>(
+    getApiUrl('getUsers')
+  );
   return response.data;
 };
 
@@ -25,7 +43,9 @@ export const getUsersService = async (): Promise<ApiResponse<UserResponse[]>> =>
  * @returns Promise with user data
  */
 export const getUserByIdService = async (userId: string): Promise<ApiResponse<UserResponse>> => {
-  const response = await apiInstance.get<ApiResponse<UserResponse>>(`/users/${userId}`);
+  const response = await apiInstance.get<ApiResponse<UserResponse>>(
+    getApiUrl('getUserById', { id: userId })
+  );
   return response.data;
 };
 
@@ -42,7 +62,7 @@ export const updateUserService = async (
   userData: { fullName: string }
 ): Promise<ApiResponse<UserResponse>> => {
   const response = await apiInstance.put<ApiResponse<UserResponse>>(
-    `/users/${userId}`,
+    getApiUrl('updateUser', { id: userId }),
     userData
   );
   return response.data;
@@ -56,18 +76,9 @@ export const updateUserService = async (
  * @returns Promise with success message
  */
 export const deleteUserService = async (userId: string): Promise<ApiResponse<null>> => {
-  const response = await apiInstance.delete<ApiResponse<null>>(`/users/${userId}`);
+  const response = await apiInstance.delete<ApiResponse<null>>(
+    getApiUrl('deleteUser', { id: userId })
+  );
   return response.data;
 };
-
-/**
- * Create User by Admin Service
- * POST /api/users/admin/create
- * 
- * Note: Requires admin authentication token in headers
- * 
- * @param userData - User data to be created
- * @returns Promise with created user data
- */
-export { createUserByAdminService } from './AuthApi';
 

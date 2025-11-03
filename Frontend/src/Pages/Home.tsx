@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { isAuthenticated, removeAuthToken } from '../ApiDetails/AuthApi';
+import { isAuthenticated, removeAuthToken } from '../Services/ApiServices';
 import Button from '../style';
 
 const HomeContainer = styled.div`

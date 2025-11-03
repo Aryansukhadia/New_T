@@ -1,13 +1,22 @@
-// ============================================
-// API CONFIGURATION
-// ============================================
+const NODEJS_BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL || 'http://localhost:3000/api';
 
-// Base URLs
-const NODEJS_BASE_URL = 'http://localhost:3000/api';
+interface EndpointConfig {
+    path: string;
+    method: string;
+    baseUrl: string;
+}
 
-// API Endpoint Configuration
-export const API_CONFIG = {
-    baseUrl: NODEJS_BASE_URL,
+interface ApiConfig {
+    endpoints: Record<string, EndpointConfig>;
+}
+
+interface ApiConfigResult {
+    url: string;
+    method: string;
+    baseUrl: string;
+}
+
+export const API_CONFIG: ApiConfig = {
     endpoints: {
         // ============================================
         // AUTHENTICATION ENDPOINTS
@@ -115,77 +124,79 @@ export const API_CONFIG = {
             baseUrl: NODEJS_BASE_URL,
         },
     },
-} as const;
+};
 
-// Type for endpoint keys
-export type EndpointKey = keyof typeof API_CONFIG.endpoints;
-
-// Type for endpoint configuration
-export interface EndpointConfig {
-    path: string;
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-    baseUrl: string;
-}
-
-/**
- * Get the full API URL for a given endpoint
- * 
- * @param endpoint - The endpoint key from API_CONFIG.endpoints
- * @param pathParams - Optional object with path parameters to replace in the URL
- * @returns The full API URL string
- * 
- * @example
- * getApiUrl('getUserById', { id: '123' })
- * // Returns: 'http://localhost:3000/api/users/123'
- * 
- * @example
- * getApiUrl('getCustomers')
- * // Returns: 'http://localhost:3000/api/customers'
- */
-export const getApiUrl = (endpoint: EndpointKey, pathParams: Record<string, string> = {}): string => {
+export const getApiUrl = (endpoint: string, pathParams: Record<string, string> = {}): string => {
     const endpointConfig = API_CONFIG.endpoints[endpoint];
 
     if (!endpointConfig) {
         throw new Error(`Endpoint ${endpoint} not found in API configuration`);
     }
 
-    let baseUrl = endpointConfig.baseUrl;
+    const baseUrl = API_CONFIG.endpoints[endpoint].baseUrl;
 
     // Replace path parameters in the URL
     let path = endpointConfig.path;
-    Object.keys(pathParams).forEach((key) => {
+    Object.keys(pathParams).forEach(key => {
         path = path.replace(`{${key}}`, pathParams[key]);
     });
 
-    // Remove trailing slash from baseUrl if present
-    if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1);
-    }
-
-    // Ensure path starts with /
-    if (!path.startsWith('/')) {
-        path = '/' + path;
-    }
-
     const fullUrl = `${baseUrl}${path}`;
+
     console.log(`Generated API URL for ${endpoint}:`, fullUrl);
 
     return fullUrl;
 };
 
-/**
- * Get endpoint configuration by key
- * 
- * @param endpoint - The endpoint key from API_CONFIG.endpoints
- * @returns The endpoint configuration object
- */
-export const getEndpointConfig = (endpoint: EndpointKey): EndpointConfig => {
+export const getApiUrlWithParams = (endpoint: string, pathParams: Record<string, string> = {}, queryParams: Record<string, string> = {}): ApiConfigResult => {
     const endpointConfig = API_CONFIG.endpoints[endpoint];
 
     if (!endpointConfig) {
         throw new Error(`Endpoint ${endpoint} not found in API configuration`);
     }
 
-    return endpointConfig;
+    const baseUrl = API_CONFIG.endpoints[endpoint].baseUrl;
+
+    // Replace path parameters in the URL
+    let path = endpointConfig.path;
+    Object.keys(pathParams).forEach(key => {
+        path = path.replace(`{${key}}`, pathParams[key]);
+    });
+
+    // Add query parameters
+    const url = new URL(path, baseUrl);
+    Object.keys(queryParams).forEach(key => {
+        url.searchParams.append(key, queryParams[key]);
+    });
+
+    return {
+        url: url.toString(),
+        method: endpointConfig.method,
+        baseUrl: baseUrl
+    };
+};
+
+export const getApiConfig = (endpoint: string, pathParams: Record<string, string> = {}): ApiConfigResult => {
+    const endpointConfig = API_CONFIG.endpoints[endpoint];
+
+    if (!endpointConfig) {
+        throw new Error(`Endpoint ${endpoint} not found in API configuration`);
+    }
+
+    const baseUrl = API_CONFIG.endpoints[endpoint].baseUrl;
+
+    // Replace path parameters in the URL
+    let path = endpointConfig.path;
+    Object.keys(pathParams).forEach(key => {
+        path = path.replace(`{${key}}`, pathParams[key]);
+    });
+
+    const fullUrl = `${baseUrl}${path}`;
+
+    return {
+        url: fullUrl,
+        method: endpointConfig.method,
+        baseUrl: baseUrl
+    };
 };
 

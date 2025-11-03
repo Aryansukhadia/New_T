@@ -1,6 +1,5 @@
 import styled from 'styled-components';
-import { getUserInfo } from '../../ApiDetails/AuthApi';
-import type { LoginResponse } from '../../ApiDetails/AuthApi';
+import { getUserInfo, type LoginResponse } from '../../Services/ApiServices';
 import { FaUsers, FaRuler, FaShoppingCart, FaDollarSign, FaChartLine } from 'react-icons/fa';
 
 const DashboardContainer = styled.div`
