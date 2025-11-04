@@ -13,7 +13,7 @@ import {
 import Modal from '../../Components/Common/Modal';
 import { FormGroup, Label, Input, Select, Button, LoadingSpinner } from '../../Components/Common/FormComponents';
 import { useToast } from '../../Utils/ToastContext';
-import { FaUsers, FaUser, FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaUsers, FaUser, FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaEdit, FaTrash, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const PageContainer = styled.div`
   background: white;
@@ -242,6 +242,48 @@ const ModalButtonSecondary = styled.button`
   }
 `;
 
+const PasswordInputWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+`;
+
+const PasswordToggleButton = styled.button`
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: color 0.2s ease;
+  z-index: 1;
+  
+  &:hover {
+    color: #667eea;
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  
+  svg {
+    font-size: 18px;
+  }
+`;
+
+const PasswordInput = styled(Input)`
+  padding-right: 45px;
+  box-sizing: border-box;
+  width: 100%;
+`;
+
 const UsersPage = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserResponse[]>([]);
@@ -254,6 +296,7 @@ const UsersPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { showSuccess, showError } = useToast();
 
   const [formData, setFormData] = useState({
@@ -607,17 +650,27 @@ const UsersPage = () => {
                 <FaLock />
                 Password
               </Label>
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleFormChange}
-                placeholder="Enter password (minimum 6 characters)"
-                required
-                disabled={formLoading}
-                minLength={6}
-              />
+              <PasswordInputWrapper>
+                <PasswordInput
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleFormChange}
+                  placeholder="Enter password (minimum 6 characters)"
+                  required
+                  disabled={formLoading}
+                  minLength={6}
+                />
+                <PasswordToggleButton
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={formLoading}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </PasswordToggleButton>
+              </PasswordInputWrapper>
               <p style={{
                 fontSize: '12px',
                 color: '#666',
