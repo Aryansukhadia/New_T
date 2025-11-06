@@ -10,6 +10,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/////////////////////////////
+// ENUMS
+/////////////////////////////
+
+enum OrderStatus {
+  pending
+  inProgress
+  completed
+  ready_to_deliver
+}
+
+enum ItemStatusType {
+  cutting
+  stitching
+  finishing
+  ready_to_deliver
+}
+
+/////////////////////////////
+// USER, ROLE, CUSTOMER, MEASUREMENT
+/////////////////////////////
+
 model Role { 
   roleId    String    @id
   roleName  String
@@ -18,8 +40,8 @@ model Role {
   updatedAt DateTime? @updatedAt
   createdAt DateTime  @default(now())
 
-  users     User[]
-  updater   User?     @relation("RoleUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  users   User[]
+  updater User? @relation("RoleUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
 }
 
 model User {
@@ -33,14 +55,17 @@ model User {
   updatedAt DateTime? @updatedAt
   createdAt DateTime @default(now())
 
-  role              Role              @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Restrict)
-  updater           User?             @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
-  updatedUsers      User[]            @relation("UserUpdater")
-  updatedRoles      Role[]            @relation("RoleUpdater")
-  createdCustomers Customer[]         @relation("CustomerCreator")
-  updatedCustomers  Customer[]        @relation("CustomerUpdater")
+  role               Role               @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Restrict)
+  updater            User?              @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  updatedUsers       User[]             @relation("UserUpdater")
+  updatedRoles       Role[]             @relation("RoleUpdater")
+  createdCustomers   Customer[]         @relation("CustomerCreator")
+  updatedCustomers   Customer[]         @relation("CustomerUpdater")
   topMeasurements    TopMeasurement[]
   bottomMeasurements BottomMeasurement[]
+
+  // Cloth management relations
+  updatedStatuses ItemStatus[] @relation("UserStatusUpdates")
 }
 
 model Customer {
@@ -58,10 +83,13 @@ model Customer {
   topMeasurementId    String?
   bottomMeasurementId String?
 
-  creator          User?              @relation("CustomerCreator", fields: [createdBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
-  updater          User?              @relation("CustomerUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
-  topMeasurement   TopMeasurement?    @relation(fields: [topMeasurementId], references: [topMeasurementId], onUpdate: Cascade, onDelete: SetNull)
-  bottomMeasurement BottomMeasurement? @relation(fields: [bottomMeasurementId], references: [bottomMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+  creator           User?               @relation("CustomerCreator", fields: [createdBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  updater           User?               @relation("CustomerUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+  topMeasurement    TopMeasurement?     @relation(fields: [topMeasurementId], references: [topMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+  bottomMeasurement BottomMeasurement?  @relation(fields: [bottomMeasurementId], references: [bottomMeasurementId], onUpdate: Cascade, onDelete: SetNull)
+
+  // Cloth management relation
+  orders ProductOrder[]
 }
 
 model TopMeasurement {
@@ -102,3 +130,103 @@ model BottomMeasurement {
   customers Customer[]
 }
 
+//
+// 3️⃣ PRODUCT ITEMS — Shirt, Pant, Blazer, etc. (created first)
+//
+model ProductItem {
+  id               String         @id @default(uuid())
+  name             String
+  imageUrl         String?
+  createdAt        DateTime       @default(now())
+
+  itemStatuses     ItemStatus[]
+  variants         ProductVariant[]
+}
+
+//
+// 4️⃣ PRODUCTS — Suit, Sherwani, Indowestern, etc.
+//
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+
+  variants    ProductVariant[]
+}
+
+//
+// 5️⃣ PRODUCT VARIANTS — Normal / 2 Piece suit / 3 Piece suit (added to Product)
+//
+model ProductVariant {
+  id            String        @id @default(uuid())
+  productId String
+  name          String
+  description   String?
+  photoUrl      String?
+  createdAt     DateTime      @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productItems  ProductItem[]
+  orderItems   OrderItem[]
+}
+
+//
+// 6️⃣ PRODUCT ORDERS — a customer’s full order (can have multiple items)
+//
+model ProductOrder {
+  id           String        @id @default(uuid())
+  customerId   String
+  orderDate    DateTime      @default(now())
+  deliveryDate DateTime?
+  notes        String?
+  status       OrderStatus   @default(pending)
+
+  customer   Customer   @relation(fields: [customerId], references: [customerId], onDelete: Cascade, onUpdate: Cascade)
+  orderItems OrderItem[]
+}
+
+//
+// 7️⃣ ORDER ITEMS — individual products in an order (Suit, Sherwani, etc.)
+//
+model OrderItem {
+  id               String         @id @default(uuid())
+  productOrderId   String
+  productVariantId String
+  quantity         Int            @default(1)
+  createdAt        DateTime       @default(now())
+
+  productOrder  ProductOrder  @relation(fields: [productOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  itemStatuses   ItemStatus[]
+}
+
+//
+// 8️⃣ ITEM STATUS — tracking per clothing piece (cutting, stitching, etc.)
+//
+model ItemStatus {
+  id            String          @id @default(uuid())
+  orderItemId   String
+  productItemId String
+  status        ItemStatusType
+  updatedById   String?
+  updatedAt     DateTime        @default(now())
+  remarks       String?
+
+  orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productItem ProductItem @relation(fields: [productItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  updatedBy   User?       @relation("UserStatusUpdates", fields: [updatedById], references: [userId], onDelete: SetNull, onUpdate: Cascade)
+  photos      ItemStagePhoto[]
+}
+
+//
+// 9️⃣ ITEM STAGE PHOTOS — photos per stage (optional)
+//
+model ItemStagePhoto {
+  id           String      @id @default(uuid())
+  itemStatusId String
+  photoUrl     String
+  uploadedAt   DateTime    @default(now())
+
+  itemStatus ItemStatus @relation(fields: [itemStatusId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
