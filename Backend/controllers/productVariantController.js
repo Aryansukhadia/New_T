@@ -52,12 +52,20 @@ export const addProductVariant = async (req, res) => {
             }
         }
 
+        // Handle photo: prioritize uploaded file, then provided URL
+        let finalPhotoUrl = null;
+        if (req.file) {
+            finalPhotoUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "") {
+            finalPhotoUrl = photoUrl.trim();
+        }
+
         const newProductVariant = await prisma.productVariant.create({
             data: {
                 productId: productId.trim(),
                 name: name.trim(),
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-                photoUrl: photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "" ? photoUrl.trim() : null,
+                photoUrl: finalPhotoUrl,
                 productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
                     ? {
                         connect: productItemIds
@@ -194,12 +202,18 @@ export const updateProductVariant = async (req, res) => {
             }
         }
 
+        // Handle photo: prioritize uploaded file, then provided URL
+        let finalPhotoUrl;
+        if (req.file) {
+            finalPhotoUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "") {
+            finalPhotoUrl = photoUrl.trim();
+        }
+
         const updateData = {
             name: name.trim(),
             description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            photoUrl: photoUrl !== undefined
-                ? (photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "" ? photoUrl.trim() : null)
-                : undefined,
+            photoUrl: finalPhotoUrl,
         };
 
         if (productId) {

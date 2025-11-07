@@ -20,10 +20,18 @@ export const addProductItem = async (req, res) => {
             return sendResponse(res, 409, "Product item with this name already exists");
         }
 
+        // Handle image: prioritize uploaded file, then provided URL
+        let finalImageUrl = null;
+        if (req.file) {
+            finalImageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "") {
+            finalImageUrl = imageUrl.trim();
+        }
+
         const newProductItem = await prisma.productItem.create({
             data: {
                 name: name.trim(),
-                imageUrl: imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "" ? imageUrl.trim() : null,
+                imageUrl: finalImageUrl,
             },
             include: {
                 variants: true,
@@ -116,11 +124,19 @@ export const updateProductItem = async (req, res) => {
             return sendResponse(res, 409, "Product item with this name already exists");
         }
 
+        // Handle image: prioritize uploaded file, then provided URL
+        let finalImageUrl = existingItem.imageUrl; // Keep existing if nothing provided
+        if (req.file) {
+            finalImageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (imageUrl !== undefined) {
+            finalImageUrl = imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "" ? imageUrl.trim() : null;
+        }
+
         const updatedProductItem = await prisma.productItem.update({
             where: { id },
             data: {
                 name: name.trim(),
-                imageUrl: imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "" ? imageUrl.trim() : null,
+                imageUrl: finalImageUrl,
             },
             include: {
                 variants: true,
