@@ -3,7 +3,7 @@ import sendResponse from "../utils/response.js";
 
 export const addProductVariant = async (req, res) => {
     try {
-        const { productId, name, description, photoUrl, productItemIds } = req.body;
+        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw } = req.body;
 
         if (!productId || typeof productId !== "string" || productId.trim() === "") {
             return sendResponse(res, 400, "productId is required");
@@ -34,6 +34,16 @@ export const addProductVariant = async (req, res) => {
             return sendResponse(res, 409, "Product variant with this name already exists for this product");
         }
 
+        // Parse productItemIds if it's a JSON string (from FormData)
+        let productItemIds = productItemIdsRaw;
+        if (productItemIds && typeof productItemIds === "string") {
+            try {
+                productItemIds = JSON.parse(productItemIds);
+            } catch (parseError) {
+                return sendResponse(res, 400, "Invalid productItemIds format");
+            }
+        }
+
         // Validate productItemIds if provided
         if (productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0) {
             const validProductItemIds = productItemIds.filter(id => typeof id === "string" && id.trim() !== "");
@@ -50,6 +60,9 @@ export const addProductVariant = async (req, res) => {
                     return sendResponse(res, 404, "One or more product items not found");
                 }
             }
+        }
+        else {
+            return sendResponse(res, 400, "productItemIds is required");
         }
 
         // Handle photo: prioritize uploaded file, then provided URL
@@ -79,8 +92,24 @@ export const addProductVariant = async (req, res) => {
                 productItems: true
             }
         });
+        const data = {
+            productId: productId.trim(),
+            name: name.trim(),
+            description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
+            photoUrl: finalPhotoUrl,
+            productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
+                ? {
+                    connect: productItemIds
+                        .filter(id => typeof id === "string" && id.trim() !== "")
+                        .map(id => ({ id: id.trim() }))
+                }
+                : undefined
+        };
 
-        return sendResponse(res, 201, "Product variant created successfully", newProductVariant);
+        console.log(data);
+
+
+        return sendResponse(res, 201, "Product variant created successfully", data);
     } catch (error) {
         console.error("addProductVariant error:", error);
         return sendResponse(res, 500, "Failed to create product variant", { error: error.message });
@@ -140,7 +169,7 @@ export const getProductVariantById = async (req, res) => {
 export const updateProductVariant = async (req, res) => {
     try {
         const { id } = req.params;
-        const { productId, name, description, photoUrl, productItemIds } = req.body;
+        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw } = req.body;
 
         if (productId && (typeof productId !== "string" || productId.trim() === "")) {
             return sendResponse(res, 400, "productId must be a valid string");
@@ -182,6 +211,16 @@ export const updateProductVariant = async (req, res) => {
 
         if (duplicateVariant) {
             return sendResponse(res, 409, "Product variant with this name already exists for this product");
+        }
+
+        // Parse productItemIds if it's a JSON string (from FormData)
+        let productItemIds = productItemIdsRaw;
+        if (productItemIds !== undefined && typeof productItemIds === "string") {
+            try {
+                productItemIds = JSON.parse(productItemIds);
+            } catch (parseError) {
+                return sendResponse(res, 400, "Invalid productItemIds format");
+            }
         }
 
         // Validate productItemIds if provided
