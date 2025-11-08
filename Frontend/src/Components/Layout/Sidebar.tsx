@@ -12,7 +12,10 @@ import {
   FaShoppingCart,
   FaSignOutAlt,
   FaChevronLeft,
-  FaChevronRight
+  FaChevronRight,
+  FaBox,
+  FaShoppingBag,
+  FaTags
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 
@@ -173,9 +176,12 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     { path: '/dashboard/roles', label: 'Roles', icon: FaUserLock, roles: ['admin'] },
     { path: '/dashboard/customers', label: 'Customers', icon: FaUser, roles: ['admin', 'staff members', 'staff'] },
     { path: '/dashboard/measurements', label: 'Measurements', icon: FaRuler, roles: ['admin', 'staff members', 'staff'] },
+    { path: '/dashboard/product-items', label: 'Product Items', icon: FaBox, roles: ['admin', 'staff members', 'staff'] },
+    { path: '/dashboard/products', label: 'Products', icon: FaShoppingBag, roles: ['admin', 'staff members', 'staff'] },
+    { path: '/dashboard/product-variants', label: 'Product Variants', icon: FaTags, roles: ['admin', 'staff members', 'staff'] },
+    { path: '/dashboard/orders', label: 'Orders', icon: FaShoppingCart, roles: ['admin', 'staff members', 'staff'] },
     { path: '/dashboard/reports', label: 'Reports', icon: FaChartLine, roles: ['admin', 'accountant'] },
     { path: '/dashboard/financials', label: 'Financials', icon: FaDollarSign, roles: ['admin', 'accountant'] },
-    { path: '/dashboard/orders', label: 'Orders', icon: FaShoppingCart, roles: ['admin', 'staff members', 'staff'] },
   ];
 
   // Filter menu items based on user role

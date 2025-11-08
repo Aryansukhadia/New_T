@@ -14,6 +14,9 @@ import ManageMeasurementPage from './Pages/Dashboard/ManageMeasurementPage';
 import ReportsPage from './Pages/Dashboard/ReportsPage';
 import FinancialsPage from './Pages/Dashboard/FinancialsPage';
 import OrdersPage from './Pages/Dashboard/OrdersPage';
+import ProductItemsPage from './Pages/Dashboard/ProductItemsPage';
+import ProductsPage from './Pages/Dashboard/ProductsPage';
+import ProductVariantsPage from './Pages/Dashboard/ProductVariantsPage';
 import { isAuthenticated, isAdmin } from './Services/ApiServices';
 
 // Protected Route Component
@@ -56,6 +59,9 @@ function App() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="financials" element={<FinancialsPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="product-items" element={<ProductItemsPage />} />
+            <Route path="products" element={<ProductsPage />} />
+            <Route path="product-variants" element={<ProductVariantsPage />} />
           </Route>
 
           {/* Redirect root to dashboard */}

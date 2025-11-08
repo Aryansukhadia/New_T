@@ -142,6 +142,103 @@ export const API_CONFIG: ApiConfig = {
             method: 'PUT',
             baseUrl: NODEJS_BASE_URL,
         },
+
+        // ============================================
+        // PRODUCT ENDPOINTS
+        // ============================================
+        getProducts: {
+            path: '/products',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getProductById: {
+            path: '/products/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createProduct: {
+            path: '/products',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateProduct: {
+            path: '/products/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteProduct: {
+            path: '/products/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
+        // PRODUCT VARIANT ENDPOINTS
+        // ============================================
+        getProductVariants: {
+            path: '/productVariants',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getProductVariantById: {
+            path: '/productVariants/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createProductVariant: {
+            path: '/productVariants',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateProductVariant: {
+            path: '/productVariants/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteProductVariant: {
+            path: '/productVariants/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        addProductItemsToVariant: {
+            path: '/productVariants/{id}/productItems',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        removeProductItemsFromVariant: {
+            path: '/productVariants/{id}/productItems',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
+        // PRODUCT ITEM ENDPOINTS
+        // ============================================
+        getProductItems: {
+            path: '/productItems',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getProductItemById: {
+            path: '/productItems/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createProductItem: {
+            path: '/productItems',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateProductItem: {
+            path: '/productItems/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteProductItem: {
+            path: '/productItems/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 
