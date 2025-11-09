@@ -6,7 +6,6 @@ import {
   FaUsers,
   FaUserLock,
   FaUser,
-  FaRuler,
   FaChartLine,
   FaDollarSign,
   FaShoppingCart,
@@ -171,15 +170,14 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
   // Menu items based on roles
   const menuItems: MenuItem[] = [
-    { path: '/dashboard', label: 'Dashboard', icon: FaChartBar, roles: ['admin', 'staff members', 'staff', 'accountant'] },
+    { path: '/dashboard', label: 'Dashboard', icon: FaChartBar, roles: ['admin', 'staff', 'accountant'] },
     { path: '/dashboard/users', label: 'Users', icon: FaUsers, roles: ['admin'] },
     { path: '/dashboard/roles', label: 'Roles', icon: FaUserLock, roles: ['admin'] },
-    { path: '/dashboard/customers', label: 'Customers', icon: FaUser, roles: ['admin', 'staff members', 'staff'] },
-    { path: '/dashboard/measurements', label: 'Measurements', icon: FaRuler, roles: ['admin', 'staff members', 'staff'] },
-    { path: '/dashboard/product-items', label: 'Product Items', icon: FaBox, roles: ['admin', 'staff members', 'staff'] },
-    { path: '/dashboard/products', label: 'Products', icon: FaShoppingBag, roles: ['admin', 'staff members', 'staff'] },
-    { path: '/dashboard/product-variants', label: 'Product Variants', icon: FaTags, roles: ['admin', 'staff members', 'staff'] },
-    { path: '/dashboard/orders', label: 'Orders', icon: FaShoppingCart, roles: ['admin', 'staff members', 'staff'] },
+    { path: '/dashboard/customers', label: 'Customers', icon: FaUser, roles: ['admin', 'staff'] },
+    { path: '/dashboard/product-items', label: 'Product Items', icon: FaBox, roles: ['admin', 'staff'] },
+    { path: '/dashboard/products', label: 'Products', icon: FaShoppingBag, roles: ['admin', 'staff'] },
+    { path: '/dashboard/product-variants', label: 'Product Variants', icon: FaTags, roles: ['admin', 'staff'] },
+    { path: '/dashboard/orders', label: 'Orders', icon: FaShoppingCart, roles: ['admin', 'staff'] },
     { path: '/dashboard/reports', label: 'Reports', icon: FaChartLine, roles: ['admin', 'accountant'] },
     { path: '/dashboard/financials', label: 'Financials', icon: FaDollarSign, roles: ['admin', 'accountant'] },
   ];

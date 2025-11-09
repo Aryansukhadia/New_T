@@ -8,8 +8,6 @@ import DashboardHome from './Pages/Dashboard/DashboardHome';
 import UsersPage from './Pages/Dashboard/UsersPage';
 import RolesPage from './Pages/Dashboard/RolesPage';
 import CustomersPage from './Pages/Dashboard/CustomersPage';
-import MeasurementsPage from './Pages/Dashboard/MeasurementsPage';
-import AddMeasurementPage from './Pages/Dashboard/AddMeasurementPage';
 import ManageMeasurementPage from './Pages/Dashboard/ManageMeasurementPage';
 import ReportsPage from './Pages/Dashboard/ReportsPage';
 import FinancialsPage from './Pages/Dashboard/FinancialsPage';
@@ -53,8 +51,6 @@ function App() {
             <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
             <Route path="roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
             <Route path="customers" element={<CustomersPage />} />
-            <Route path="measurements" element={<MeasurementsPage />} />
-            <Route path="measurements/add" element={<AddMeasurementPage />} />
             <Route path="measurements/manage/:customerId" element={<ManageMeasurementPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="financials" element={<FinancialsPage />} />
