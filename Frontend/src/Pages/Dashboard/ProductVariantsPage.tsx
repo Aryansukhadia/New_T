@@ -1,19 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   getProductVariantsService,
   getProductsService,
   getProductItemsService,
-  createProductVariantService,
-  updateProductVariantService,
   deleteProductVariantService,
   addProductItemsToVariantService,
   removeProductItemsFromVariantService,
   type ProductVariant,
   type Product,
   type ProductItem,
-  type CreateProductVariantRequest,
-  type UpdateProductVariantRequest,
 } from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
@@ -30,12 +27,8 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaImage,
   FaBox,
-  FaShoppingBag,
   FaLink,
-  FaTimes,
-  FaUpload,
 } from 'react-icons/fa';
 
 const PageContainer = styled.div`
@@ -284,74 +277,6 @@ const ModalButtonSecondary = styled.button`
   }
 `;
 
-const FileInputWrapper = styled.div`
-  position: relative;
-`;
-
-const FileInputLabel = styled.label`
-  display: inline-block;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-`;
-
-const ImagePreviewContainer = styled.div`
-  margin-top: 16px;
-  position: relative;
-  display: inline-block;
-`;
-
-const ImagePreview = styled.img`
-  max-width: 300px;
-  max-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  object-fit: cover;
-`;
-
-const RemoveImageButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #c82333;
-    transform: scale(1.1);
-  }
-`;
-
 const TableImage = styled.img`
   width: 60px;
   height: 60px;
@@ -427,6 +352,7 @@ const ProductItemTag = styled.span`
 `;
 
 const ProductVariantsPage = () => {
+  const navigate = useNavigate();
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
@@ -434,9 +360,6 @@ const ProductVariantsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [variantToDelete, setVariantToDelete] = useState<ProductVariant | null>(null);
   const [isManageItemsModalOpen, setIsManageItemsModalOpen] = useState(false);
@@ -445,17 +368,7 @@ const ProductVariantsPage = () => {
 
   const { showSuccess, showError } = useToast();
 
-  const [formData, setFormData] = useState<CreateProductVariantRequest>({
-    productId: '',
-    name: '',
-    description: null,
-    photoUrl: null,
-    productItemIds: [],
-  });
-
   const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
-  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -509,36 +422,12 @@ const ProductVariantsPage = () => {
     setFilteredVariants(filtered);
   }, [searchTerm, selectedProductFilter, productVariants]);
 
-  const handleOpenCreateModal = () => {
-    setIsEditMode(false);
-    setSelectedVariant(null);
-    setFormData({
-      productId: '',
-      name: '',
-      description: null,
-      photoUrl: null,
-      productItemIds: [],
-    });
-    setSelectedProductItems([]);
-    setSelectedPhotoFile(null);
-    setPhotoPreview(null);
-    setIsModalOpen(true);
+  const handleCreateVariant = () => {
+    navigate('/dashboard/product-variants/create');
   };
 
-  const handleOpenEditModal = (variant: ProductVariant) => {
-    setIsEditMode(true);
-    setSelectedVariant(variant);
-    setFormData({
-      productId: variant.productId,
-      name: variant.name,
-      description: variant.description || null,
-      photoUrl: variant.photoUrl || null,
-      productItemIds: variant.productItems?.map((item) => item.id) || [],
-    });
-    setSelectedProductItems(variant.productItems?.map((item) => item.id) || []);
-    setSelectedPhotoFile(null);
-    setPhotoPreview(variant.photoUrl ? variant.photoUrl : null);
-    setIsModalOpen(true);
+  const handleEditVariant = (variant: ProductVariant) => {
+    navigate(`/dashboard/product-variants/edit/${variant.id}`);
   };
 
   const handleOpenDeleteModal = (variant: ProductVariant) => {
@@ -552,10 +441,6 @@ const ProductVariantsPage = () => {
     setIsManageItemsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedVariant(null);
-  };
 
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
@@ -568,32 +453,6 @@ const ProductVariantsPage = () => {
     setSelectedProductItems([]);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'photoUrl' || name === 'description' ? (value === '' ? null : value) : value,
-    }));
-  };
-
-  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedPhotoFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setSelectedPhotoFile(null);
-    setPhotoPreview(null);
-    setFormData((prev) => ({ ...prev, photoUrl: null }));
-  };
 
   const handleProductItemToggle = (itemId: string) => {
     setSelectedProductItems((prev) =>
@@ -603,74 +462,6 @@ const ProductVariantsPage = () => {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-    console.log(formData);
-    console.log(typeof formData);
-
-
-    try {
-      if (isEditMode && selectedVariant) {
-
-        const updateData: UpdateProductVariantRequest = {
-          name: formData.name,
-          description: formData.description || null,
-          photoUrl: formData.photoUrl || null,
-          productItemIds: selectedProductItems.length > 0 ? selectedProductItems : undefined,
-        };
-
-        const response = await updateProductVariantService(
-          selectedVariant.id,
-          updateData,
-          selectedPhotoFile
-        );
-
-        if (response.success === 200) {
-          showSuccess(response.message || 'Product variant updated successfully!', 'Success');
-          await fetchData();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1000);
-        } else {
-          const errorMsg = response.message || 'Failed to update product variant';
-          showError(errorMsg, 'Update Failed');
-        }
-      } else {
-        const createData: CreateProductVariantRequest = {
-          productId: formData.productId,
-          name: formData.name,
-          description: formData.description || null,
-          photoUrl: formData.photoUrl || null,
-          productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
-        };
-
-        const response = await createProductVariantService(createData, selectedPhotoFile);
-
-        if (response.success === 201) {
-          showSuccess(response.message || 'Product variant created successfully!', 'Success');
-          await fetchData();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1000);
-        } else {
-          const errorMsg = response.message || 'Failed to create product variant';
-          showError(errorMsg, 'Create Failed');
-        }
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        const errorMsg = axiosError.response?.data?.message || 'An error occurred';
-        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
-      } else {
-        const errorMsg = 'An unexpected error occurred';
-        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
-      }
-    } finally {
-      setFormLoading(false);
-    }
-  };
 
   const handleManageItems = async () => {
     if (!variantToManageItems) return;
@@ -760,7 +551,7 @@ const ProductVariantsPage = () => {
     <PageContainer>
       <PageHeader>
         <PageTitle>Product Variants Management</PageTitle>
-        <ActionButton onClick={handleOpenCreateModal}>
+        <ActionButton onClick={handleCreateVariant}>
           <FaPlus style={{ marginRight: '8px' }} />
           Add New Variant
         </ActionButton>
@@ -823,7 +614,7 @@ const ProductVariantsPage = () => {
                 <TableRow key={variant.id}>
                   <TableCell>{variant.name}</TableCell>
                   <TableCell>{variant.product?.name || '—'}</TableCell>
-                  <TableCell>{variant.description || '—'}</TableCell>
+                  <TableCell>{variant?.description || '—'}</TableCell>
                   <ImageCell>
                     {variant.photoUrl ? (
                       <TableImage
@@ -859,7 +650,7 @@ const ProductVariantsPage = () => {
                     </IconButton>
                     <IconButton
                       variant="edit"
-                      onClick={() => handleOpenEditModal(variant)}
+                      onClick={() => handleEditVariant(variant)}
                       title="Edit Variant"
                     >
                       <FaEdit />
@@ -878,149 +669,6 @@ const ProductVariantsPage = () => {
           </Table>
         </TableContainer>
       )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={isEditMode ? 'Edit Product Variant' : 'Create New Product Variant'}
-        size="large"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
-            <ModalButton onClick={handleSubmit} disabled={formLoading}>
-              {formLoading ? (
-                <LoadingSpinner />
-              ) : isEditMode ? (
-                <>
-                  <FaEdit /> Update Variant
-                </>
-              ) : (
-                <>
-                  <FaPlus /> Create Variant
-                </>
-              )}
-            </ModalButton>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <FormGroup>
-            <Label htmlFor="productId">
-              <FaShoppingBag />
-              Product
-            </Label>
-            <Select
-              id="productId"
-              name="productId"
-              value={formData.productId}
-              onChange={handleFormChange}
-              required
-              disabled={formLoading || isEditMode}
-            >
-              <option value="">Select a product</option>
-              {allProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="name">
-              <FaTags />
-              Variant Name
-            </Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleFormChange}
-              placeholder="Enter variant name (e.g., Normal, 2 Piece, 3 Piece)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="description">
-              Description (Optional)
-            </Label>
-            <Input
-              as="textarea"
-              id="description"
-              name="description"
-              value={formData.description || ''}
-              onChange={handleFormChange}
-              placeholder="Enter variant description (optional)"
-              rows={3}
-              disabled={formLoading}
-              style={{ resize: 'vertical', minHeight: '80px' }}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="photoFile">
-              <FaImage />
-              Upload Photo (Optional)
-            </Label>
-            <FileInputWrapper>
-              <FileInputLabel htmlFor="photoFile">
-                <FaUpload style={{ marginRight: '8px' }} />
-                Choose Photo File
-                <input
-                  type="file"
-                  id="photoFile"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  onChange={handlePhotoFileChange}
-                  disabled={formLoading}
-                />
-              </FileInputLabel>
-              {selectedPhotoFile && (
-                <p style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-                  Selected: {selectedPhotoFile.name}
-                </p>
-              )}
-            </FileInputWrapper>
-            {photoPreview && (
-              <ImagePreviewContainer>
-                <ImagePreview src={photoPreview} alt="Preview" />
-                <RemoveImageButton onClick={handleRemovePhoto} type="button">
-                  <FaTimes />
-                </RemoveImageButton>
-              </ImagePreviewContainer>
-            )}
-          </FormGroup>
-
-          <FormGroup>
-            <Label>
-              <FaBox />
-              Product Items (Optional)
-            </Label>
-            <CheckboxContainer>
-              {allProductItems.length === 0 ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                  No product items available
-                </p>
-              ) : (
-                allProductItems.map((item) => (
-                  <CheckboxItem key={item.id}>
-                    <input
-                      type="checkbox"
-                      checked={selectedProductItems.includes(item.id)}
-                      onChange={() => handleProductItemToggle(item.id)}
-                      disabled={formLoading}
-                    />
-                    <span>{item.name}</span>
-                  </CheckboxItem>
-                ))
-              )}
-            </CheckboxContainer>
-          </FormGroup>
-        </form>
-      </Modal>
 
       {/* Manage Items Modal */}
       <Modal

@@ -12,6 +12,7 @@ export * from './roleServices';
 export * from './customerServices';
 export * from './measurementServices';
 export * from './productServices';
+export * from './productOrderServices';
 
 // Helpers
 export * from './authHelpers';

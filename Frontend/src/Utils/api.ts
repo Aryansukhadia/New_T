@@ -239,6 +239,30 @@ export const API_CONFIG: ApiConfig = {
             method: 'DELETE',
             baseUrl: NODEJS_BASE_URL,
         },
+
+        // ============================================
+        // PRODUCT ORDER ENDPOINTS
+        // ============================================
+        getBookedOrders: {
+            path: '/productOrders',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getOrderDetails: {
+            path: '/productOrders/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        bookOrder: {
+            path: '/productOrders/book',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getWorkpieceMeasurements: {
+            path: '/productOrders/workpiece/{workpieceId}/measurements',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 
@@ -279,8 +303,9 @@ export const getApiUrlWithParams = (endpoint: string, pathParams: Record<string,
         path = path.replace(`{${key}}`, pathParams[key]);
     });
 
-    // Add query parameters
-    const url = new URL(path, baseUrl);
+    const fullUrl = `${baseUrl}${path}`;
+
+    const url = new URL(fullUrl);
     Object.keys(queryParams).forEach(key => {
         url.searchParams.append(key, queryParams[key]);
     });

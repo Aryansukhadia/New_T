@@ -12,9 +12,13 @@ import ManageMeasurementPage from './Pages/Dashboard/ManageMeasurementPage';
 import ReportsPage from './Pages/Dashboard/ReportsPage';
 import FinancialsPage from './Pages/Dashboard/FinancialsPage';
 import OrdersPage from './Pages/Dashboard/OrdersPage';
+import BookOrderPage from './Pages/Dashboard/BookOrderPage';
+import OrderDetailsPage from './Pages/Dashboard/OrderDetailsPage';
 import ProductItemsPage from './Pages/Dashboard/ProductItemsPage';
 import ProductsPage from './Pages/Dashboard/ProductsPage';
 import ProductVariantsPage from './Pages/Dashboard/ProductVariantsPage';
+import CreateProductVariantPage from './Pages/Dashboard/CreateProductVariantPage';
+import EditProductVariantPage from './Pages/Dashboard/EditProductVariantPage';
 import { isAuthenticated, isAdmin } from './Services/ApiServices';
 
 // Protected Route Component
@@ -55,9 +59,13 @@ function App() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="financials" element={<FinancialsPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/book" element={<BookOrderPage />} />
+            <Route path="orders/:id" element={<OrderDetailsPage />} />
             <Route path="product-items" element={<ProductItemsPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="product-variants" element={<ProductVariantsPage />} />
+            <Route path="product-variants/create" element={<CreateProductVariantPage />} />
+            <Route path="product-variants/edit/:id" element={<EditProductVariantPage />} />
           </Route>
 
           {/* Redirect root to dashboard */}
