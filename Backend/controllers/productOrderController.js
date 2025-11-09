@@ -89,7 +89,6 @@ export const bookOrder = async (req, res) => {
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const variant = productVariants.find(v => v.id === item.productVariantId.trim());
-            console.log(variant);
             if (!variant.productItems || variant.productItems.length === 0) {
                 return sendResponse(res, 400, `Item at index ${i}: Product variant has no product items associated. Please add product items to the variant first.`);
             }

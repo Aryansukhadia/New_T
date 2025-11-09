@@ -106,9 +106,6 @@ export const addProductVariant = async (req, res) => {
                 : undefined
         };
 
-        console.log(data);
-
-
         return sendResponse(res, 201, "Product variant created successfully", data);
     } catch (error) {
         console.error("addProductVariant error:", error);

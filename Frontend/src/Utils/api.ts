@@ -283,8 +283,6 @@ export const getApiUrl = (endpoint: string, pathParams: Record<string, string> =
 
     const fullUrl = `${baseUrl}${path}`;
 
-    console.log(`Generated API URL for ${endpoint}:`, fullUrl);
-
     return fullUrl;
 };
 

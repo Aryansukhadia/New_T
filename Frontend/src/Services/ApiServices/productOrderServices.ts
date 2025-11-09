@@ -135,7 +135,6 @@ export const getBookedOrdersService = async (
     limit: number = 10
 ): Promise<ApiResponse<PaginatedOrdersResponse>> => {
     const { url } = getApiUrlWithParams('getBookedOrders', {}, { page: page.toString(), limit: limit.toString() });
-    console.log('url', url);
     const response = await apiInstance.get<ApiResponse<PaginatedOrdersResponse>>(url);
     return response.data;
 };
