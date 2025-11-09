@@ -9,6 +9,7 @@ import productItemRoutes from "./productItemRoutes.js";
 import itemStatusRoutes from "./itemStatusRoutes.js";
 import itemStagePhotoRoutes from "./itemStagePhotoRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
+import productOrderRoutes from "./productOrderRoutes.js";
 
 const router = Router();
 
@@ -26,6 +27,9 @@ router.use("/productVariants", productVariantRoutes);
 router.use("/productItems", productItemRoutes);
 router.use("/itemStatuses", itemStatusRoutes);
 router.use("/itemStagePhotos", itemStagePhotoRoutes);
+
+// Order Management Routes
+router.use("/productOrders", productOrderRoutes);
 
 export default router;
 
