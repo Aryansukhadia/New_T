@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   getProductsService,
   getProductItemsService,
@@ -214,6 +215,7 @@ const FormActions = styled.div`
 const CreateProductVariantPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { t } = useTranslation();
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
@@ -345,9 +347,9 @@ const CreateProductVariantPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Create New Product Variant</PageTitle>
+        <PageTitle>{t('productVariants.createNewVariant')}</PageTitle>
         <BackButton onClick={() => navigate('/dashboard/product-variants')}>
-          <FaArrowLeft /> Back to Variants
+          <FaArrowLeft /> {t('common.back')} {t('productVariants.title')}
         </BackButton>
       </PageHeader>
 
@@ -356,7 +358,7 @@ const CreateProductVariantPage = () => {
           <FormGroup>
             <Label htmlFor="productId">
               <FaShoppingBag />
-              Product *
+              {t('productVariants.product')} *
             </Label>
             <Select
               id="productId"
@@ -366,7 +368,7 @@ const CreateProductVariantPage = () => {
               required
               disabled={formLoading}
             >
-              <option value="">Select a product</option>
+              <option value="">{t('common.select')} {t('productVariants.product')}</option>
               {allProducts.map((product) => (
                 <option key={product.id} value={product.id}>
                   {product.name}
@@ -378,7 +380,7 @@ const CreateProductVariantPage = () => {
           <FormGroup>
             <Label htmlFor="name">
               <FaTags />
-              Variant Name *
+              {t('productVariants.variantName')} *
             </Label>
             <Input
               type="text"
@@ -394,7 +396,7 @@ const CreateProductVariantPage = () => {
         </FormRow>
 
         <FormGroup>
-          <Label htmlFor="description">Description (Optional)</Label>
+          <Label htmlFor="description">{t('productVariants.description')} ({t('orders.optional')})</Label>
           <Input
             as="textarea"
             id="description"
@@ -411,12 +413,12 @@ const CreateProductVariantPage = () => {
         <FormGroup>
           <Label htmlFor="photoFile">
             <FaImage />
-            Upload Photo (Optional)
+            {t('productVariants.uploadPhoto')} ({t('orders.optional')})
           </Label>
           <FileInputWrapper>
             <FileInputLabel htmlFor="photoFile">
               <FaUpload style={{ marginRight: '8px' }} />
-              Choose Photo File
+              {t('productVariants.choosePhotoFile')}
               <input
                 type="file"
                 id="photoFile"
@@ -444,12 +446,12 @@ const CreateProductVariantPage = () => {
         <FormGroup>
           <Label>
             <FaBox />
-            Product Items (Optional)
+            {t('productVariants.productItems')} ({t('orders.optional')})
           </Label>
           <CheckboxContainer>
             {allProductItems.length === 0 ? (
               <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                No product items available
+                {t('productVariants.noProductItems')}
               </p>
             ) : (
               allProductItems.map((item) => (
@@ -469,14 +471,14 @@ const CreateProductVariantPage = () => {
 
         <FormActions>
           <BackButton type="button" onClick={() => navigate('/dashboard/product-variants')} disabled={formLoading}>
-            Cancel
+            {t('common.cancel')}
           </BackButton>
           <ActionButton type="submit" disabled={formLoading}>
             {formLoading ? (
               <LoadingSpinner />
             ) : (
               <>
-                <FaPlus /> Create Variant
+                <FaPlus /> {t('productVariants.createVariant')}
               </>
             )}
           </ActionButton>

@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { removeAuthToken, getUserInfo, type LoginResponse } from '../../Services/ApiServices';
+import LanguageToggle from '../Common/LanguageToggle';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   FaChartBar,
   FaUsers,
@@ -165,21 +167,22 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const userInfo: LoginResponse | null = getUserInfo();
   const userRole = userInfo?.roleName?.toLowerCase() || '';
 
   // Menu items based on roles
   const menuItems: MenuItem[] = [
-    { path: '/dashboard', label: 'Dashboard', icon: FaChartBar, roles: ['admin', 'staff', 'accountant'] },
-    { path: '/dashboard/users', label: 'Users', icon: FaUsers, roles: ['admin'] },
-    { path: '/dashboard/roles', label: 'Roles', icon: FaUserLock, roles: ['admin'] },
-    { path: '/dashboard/customers', label: 'Customers', icon: FaUser, roles: ['admin', 'staff'] },
-    { path: '/dashboard/product-items', label: 'Product Items', icon: FaBox, roles: ['admin', 'staff'] },
-    { path: '/dashboard/products', label: 'Products', icon: FaShoppingBag, roles: ['admin', 'staff'] },
-    { path: '/dashboard/product-variants', label: 'Product Variants', icon: FaTags, roles: ['admin', 'staff'] },
-    { path: '/dashboard/orders', label: 'Orders', icon: FaShoppingCart, roles: ['admin', 'staff'] },
-    { path: '/dashboard/reports', label: 'Reports', icon: FaChartLine, roles: ['admin', 'accountant'] },
-    { path: '/dashboard/financials', label: 'Financials', icon: FaDollarSign, roles: ['admin', 'accountant'] },
+    { path: '/dashboard', label: t('dashboard.title'), icon: FaChartBar, roles: ['admin', 'staff', 'accountant'] },
+    { path: '/dashboard/users', label: t('dashboard.users'), icon: FaUsers, roles: ['admin'] },
+    { path: '/dashboard/roles', label: t('dashboard.roles'), icon: FaUserLock, roles: ['admin'] },
+    { path: '/dashboard/customers', label: t('dashboard.customers'), icon: FaUser, roles: ['admin', 'staff'] },
+    { path: '/dashboard/product-items', label: t('dashboard.productItems'), icon: FaBox, roles: ['admin', 'staff'] },
+    { path: '/dashboard/products', label: t('dashboard.products'), icon: FaShoppingBag, roles: ['admin', 'staff'] },
+    { path: '/dashboard/product-variants', label: t('dashboard.productVariants'), icon: FaTags, roles: ['admin', 'staff'] },
+    { path: '/dashboard/orders', label: t('dashboard.orders'), icon: FaShoppingCart, roles: ['admin', 'staff'] },
+    { path: '/dashboard/reports', label: t('dashboard.reports'), icon: FaChartLine, roles: ['admin', 'accountant'] },
+    { path: '/dashboard/financials', label: t('dashboard.financials'), icon: FaDollarSign, roles: ['admin', 'accountant'] },
   ];
 
   // Filter menu items based on user role
@@ -232,11 +235,15 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
         })}
       </NavList>
 
+      <div style={{ position: 'absolute', bottom: '80px', left: '12px', right: '12px' }}>
+        <LanguageToggle />
+      </div>
+
       <LogoutButton onClick={handleLogout}>
         <NavIcon>
           <FaSignOutAlt />
         </NavIcon>
-        <NavText isOpen={isOpen}>Logout</NavText>
+        <NavText isOpen={isOpen}>{t('common.logout') || 'Logout'}</NavText>
       </LogoutButton>
     </SidebarContainer>
   );

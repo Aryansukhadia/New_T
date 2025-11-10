@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   bookOrderService,
   type BookOrderRequest,
@@ -169,6 +170,7 @@ const FormActions = styled.div`
 const BookOrderPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { t } = useTranslation();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -315,15 +317,15 @@ const BookOrderPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Book New Order</PageTitle>
+        <PageTitle>{t('orders.bookNewOrder')}</PageTitle>
         <BackButton onClick={() => navigate('/dashboard/orders')}>
-          <FaArrowLeft /> Back to Orders
+          <FaArrowLeft /> {t('common.back')} {t('orders.title')}
         </BackButton>
       </PageHeader>
 
       <form onSubmit={handleBookOrder} style={{ display: 'flex', flexDirection: 'column' }}>
         <FormGroup>
-          <Label htmlFor="customerId">Customer *</Label>
+          <Label htmlFor="customerId">{t('orders.customer')} *</Label>
           <Select
             id="customerId"
             value={orderFormData.customerId}
@@ -331,7 +333,7 @@ const BookOrderPage = () => {
             required
             disabled={formLoading}
           >
-            <option value="">Select a customer</option>
+            <option value="">{t('orders.customer')} {t('common.select') || 'Select'}</option>
             {customers.map((customer) => (
               <option key={customer.customerId} value={customer.customerId}>
                 {customer.fullName} ({customer.emailId})
@@ -340,8 +342,8 @@ const BookOrderPage = () => {
           </Select>
         </FormGroup>
 
-        <FormGroup>
-          <Label htmlFor="deliveryDate">Delivery Date (Optional)</Label>
+          <FormGroup>
+            <Label htmlFor="deliveryDate">{t('orders.deliveryDate')} ({t('orders.optional')})</Label>
           <Input
             type="date"
             id="deliveryDate"
@@ -356,8 +358,8 @@ const BookOrderPage = () => {
           />
         </FormGroup>
 
-        <FormGroup>
-          <Label htmlFor="notes">Notes (Optional)</Label>
+          <FormGroup>
+            <Label htmlFor="notes">{t('orders.notes')} ({t('orders.optional')})</Label>
           <Input
             type="text"
             id="notes"
@@ -374,30 +376,30 @@ const BookOrderPage = () => {
         </FormGroup>
 
         <div style={{ marginTop: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <Label style={{ margin: 0 }}>Order Items *</Label>
-            <ActionButton type="button" onClick={handleAddOrderItem} style={{ padding: '8px 16px', fontSize: '12px' }}>
-              <FaPlus /> Add Item
-            </ActionButton>
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <Label style={{ margin: 0 }}>{t('orders.orderItems')} *</Label>
+              <ActionButton type="button" onClick={handleAddOrderItem} style={{ padding: '8px 16px', fontSize: '12px' }}>
+                <FaPlus /> {t('orders.addItem')}
+              </ActionButton>
+            </div>
 
-          {orderFormData.items.length === 0 ? (
-            <EmptyState>
-              <EmptyStateText>No items added. Click "Add Item" to add products to the order.</EmptyStateText>
-            </EmptyState>
-          ) : (
+            {orderFormData.items.length === 0 ? (
+              <EmptyState>
+                <EmptyStateText>{t('orders.noItemsAdded') || 'No items added. Click "Add Item" to add products to the order.'}</EmptyStateText>
+              </EmptyState>
+            ) : (
             orderFormData.items.map((item, index) => (
               <OrderItemRow key={index}>
                 <OrderItemFields>
-                  <OrderItemField>
-                    <Label>Product *</Label>
+                    <OrderItemField>
+                      <Label>{t('orders.product')} *</Label>
                     <Select
                       value={item.productId}
                       onChange={(e) => handleOrderItemChange(index, 'productId', e.target.value)}
                       required
                       disabled={formLoading}
                     >
-                      <option value="">Select product</option>
+                      <option value="">{t('orders.product')} {t('common.select') || 'Select'}</option>
                       {products.map((product) => (
                         <option key={product.id} value={product.id}>
                           {product.name}
@@ -405,15 +407,15 @@ const BookOrderPage = () => {
                       ))}
                     </Select>
                   </OrderItemField>
-                  <OrderItemField>
-                    <Label>Variant *</Label>
+                    <OrderItemField>
+                      <Label>{t('orders.variant')} *</Label>
                     <Select
                       value={item.productVariantId}
                       onChange={(e) => handleOrderItemChange(index, 'productVariantId', e.target.value)}
                       required
                       disabled={formLoading || !item.productId}
                     >
-                      <option value="">Select variant</option>
+                      <option value="">{t('orders.variant')} {t('common.select') || 'Select'}</option>
                       {productVariants
                         .filter((variant) => variant.productId === item.productId)
                         .map((variant) => (
@@ -423,8 +425,8 @@ const BookOrderPage = () => {
                         ))}
                     </Select>
                   </OrderItemField>
-                  <OrderItemField>
-                    <Label>Quantity *</Label>
+                    <OrderItemField>
+                      <Label>{t('orders.quantity')} *</Label>
                     <Input
                       type="number"
                       min="1"
@@ -450,14 +452,14 @@ const BookOrderPage = () => {
 
         <FormActions>
           <BackButton type="button" onClick={() => navigate('/dashboard/orders')} disabled={formLoading}>
-            Cancel
+            {t('common.cancel')}
           </BackButton>
           <ActionButton type="submit" disabled={formLoading || orderFormData.items.length === 0}>
             {formLoading ? (
               <LoadingSpinner />
             ) : (
               <>
-                <FaShoppingCart /> Book Order
+                <FaShoppingCart /> {t('orders.bookOrder')}
               </>
             )}
           </ActionButton>

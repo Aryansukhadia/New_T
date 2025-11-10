@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   getOrderDetailsService,
   getWorkpieceMeasurementsService,
@@ -281,6 +282,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showError } = useToast();
+  const { t } = useTranslation();
 
   const [order, setOrder] = useState<ProductOrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -370,7 +372,7 @@ const OrderDetailsPage = () => {
           </BackButton>
         </PageHeader>
         <EmptyState>
-          <EmptyStateText>Order not found</EmptyStateText>
+          <EmptyStateText>{t('orders.orderDetails')} {t('common.noData')}</EmptyStateText>
         </EmptyState>
       </PageContainer>
     );
@@ -379,43 +381,43 @@ const OrderDetailsPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Order Details - {order.id.substring(0, 8)}...</PageTitle>
+        <PageTitle>{t('orders.orderDetails')} - {order.id.substring(0, 8)}...</PageTitle>
         <BackButton onClick={() => navigate('/dashboard/orders')}>
-          <FaArrowLeft /> Back to Orders
+          <FaArrowLeft /> {t('common.back')} {t('orders.title')}
         </BackButton>
       </PageHeader>
 
       <OrderInfo>
         <InfoItem>
-          <InfoLabel>Customer</InfoLabel>
+          <InfoLabel>{t('orders.customer')}</InfoLabel>
           <InfoValue>{order.customerName || '—'}</InfoValue>
         </InfoItem>
         <InfoItem>
-          <InfoLabel>Order Date</InfoLabel>
+          <InfoLabel>{t('orders.orderDate')}</InfoLabel>
           <InfoValue>{formatDate(order.orderDate)}</InfoValue>
         </InfoItem>
         <InfoItem>
-          <InfoLabel>Delivery Date</InfoLabel>
+          <InfoLabel>{t('orders.deliveryDate')}</InfoLabel>
           <InfoValue>{formatDate(order.deliveryDate)}</InfoValue>
         </InfoItem>
         <InfoItem>
-          <InfoLabel>Status</InfoLabel>
+          <InfoLabel>{t('orders.status')}</InfoLabel>
           <InfoValue>
-            <StatusBadge status={order.status}>{order.status}</StatusBadge>
+            <StatusBadge status={order.status}>{t(`status.${order.status.toLowerCase()}`) || order.status}</StatusBadge>
           </InfoValue>
         </InfoItem>
         {order.notes && (
           <InfoItem>
-            <InfoLabel>Notes</InfoLabel>
+            <InfoLabel>{t('orders.notes')}</InfoLabel>
             <InfoValue>{order.notes}</InfoValue>
           </InfoItem>
         )}
       </OrderInfo>
 
-      <h3 style={{ marginBottom: '16px' }}>Work Pieces ({order.workPieces.length})</h3>
+      <h3 style={{ marginBottom: '16px' }}>{t('orders.workPieces')} ({order.workPieces.length})</h3>
       {order.workPieces.length === 0 ? (
         <EmptyState>
-          <EmptyStateText>No work pieces found for this order.</EmptyStateText>
+          <EmptyStateText>{t('orders.workPieces')} {t('common.noData')}</EmptyStateText>
         </EmptyState>
       ) : (
         <WorkPieceGrid>
@@ -427,19 +429,19 @@ const OrderDetailsPage = () => {
               <WorkPieceInfo>
                 <WorkPieceTitle>{workPiece.productItem.name}</WorkPieceTitle>
                 <WorkPieceDetail>
-                  Status: <StatusBadge status={workPiece.currentStatus}>{workPiece.currentStatus}</StatusBadge>
+                  {t('orders.status')}: <StatusBadge status={workPiece.currentStatus}>{t(`status.${workPiece.currentStatus.toLowerCase()}`) || workPiece.currentStatus}</StatusBadge>
                 </WorkPieceDetail>
                 {workPiece.assignedTo && (
-                  <WorkPieceDetail>Assigned to: {workPiece.assignedTo.fullName}</WorkPieceDetail>
+                  <WorkPieceDetail>{t('orders.assignedTo') || 'Assigned to'}: {workPiece.assignedTo.fullName}</WorkPieceDetail>
                 )}
                 {workPiece.remarks && (
-                  <WorkPieceDetail>Remarks: {workPiece.remarks}</WorkPieceDetail>
+                  <WorkPieceDetail>{t('orders.remarks') || 'Remarks'}: {workPiece.remarks}</WorkPieceDetail>
                 )}
                 <ViewMeasurementsButton
                   onClick={() => handleViewMeasurements(workPiece.id)}
                   disabled={loadingMeasurements}
                 >
-                  <FaRuler /> View Measurements
+                  <FaRuler /> {t('orders.viewMeasurements')}
                 </ViewMeasurementsButton>
               </WorkPieceInfo>
             </WorkPieceCard>
@@ -451,61 +453,61 @@ const OrderDetailsPage = () => {
       <Modal
         isOpen={isMeasurementsModalOpen}
         onClose={() => setIsMeasurementsModalOpen(false)}
-        title="Workpiece Measurements"
+        title={t('orders.viewMeasurements')}
         size="large"
         footer={
-          <ModalButtonSecondary onClick={() => setIsMeasurementsModalOpen(false)}>Close</ModalButtonSecondary>
+          <ModalButtonSecondary onClick={() => setIsMeasurementsModalOpen(false)}>{t('common.close')}</ModalButtonSecondary>
         }
       >
         {measurements && (
           <div>
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ marginBottom: '12px' }}>Customer Information</h3>
-              <p><strong>Name:</strong> {measurements.customer.fullName}</p>
-              <p><strong>Email:</strong> {measurements.customer.emailId}</p>
-              <p><strong>Mobile:</strong> {measurements.customer.mobileNo}</p>
+              <h3 style={{ marginBottom: '12px' }}>{t('orders.customerInfo')}</h3>
+              <p><strong>{t('customers.fullName')}:</strong> {measurements.customer.fullName}</p>
+              <p><strong>{t('customers.email')}:</strong> {measurements.customer.emailId}</p>
+              <p><strong>{t('customers.mobile')}:</strong> {measurements.customer.mobileNo}</p>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ marginBottom: '12px' }}>Workpiece Information</h3>
-              <p><strong>Product Item:</strong> {measurements.workpiece.productItem.name}</p>
-              <p><strong>Status:</strong> <StatusBadge status={measurements.workpiece.currentStatus}>{measurements.workpiece.currentStatus}</StatusBadge></p>
+              <h3 style={{ marginBottom: '12px' }}>{t('orders.workpieceInfo')}</h3>
+              <p><strong>{t('orders.product')}:</strong> {measurements.workpiece.productItem.name}</p>
+              <p><strong>{t('orders.status')}:</strong> <StatusBadge status={measurements.workpiece.currentStatus}>{t(`status.${measurements.workpiece.currentStatus.toLowerCase()}`) || measurements.workpiece.currentStatus}</StatusBadge></p>
             </div>
 
             <MeasurementsGrid>
               {measurements.measurements.top && (
                 <MeasurementCard>
-                  <MeasurementTitle>Top Measurements</MeasurementTitle>
+                  <MeasurementTitle>{t('orders.topMeasurements')}</MeasurementTitle>
                   <MeasurementRow>
-                    <MeasurementLabel>Length:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.length')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.length ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Shoulder:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.shoulder')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.shoulder ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Sleeve Length:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.sleeveLength')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.sleeveLength ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Sleeve Bottom:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.sleeveBottom')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.sleeveBottom ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Chest:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.chest')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.chest ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Waist:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.waist')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.waist ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Hip:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.hip')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.hip ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Neck:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.neck')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.top.neck ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                 </MeasurementCard>
@@ -513,37 +515,37 @@ const OrderDetailsPage = () => {
 
               {measurements.measurements.bottom && (
                 <MeasurementCard>
-                  <MeasurementTitle>Bottom Measurements</MeasurementTitle>
+                  <MeasurementTitle>{t('orders.bottomMeasurements')}</MeasurementTitle>
                   <MeasurementRow>
-                    <MeasurementLabel>Length:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.length')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.length ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Waist:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.waist')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.waist ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Hip:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.hip')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.hip ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Thigh:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.thigh')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.thigh ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Knee:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.knee')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.knee ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Calf:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.calf')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.calf ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Bottom:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.bottom')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.bottom ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                   <MeasurementRow>
-                    <MeasurementLabel>Langot:</MeasurementLabel>
+                    <MeasurementLabel>{t('orders.langot')}:</MeasurementLabel>
                     <MeasurementValue>{measurements.measurements.bottom.langot ?? '—'}</MeasurementValue>
                   </MeasurementRow>
                 </MeasurementCard>
@@ -552,7 +554,7 @@ const OrderDetailsPage = () => {
 
             {!measurements.measurements.top && !measurements.measurements.bottom && (
               <EmptyState style={{ padding: '20px' }}>
-                <EmptyStateText>No measurements available for this workpiece.</EmptyStateText>
+                <EmptyStateText>{t('orders.viewMeasurements')} {t('common.noData')}</EmptyStateText>
               </EmptyState>
             )}
           </div>

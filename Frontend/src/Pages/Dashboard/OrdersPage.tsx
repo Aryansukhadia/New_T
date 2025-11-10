@@ -7,6 +7,7 @@ import {
 } from '../../Services/ApiServices/productOrderServices';
 import { useToast } from '../../Utils/ToastContext';
 import { LoadingSpinner } from '../../Components/Common/FormComponents';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   FaShoppingCart,
   FaPlus,
@@ -248,6 +249,7 @@ const StatusBadge = styled.span<{ status: string }>`
 const OrdersPage = () => {
   const navigate = useNavigate();
   const { showError } = useToast();
+  const { t } = useTranslation();
 
   const [orders, setOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,9 +306,9 @@ const OrdersPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Product Orders</PageTitle>
+        <PageTitle>{t('orders.title')}</PageTitle>
         <ActionButton onClick={handleBookOrder}>
-          <FaPlus /> Book New Order
+          <FaPlus /> {t('orders.bookNewOrder')}
         </ActionButton>
       </PageHeader>
 
@@ -319,7 +321,7 @@ const OrdersPage = () => {
           <EmptyStateIcon>
             <FaShoppingCart />
           </EmptyStateIcon>
-          <EmptyStateText>No orders found. Book your first order to get started!</EmptyStateText>
+          <EmptyStateText>{t('orders.noOrders')}</EmptyStateText>
         </EmptyState>
       ) : (
         <>
@@ -327,13 +329,13 @@ const OrdersPage = () => {
             <Table>
               <TableHeader>
                 <TableRow isHeader>
-                  <TableHeaderCell>Order ID</TableHeaderCell>
-                  <TableHeaderCell>Customer</TableHeaderCell>
-                  <TableHeaderCell>Order Date</TableHeaderCell>
-                  <TableHeaderCell>Delivery Date</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Total Amount</TableHeaderCell>
-                  <TableHeaderCell>Actions</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.orderId')}</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.customer')}</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.orderDate')}</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.deliveryDate')}</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.status')}</TableHeaderCell>
+                  <TableHeaderCell>{t('orders.totalAmount')}</TableHeaderCell>
+                  <TableHeaderCell>{t('common.actions')}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <tbody>
@@ -351,7 +353,7 @@ const OrdersPage = () => {
                       <IconButton
                         variant="view"
                         onClick={() => handleViewOrderDetails(order.id)}
-                        title="View Order Details"
+                        title={t('orders.viewDetails')}
                       >
                         <FaEye />
                       </IconButton>
@@ -364,20 +366,20 @@ const OrdersPage = () => {
 
           <PaginationContainer>
             <PaginationInfo>
-              Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount} orders
+              {t('pagination.showing')} {((currentPage - 1) * limit) + 1} {t('pagination.to')} {Math.min(currentPage * limit, totalCount)} {t('pagination.of')} {totalCount} {t('orders.title').toLowerCase()}
             </PaginationInfo>
             <PaginationButtons>
               <PaginationButton
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
               >
-                <FaChevronLeft /> Previous
+                <FaChevronLeft /> {t('pagination.previous')}
               </PaginationButton>
               <PaginationButton
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
               >
-                Next <FaChevronRight />
+                {t('pagination.next')} <FaChevronRight />
               </PaginationButton>
             </PaginationButtons>
           </PaginationContainer>

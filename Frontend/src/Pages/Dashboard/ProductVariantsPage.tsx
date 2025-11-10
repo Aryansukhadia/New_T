@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   getProductVariantsService,
   getProductsService,
@@ -353,6 +354,7 @@ const ProductItemTag = styled.span`
 
 const ProductVariantsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
@@ -550,10 +552,10 @@ const ProductVariantsPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Product Variants Management</PageTitle>
+        <PageTitle>{t('productVariants.title')}</PageTitle>
         <ActionButton onClick={handleCreateVariant}>
           <FaPlus style={{ marginRight: '8px' }} />
-          Add New Variant
+          {t('productVariants.addNewVariant')}
         </ActionButton>
       </PageHeader>
 
@@ -591,8 +593,8 @@ const ProductVariantsPage = () => {
           </EmptyStateIcon>
           <EmptyStateText>
             {searchTerm || selectedProductFilter
-              ? 'No product variants found matching your filters'
-              : 'No product variants found. Add your first variant to get started!'}
+              ? t('productVariants.noVariants')
+              : t('productVariants.noVariants')}
           </EmptyStateText>
         </EmptyState>
       ) : (
@@ -600,13 +602,13 @@ const ProductVariantsPage = () => {
           <Table>
             <TableHeader>
               <TableRow isHeader>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Product</TableHeaderCell>
-                <TableHeaderCell>Description</TableHeaderCell>
-                <TableHeaderCell>Photo</TableHeaderCell>
-                <TableHeaderCell>Product Items</TableHeaderCell>
-                <TableHeaderCell>Created At</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.name')}</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.product')}</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.description')}</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.photo')}</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.productItems')}</TableHeaderCell>
+                <TableHeaderCell>{t('productVariants.createdAt')}</TableHeaderCell>
+                <TableHeaderCell>{t('common.actions')}</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <tbody>

@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store/store';
 import { ToastProvider } from './Utils/ToastContext';
 import ToastDisplay from './Components/Common/ToastProvider';
 import Login from './Pages/Login';
@@ -36,8 +38,9 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <ToastProvider>
-      <Router>
+    <Provider store={store}>
+      <ToastProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -74,7 +77,8 @@ function App() {
         </Routes>
         <ToastDisplay />
       </Router>
-    </ToastProvider>
+      </ToastProvider>
+    </Provider>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   getProductVariantByIdService,
   getProductsService,
@@ -217,6 +218,7 @@ const EditProductVariantPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { t } = useTranslation();
 
   const [variant, setVariant] = useState<ProductVariant | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -383,9 +385,9 @@ const EditProductVariantPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>Edit Product Variant - {variant.name}</PageTitle>
+        <PageTitle>{t('productVariants.editVariant')} - {variant.name}</PageTitle>
         <BackButton onClick={() => navigate('/dashboard/product-variants')}>
-          <FaArrowLeft /> Back to Variants
+          <FaArrowLeft /> {t('common.back')} {t('productVariants.title')}
         </BackButton>
       </PageHeader>
 
@@ -394,7 +396,7 @@ const EditProductVariantPage = () => {
           <FormGroup>
             <Label htmlFor="productId">
               <FaShoppingBag />
-              Product
+              {t('productVariants.product')}
             </Label>
             <Select
               id="productId"
@@ -404,18 +406,18 @@ const EditProductVariantPage = () => {
               style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
             >
               <option value={variant.productId}>
-                {variant.product?.name || 'Unknown Product'}
+                {variant.product?.name || t('productVariants.product')}
               </option>
             </Select>
             <p style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-              Product cannot be changed after creation
+              {t('productVariants.productCannotChange')}
             </p>
           </FormGroup>
 
           <FormGroup>
             <Label htmlFor="name">
               <FaTags />
-              Variant Name *
+              {t('productVariants.variantName')} *
             </Label>
             <Input
               type="text"
@@ -431,7 +433,7 @@ const EditProductVariantPage = () => {
         </FormRow>
 
         <FormGroup>
-          <Label htmlFor="description">Description (Optional)</Label>
+          <Label htmlFor="description">{t('productVariants.description')} ({t('orders.optional')})</Label>
           <Input
             as="textarea"
             id="description"
@@ -448,12 +450,12 @@ const EditProductVariantPage = () => {
         <FormGroup>
           <Label htmlFor="photoFile">
             <FaImage />
-            Upload Photo (Optional)
+            {t('productVariants.uploadPhoto')} ({t('orders.optional')})
           </Label>
           <FileInputWrapper>
             <FileInputLabel htmlFor="photoFile">
               <FaUpload style={{ marginRight: '8px' }} />
-              Choose Photo File
+              {t('productVariants.choosePhotoFile')}
               <input
                 type="file"
                 id="photoFile"
@@ -481,12 +483,12 @@ const EditProductVariantPage = () => {
         <FormGroup>
           <Label>
             <FaBox />
-            Product Items (Optional)
+            {t('productVariants.productItems')} ({t('orders.optional')})
           </Label>
           <CheckboxContainer>
             {allProductItems.length === 0 ? (
               <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                No product items available
+                {t('productVariants.noProductItems')}
               </p>
             ) : (
               allProductItems.map((item) => (
@@ -506,14 +508,14 @@ const EditProductVariantPage = () => {
 
         <FormActions>
           <BackButton type="button" onClick={() => navigate('/dashboard/product-variants')} disabled={formLoading}>
-            Cancel
+            {t('common.cancel')}
           </BackButton>
           <ActionButton type="submit" disabled={formLoading}>
             {formLoading ? (
               <LoadingSpinner />
             ) : (
               <>
-                <FaEdit /> Update Variant
+                <FaEdit /> {t('productVariants.updateVariant')}
               </>
             )}
           </ActionButton>
