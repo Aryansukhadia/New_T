@@ -10,6 +10,7 @@ import itemStatusRoutes from "./itemStatusRoutes.js";
 import itemStagePhotoRoutes from "./itemStagePhotoRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import productOrderRoutes from "./productOrderRoutes.js";
+import workPieceRoutes from "./workPieceRoutes.js";
 
 const router = Router();
 
@@ -30,6 +31,7 @@ router.use("/itemStagePhotos", itemStagePhotoRoutes);
 
 // Order Management Routes
 router.use("/productOrders", productOrderRoutes);
+router.use("/workPieces", workPieceRoutes);
 
 export default router;
 
