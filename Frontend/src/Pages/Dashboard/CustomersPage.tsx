@@ -3,28 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import {
   getCustomersService,
-  createCustomerService,
-  updateCustomerService,
   deleteCustomerService,
   type Customer,
-  type CreateCustomerRequest,
-  type UpdateCustomerRequest,
 } from '../../Services/ApiServices';
 import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
-import {
-  FormGroup,
-  Label,
-  Input,
-  Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
+import { Button, LoadingSpinner } from '../../Components/Common/FormComponents';
 import {
   FaUsers,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
   FaEdit,
   FaTrash,
   FaUserPlus,
@@ -230,21 +216,6 @@ const EmptyStateText = styled.p`
   margin: 0;
 `;
 
-const ModalButton = styled(Button)`
-  margin-top: 0;
-  min-width: 140px;
-  padding: 14px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
 const ModalButtonSecondary = styled.button`
   padding: 14px 28px;
   background: #f5f5f5;
@@ -274,23 +245,12 @@ const CustomersPage = () => {
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
-  const [formLoading, setFormLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-
-  const [formData, setFormData] = useState<CreateCustomerRequest>({
-    fullName: '',
-    emailId: '',
-    mobileNo: '',
-    address: '',
-    reference: null,
-  });
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -298,7 +258,6 @@ const CustomersPage = () => {
       const response = await getCustomersService();
       if (response.success === 200 && response.data) {
         setCustomers(response.data);
-        // Don't show toast on initial load, only show errors
       } else {
         showError(response.message || 'Failed to load customers', 'Error');
       }
@@ -337,30 +296,12 @@ const CustomersPage = () => {
     setFilteredCustomers(filtered);
   }, [searchTerm, customers]);
 
-  const handleOpenCreateModal = () => {
-    setIsEditMode(false);
-    setSelectedCustomer(null);
-    setFormData({
-      fullName: '',
-      emailId: '',
-      mobileNo: '',
-      address: '',
-      reference: null,
-    });
-    setIsModalOpen(true);
+  const handleAddCustomer = () => {
+    navigate('/dashboard/customers/create');
   };
 
-  const handleOpenEditModal = (customer: Customer) => {
-    setIsEditMode(true);
-    setSelectedCustomer(customer);
-    setFormData({
-      fullName: customer.fullName,
-      emailId: customer.emailId,
-      mobileNo: customer.mobileNo,
-      address: customer.address,
-      reference: customer.reference || null,
-    });
-    setIsModalOpen(true);
+  const handleEditCustomer = (customer: Customer) => {
+    navigate(`/dashboard/customers/edit/${customer.customerId}`);
   };
 
   const handleOpenDeleteModal = (customer: Customer) => {
@@ -372,92 +313,15 @@ const CustomersPage = () => {
     navigate(`/dashboard/measurements/manage/${customer.customerId}`);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedCustomer(null);
-  };
-
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'reference' ? (value === '' ? null : value) : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-
-    try {
-      if (isEditMode && selectedCustomer) {
-        // Update customer
-        const updateData: UpdateCustomerRequest = {
-          fullName: formData.fullName,
-          emailId: formData.emailId,
-          mobileNo: formData.mobileNo,
-          address: formData.address,
-          reference: formData.reference || null,
-        };
-
-        const response = await updateCustomerService(selectedCustomer.customerId, updateData);
-
-        if (response.success === 200) {
-          showSuccess(response.message || 'Customer updated successfully!', 'Success');
-          await fetchCustomers();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1000);
-        } else {
-          const errorMsg = response.message || 'Failed to update customer';
-          showError(errorMsg, 'Update Failed');
-        }
-      } else {
-        // Create new customer
-        const createData: CreateCustomerRequest = {
-          fullName: formData.fullName,
-          emailId: formData.emailId,
-          mobileNo: formData.mobileNo,
-          address: formData.address,
-          reference: formData.reference || null,
-        };
-
-        const response = await createCustomerService(createData);
-
-        if (response.success === 201) {
-          showSuccess(response.message || 'Customer created successfully!', 'Success');
-          await fetchCustomers();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1000);
-        } else {
-          const errorMsg = response.message || 'Failed to create customer';
-          showError(errorMsg, 'Create Failed');
-        }
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        const errorMsg = axiosError.response?.data?.message || 'An error occurred';
-        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
-      } else {
-        const errorMsg = 'An unexpected error occurred';
-        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
-      }
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (!customerToDelete) return;
 
-    setFormLoading(true);
+    setDeleteLoading(true);
 
     try {
       const response = await deleteCustomerService(customerToDelete.customerId);
@@ -467,7 +331,7 @@ const CustomersPage = () => {
         await fetchCustomers();
         setTimeout(() => {
           handleCloseDeleteModal();
-        }, 1000);
+        }, 800);
       } else {
         const errorMsg = response.message || 'Failed to delete customer';
         showError(errorMsg, 'Delete Failed');
@@ -482,7 +346,7 @@ const CustomersPage = () => {
         showError(errorMsg, 'Delete Failed');
       }
     } finally {
-      setFormLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -498,7 +362,7 @@ const CustomersPage = () => {
     <PageContainer>
       <PageHeader>
         <PageTitle>Customer Management</PageTitle>
-        <ActionButton onClick={handleOpenCreateModal}>
+        <ActionButton onClick={handleAddCustomer}>
           <FaUserPlus style={{ marginRight: '8px' }} />
           Add New Customer
         </ActionButton>
@@ -561,7 +425,7 @@ const CustomersPage = () => {
                     </IconButton>
                     <IconButton
                       variant="edit"
-                      onClick={() => handleOpenEditModal(customer)}
+                      onClick={() => handleEditCustomer(customer)}
                       title="Edit Customer"
                     >
                       <FaEdit />
@@ -581,118 +445,6 @@ const CustomersPage = () => {
         </TableContainer>
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={isEditMode ? 'Edit Customer' : 'Create New Customer'}
-        size="large"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
-            <ModalButton onClick={handleSubmit} disabled={formLoading}>
-              {formLoading ? (
-                <LoadingSpinner />
-              ) : isEditMode ? (
-                <>
-                  <FaEdit /> Update Customer
-                </>
-              ) : (
-                <>
-                  <FaUserPlus /> Create Customer
-                </>
-              )}
-            </ModalButton>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-
-          <FormGroup>
-            <Label htmlFor="fullName">
-              <FaUser />
-              Full Name
-            </Label>
-            <Input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleFormChange}
-              placeholder="Enter full name (e.g., John Doe)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="emailId">
-              <FaEnvelope />
-              Email Address
-            </Label>
-            <Input
-              type="email"
-              id="emailId"
-              name="emailId"
-              value={formData.emailId}
-              onChange={handleFormChange}
-              placeholder="Enter email address (e.g., john.doe@example.com)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="mobileNo">
-              <FaPhone />
-              Mobile Number
-            </Label>
-            <Input
-              type="tel"
-              id="mobileNo"
-              name="mobileNo"
-              value={formData.mobileNo}
-              onChange={handleFormChange}
-              placeholder="Enter mobile number (e.g., +1234567890)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="address">
-              <FaMapMarkerAlt />
-              Address
-            </Label>
-            <Input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleFormChange}
-              placeholder="Enter complete address"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="reference">
-              Reference (Optional)
-            </Label>
-            <Input
-              type="text"
-              id="reference"
-              name="reference"
-              value={formData.reference || ''}
-              onChange={handleFormChange}
-              placeholder="Enter reference information (optional)"
-              disabled={formLoading}
-            />
-          </FormGroup>
-        </form>
-      </Modal>
-
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
@@ -703,10 +455,10 @@ const CustomersPage = () => {
             <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
             <Button
               onClick={handleDelete}
-              disabled={formLoading}
+              disabled={deleteLoading}
               style={{ background: '#dc3545', marginTop: 0 }}
             >
-              {formLoading ? <LoadingSpinner /> : 'Delete'}
+              {deleteLoading ? <LoadingSpinner /> : 'Delete'}
             </Button>
           </>
         }

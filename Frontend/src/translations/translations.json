@@ -61,6 +61,9 @@
       "viewMeasurements": "View Measurements",
       "customerInfo": "Customer Information",
       "workpieceInfo": "Workpiece Information",
+      "newCustomerButton": "Create New Customer",
+      "existingCustomerButton": "Select Existing Customer",
+      "manageCustomersButton": "Manage Customers",
       "topMeasurements": "Top Measurements",
       "bottomMeasurements": "Bottom Measurements",
       "length": "Length",
@@ -77,7 +80,8 @@
       "bottom": "Bottom",
       "langot": "Langot",
       "assignedTo": "Assigned to",
-      "remarks": "Remarks"
+      "remarks": "Remarks",
+      "convertPendingToCutting": "Convert Pending to Cutting"
     },
     "productVariants": {
       "title": "Product Variants Management",
@@ -114,10 +118,26 @@
       "mobile": "Mobile Number",
       "address": "Address",
       "reference": "Reference",
-      "noCustomers": "No customers found. Add your first customer to get started!"
+      "noCustomers": "No customers found. Add your first customer to get started!",
+      "addNewCustomerTitle": "Add New Customer",
+      "createCustomer": "Create Customer",
+      "createSuccess": "Customer created successfully!",
+      "createFailed": "Failed to create customer",
+      "unexpectedError": "An unexpected error occurred",
+      "fullNamePlaceholder": "Enter full name",
+      "emailPlaceholder": "Enter email address",
+      "mobilePlaceholder": "Enter mobile number",
+      "addressPlaceholder": "Enter complete address",
+      "referencePlaceholder": "Enter reference (optional)",
+      "editCustomerTitle": "Edit Customer",
+      "updateCustomer": "Update Customer",
+      "updateSuccess": "Customer updated successfully!",
+      "updateFailed": "Failed to update customer",
+      "fetchFailed": "Failed to load customer details"
     },
     "status": {
       "pending": "Pending",
+      "cutting": "Cutting",
       "inProgress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
@@ -192,6 +212,9 @@
       "viewMeasurements": "માપ જુઓ",
       "customerInfo": "ગ્રાહક માહિતી",
       "workpieceInfo": "કામના ટુકડાની માહિતી",
+      "newCustomerButton": "નવો ગ્રાહક બનાવો",
+      "existingCustomerButton": "મોજૂદા ગ્રાહક પસંદ કરો",
+      "manageCustomersButton": "ગ્રાહક યાદી મેनेજ કરો",
       "topMeasurements": "ટોપ માપ",
       "bottomMeasurements": "બોટમ માપ",
       "length": "લંબાઈ",
@@ -208,7 +231,8 @@
       "bottom": "બોટમ",
       "langot": "લંગોટ",
       "assignedTo": "સોંપેલ",
-      "remarks": "નોંધો"
+      "remarks": "નોંધો",
+      "convertPendingToCutting": "લંબાયેલુંને કટિંગમાં કન્વર્ટ કરો"
     },
     "productVariants": {
       "title": "ઉત્પાદન વેરિઅન્ટ્સ મેનેજમેન્ટ",
@@ -245,10 +269,26 @@
       "mobile": "મોબાઇલ નંબર",
       "address": "સરનામું",
       "reference": "સંદર્ભ",
-      "noCustomers": "કોઈ ગ્રાહક મળ્યો નથી. શરૂ કરવા માટે તમારો પહેલો ગ્રાહક ઉમેરો!"
+      "noCustomers": "કોઈ ગ્રાહક મળ્યો નથી. શરૂ કરવા માટે તમારો પહેલો ગ્રાહક ઉમેરો!",
+      "addNewCustomerTitle": "નવો ગ્રાહક ઉમેરો",
+      "createCustomer": "ગ્રાહક બનાવો",
+      "createSuccess": "ગ્રાહક સફળતાપૂર્વક બનાવાયો!",
+      "createFailed": "ગ્રાહક બનાવવામાં નિષ્ફળતા",
+      "unexpectedError": "અપ્રત્યાશિત ભૂલ સર્જાઈ",
+      "fullNamePlaceholder": "પૂરું નામ દાખલ કરો",
+      "emailPlaceholder": "ઇમેઇલ સરનામું દાખલ કરો",
+      "mobilePlaceholder": "મોબાઇલ નંબર દાખલ કરો",
+      "addressPlaceholder": "સંપૂર્ણ સરનામું દાખલ કરો",
+      "referencePlaceholder": "સંદર્ભ દાખલ કરો (વૈકલ્પિક)",
+      "editCustomerTitle": "ગ્રાહક સંપાદિત કરો",
+      "updateCustomer": "ગ્રાહક અપડેટ કરો",
+      "updateSuccess": "ગ્રાહક સફળતાપૂર્વક અપડેટ થયો!",
+      "updateFailed": "ગ્રાહક અપડેટ કરવામાં નિષ્ફળતા",
+      "fetchFailed": "ગ્રાહક વિગતો લોડ કરવામાં નિષ્ફળતા"
     },
     "status": {
       "pending": "લંબાયેલું",
+      "cutting": "કટિંગ",
       "inProgress": "પ્રગતિમાં",
       "completed": "પૂર્ણ",
       "cancelled": "રદ કરેલું"

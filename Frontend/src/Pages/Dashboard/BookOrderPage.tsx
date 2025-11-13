@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -7,9 +7,10 @@ import {
   type BookOrderRequest,
   type OrderItem,
 } from '../../Services/ApiServices/productOrderServices';
-import { getCustomersService, type Customer } from '../../Services/ApiServices/customerServices';
+import { getCustomersService, createCustomerService, type Customer } from '../../Services/ApiServices/customerServices';
 import { getProductsService, getProductVariantsService, type Product, type ProductVariant } from '../../Services/ApiServices/productServices';
 import { useToast } from '../../Utils/ToastContext';
+import Modal from '../../Components/Common/Modal';
 import {
   FormGroup,
   Label,
@@ -22,7 +23,9 @@ import {
   FaPlus,
   FaTrash,
   FaArrowLeft,
+  FaUserPlus,
 } from 'react-icons/fa';
+import ManageMeasurementModal from '../../Components/Common/ManageMeasurementModal';
 
 const PageContainer = styled.div`
   background: white;
@@ -167,6 +170,38 @@ const FormActions = styled.div`
   border-top: 2px solid #e0e0e0;
 `;
 
+const CustomerActionButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+`;
+
+const CustomerActionButton = styled.button`
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+`;
+
 const BookOrderPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -177,12 +212,24 @@ const BookOrderPage = () => {
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [formLoading, setFormLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const customerSelectRef = useRef<HTMLSelectElement>(null);
+  const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false);
+  const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
+  const [showMeasurementModal, setShowMeasurementModal] = useState(false);
+  const [newlyCreatedCustomer, setNewlyCreatedCustomer] = useState<Customer | null>(null);
 
   const [orderFormData, setOrderFormData] = useState<BookOrderRequest>({
     customerId: '',
     deliveryDate: null,
     notes: null,
     items: [],
+  });
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    fullName: '',
+    emailId: '',
+    mobileNo: '',
+    address: '',
+    reference: '',
   });
 
   const fetchCustomers = useCallback(async () => {
@@ -304,6 +351,81 @@ const BookOrderPage = () => {
     }
   };
 
+  const resetNewCustomerForm = () => {
+    setNewCustomerForm({
+      fullName: '',
+      emailId: '',
+      mobileNo: '',
+      address: '',
+      reference: '',
+    });
+  };
+
+  const handleOpenCreateCustomerModal = () => {
+    resetNewCustomerForm();
+    setShowCreateCustomerModal(true);
+  };
+
+  const handleCreateCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewCustomerForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !newCustomerForm.fullName.trim() ||
+      !newCustomerForm.emailId.trim() ||
+      !newCustomerForm.mobileNo.trim() ||
+      !newCustomerForm.address.trim()
+    ) {
+      showError('Please fill in all required customer details', 'Validation Error');
+      return;
+    }
+
+    setCreateCustomerLoading(true);
+    try {
+      const response = await createCustomerService({
+        fullName: newCustomerForm.fullName.trim(),
+        emailId: newCustomerForm.emailId.trim(),
+        mobileNo: newCustomerForm.mobileNo.trim(),
+        address: newCustomerForm.address.trim(),
+        reference: newCustomerForm.reference.trim() || null,
+      });
+
+      if ((response.success === 201 || response.success === 200) && response.data) {
+        const createdCustomer = response.data;
+        setCustomers((prev) => [createdCustomer, ...prev]);
+        setOrderFormData((prev) => ({ ...prev, customerId: createdCustomer.customerId }));
+        setNewlyCreatedCustomer(createdCustomer);
+        showSuccess(response.message || 'Customer created successfully!', 'Success');
+        setShowCreateCustomerModal(false);
+        setShowMeasurementModal(true);
+      } else {
+        const errorMsg = response.message || 'Failed to create customer';
+        showError(errorMsg, 'Create Failed');
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        const errorMsg = axiosError.response?.data?.message || 'Failed to create customer';
+        showError(errorMsg, 'Create Failed');
+      } else {
+        showError('An unexpected error occurred', 'Create Failed');
+      }
+    } finally {
+      setCreateCustomerLoading(false);
+    }
+  };
+
+  const handleMeasurementUpdated = () => {
+    showSuccess('Measurements saved successfully!', 'Success');
+    setShowMeasurementModal(false);
+  };
+
   if (loading) {
     return (
       <PageContainer>
@@ -326,8 +448,25 @@ const BookOrderPage = () => {
       <form onSubmit={handleBookOrder} style={{ display: 'flex', flexDirection: 'column' }}>
         <FormGroup>
           <Label htmlFor="customerId">{t('orders.customer')} *</Label>
+          <CustomerActionButtons>
+            <CustomerActionButton
+              type="button"
+              onClick={handleOpenCreateCustomerModal}
+              disabled={formLoading}
+            >
+              {t('orders.newCustomerButton') || 'Create New Customer'}
+            </CustomerActionButton>
+            <CustomerActionButton
+              type="button"
+              onClick={() => customerSelectRef.current?.focus()}
+              disabled={formLoading}
+            >
+              {t('orders.existingCustomerButton') || 'Select Existing Customer'}
+            </CustomerActionButton>
+          </CustomerActionButtons>
           <Select
             id="customerId"
+            ref={customerSelectRef}
             value={orderFormData.customerId}
             onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerId: e.target.value }))}
             required
@@ -342,8 +481,8 @@ const BookOrderPage = () => {
           </Select>
         </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="deliveryDate">{t('orders.deliveryDate')} ({t('orders.optional')})</Label>
+        <FormGroup>
+          <Label htmlFor="deliveryDate">{t('orders.deliveryDate')} ({t('orders.optional')})</Label>
           <Input
             type="date"
             id="deliveryDate"
@@ -358,8 +497,8 @@ const BookOrderPage = () => {
           />
         </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="notes">{t('orders.notes')} ({t('orders.optional')})</Label>
+        <FormGroup>
+          <Label htmlFor="notes">{t('orders.notes')} ({t('orders.optional')})</Label>
           <Input
             type="text"
             id="notes"
@@ -376,23 +515,23 @@ const BookOrderPage = () => {
         </FormGroup>
 
         <div style={{ marginTop: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <Label style={{ margin: 0 }}>{t('orders.orderItems')} *</Label>
-              <ActionButton type="button" onClick={handleAddOrderItem} style={{ padding: '8px 16px', fontSize: '12px' }}>
-                <FaPlus /> {t('orders.addItem')}
-              </ActionButton>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <Label style={{ margin: 0 }}>{t('orders.orderItems')} *</Label>
+            <ActionButton type="button" onClick={handleAddOrderItem} style={{ padding: '8px 16px', fontSize: '12px' }}>
+              <FaPlus /> {t('orders.addItem')}
+            </ActionButton>
+          </div>
 
-            {orderFormData.items.length === 0 ? (
-              <EmptyState>
-                <EmptyStateText>{t('orders.noItemsAdded') || 'No items added. Click "Add Item" to add products to the order.'}</EmptyStateText>
-              </EmptyState>
-            ) : (
+          {orderFormData.items.length === 0 ? (
+            <EmptyState>
+              <EmptyStateText>{t('orders.noItemsAdded') || 'No items added. Click "Add Item" to add products to the order.'}</EmptyStateText>
+            </EmptyState>
+          ) : (
             orderFormData.items.map((item, index) => (
               <OrderItemRow key={index}>
                 <OrderItemFields>
-                    <OrderItemField>
-                      <Label>{t('orders.product')} *</Label>
+                  <OrderItemField>
+                    <Label>{t('orders.product')} *</Label>
                     <Select
                       value={item.productId}
                       onChange={(e) => handleOrderItemChange(index, 'productId', e.target.value)}
@@ -407,8 +546,8 @@ const BookOrderPage = () => {
                       ))}
                     </Select>
                   </OrderItemField>
-                    <OrderItemField>
-                      <Label>{t('orders.variant')} *</Label>
+                  <OrderItemField>
+                    <Label>{t('orders.variant')} *</Label>
                     <Select
                       value={item.productVariantId}
                       onChange={(e) => handleOrderItemChange(index, 'productVariantId', e.target.value)}
@@ -425,8 +564,8 @@ const BookOrderPage = () => {
                         ))}
                     </Select>
                   </OrderItemField>
-                    <OrderItemField>
-                      <Label>{t('orders.quantity')} *</Label>
+                  <OrderItemField>
+                    <Label>{t('orders.quantity')} *</Label>
                     <Input
                       type="number"
                       min="1"
@@ -465,6 +604,92 @@ const BookOrderPage = () => {
           </ActionButton>
         </FormActions>
       </form>
+
+      <Modal
+        isOpen={showCreateCustomerModal}
+        onClose={() => (!createCustomerLoading ? setShowCreateCustomerModal(false) : undefined)}
+        title={`${t('customers.addNewCustomerTitle') || 'Add New Customer'}`}
+        size="large"
+        footer={
+          <>
+            <CustomerActionButton
+              type="button"
+              onClick={() => setShowCreateCustomerModal(false)}
+              disabled={createCustomerLoading}
+            >
+              {t('common.cancel')}
+            </CustomerActionButton>
+            <Button onClick={handleCreateCustomer} disabled={createCustomerLoading}>
+              {createCustomerLoading ? <LoadingSpinner /> : <><FaUserPlus /> {t('customers.createCustomer') || 'Create Customer'}</>}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleCreateCustomer}>
+          <FormGroup>
+            <Label htmlFor="newCustomerFullName">{t('customers.fullName')} *</Label>
+            <Input
+              id="newCustomerFullName"
+              name="fullName"
+              value={newCustomerForm.fullName}
+              onChange={handleCreateCustomerChange}
+              required
+              disabled={createCustomerLoading}
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="newCustomerEmail">{t('customers.email')} *</Label>
+            <Input
+              id="newCustomerEmail"
+              type="email"
+              name="emailId"
+              value={newCustomerForm.emailId}
+              onChange={handleCreateCustomerChange}
+              required
+              disabled={createCustomerLoading}
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="newCustomerMobile">{t('customers.mobile')} *</Label>
+            <Input
+              id="newCustomerMobile"
+              name="mobileNo"
+              value={newCustomerForm.mobileNo}
+              onChange={handleCreateCustomerChange}
+              required
+              disabled={createCustomerLoading}
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="newCustomerAddress">{t('customers.address')} *</Label>
+            <Input
+              id="newCustomerAddress"
+              name="address"
+              value={newCustomerForm.address}
+              onChange={handleCreateCustomerChange}
+              required
+              disabled={createCustomerLoading}
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label htmlFor="newCustomerReference">{t('customers.reference') || 'Reference'} ({t('orders.optional')})</Label>
+            <Input
+              id="newCustomerReference"
+              name="reference"
+              value={newCustomerForm.reference}
+              onChange={handleCreateCustomerChange}
+              disabled={createCustomerLoading}
+            />
+          </FormGroup>
+        </form>
+      </Modal>
+
+      <ManageMeasurementModal
+        isOpen={showMeasurementModal}
+        onClose={() => setShowMeasurementModal(false)}
+        customer={newlyCreatedCustomer}
+        onMeasurementUpdated={handleMeasurementUpdated}
+      />
     </PageContainer>
   );
 };

@@ -263,6 +263,15 @@ export const API_CONFIG: ApiConfig = {
             method: 'GET',
             baseUrl: NODEJS_BASE_URL,
         },
+
+        // ============================================
+        // ITEM STATUS ENDPOINTS
+        // ============================================
+        convertPendingToCutting: {
+            path: '/itemStatuses/convert-pending-to-cutting',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 
