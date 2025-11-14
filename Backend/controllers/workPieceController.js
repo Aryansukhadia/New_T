@@ -9,7 +9,7 @@ import sendResponse from "../utils/response.js";
  * Updates:
  * 1. OrderWorkPiece.currentStatus from 'pending' to 'cutting'
  * 2. Creates a WorkStage record to track the status change
- * 3. Updates related ItemStatus records if they exist
+ * Only updates the specified work piece and its own work stages
  */
 export const convertPendingToCutting = async (req, res) => {
     try {
@@ -113,7 +113,7 @@ export const convertPendingToCutting = async (req, res) => {
                     orderWorkPieceId: workpieceId.trim(),
                     stage: 'cutting',
                     startedAt: new Date(),
-                    updatedById: req.user?.userId || null,
+                    updatedById: req.user?.userId,
                     remarks: null
                 },
                 include: {
@@ -121,32 +121,14 @@ export const convertPendingToCutting = async (req, res) => {
                 }
             });
 
-            // 4. Update related ItemStatus records if they exist
-            // Find ItemStatus records for this orderItem and productItem combination
-            const itemStatuses = await tx.itemStatus.findMany({
-                where: {
-                    orderItemId: workPiece.orderItemId,
-                    productItemId: workPiece.productItemId,
-                    status: 'pending'
-                }
-            });
-
-            return {
-                workPiece: updatedWorkPiece,
-                workStage: newWorkStage,
-                updatedItemStatusesCount: itemStatuses.length
-            };
+            // Only mutate this work piece and its stages
+            return { workPiece: updatedWorkPiece, workStage: newWorkStage };
         });
 
         return sendResponse(
             res,
             200,
-            `Successfully converted work piece from pending to cutting. Updated ${result.updatedItemStatusesCount} related item status(es).`,
-            {
-                workPiece: result.workPiece,
-                workStage: result.workStage,
-                updatedItemStatusesCount: result.updatedItemStatusesCount
-            }
+            `Successfully converted work piece from pending to cutting.`
         );
     } catch (error) {
         console.error("convertPendingToCutting error:", error);
@@ -170,29 +152,37 @@ export const getWorkPieceById = async (req, res) => {
 
         const workPiece = await prisma.orderWorkPiece.findUnique({
             where: { id: workpieceId.trim() },
-            include: {
+            select: {
+                id: true,
+                createdAt: true,
                 orderItem: {
-                    include: {
+                    select: {
                         productOrder: {
-                            include: {
-                                customer: true
-                            }
-                        },
-                        productVariant: {
-                            include: {
-                                product: true
+                            select: {
+                                orderDate: true
                             }
                         }
                     }
                 },
-                productItem: true,
-                assignedTo: true,
+                productItem: {
+                    select: {
+                        id: true,
+                        name: true,
+                        imageUrl: true,
+                        createdAt: true
+                    }
+                },
                 workStages: {
-                    include: {
-                        updatedBy: true
-                    },
                     orderBy: {
                         startedAt: 'desc'
+                    },
+                    take: 1,
+                    select: {
+                        id: true,
+                        stage: true,
+                        startedAt: true,
+                        completedAt: true,
+                        remarks: true
                     }
                 }
             }
@@ -202,7 +192,28 @@ export const getWorkPieceById = async (req, res) => {
             return sendResponse(res, 404, "Work piece not found");
         }
 
-        return sendResponse(res, 200, "Work piece fetched successfully", workPiece);
+        const latestStage = Array.isArray(workPiece.workStages) && workPiece.workStages.length > 0
+            ? workPiece.workStages[0]
+            : null;
+
+        const lastUpdated =
+            (latestStage && (latestStage.completedAt || latestStage.startedAt)) ||
+            workPiece.createdAt ||
+            null;
+
+        console.log({
+            workPieceStage: latestStage,
+            orderDate: workPiece.orderItem?.productOrder?.orderDate ?? null,
+            productItem: workPiece.productItem,
+            lastUpdated
+        });
+
+        return sendResponse(res, 200, "Work piece fetched successfully", {
+            workPieceStage: latestStage,
+            orderDate: workPiece.orderItem?.productOrder?.orderDate ?? null,
+            productItem: workPiece.productItem,
+            lastUpdated
+        });
     } catch (error) {
         console.error("getWorkPieceById error:", error);
         return sendResponse(res, 500, "Failed to fetch work piece", { error: error.message });
@@ -281,9 +292,9 @@ export const getWorkPieceStatusHistory = async (req, res) => {
                     fullName: stage.updatedBy.fullName,
                     emailId: stage.updatedBy.emailId
                 } : null,
-                duration: stage.startedAt && stage.completedAt 
+                duration: stage.startedAt && stage.completedAt
                     ? Math.round((new Date(stage.completedAt) - new Date(stage.startedAt)) / (1000 * 60 * 60)) // Duration in hours
-                    : stage.startedAt 
+                    : stage.startedAt
                         ? Math.round((new Date() - new Date(stage.startedAt)) / (1000 * 60 * 60)) // Current duration if not completed
                         : null,
                 isCompleted: stage.completedAt !== null,
