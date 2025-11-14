@@ -8,14 +8,12 @@ import {
   type ProductOrderDetails,
   type WorkpieceMeasurements,
 } from '../../Services/ApiServices/productOrderServices';
-import { convertPendingToCuttingService } from '../../Services/ApiServices/itemStatusServices';
 import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
 import { LoadingSpinner } from '../../Components/Common/FormComponents';
 import {
   FaArrowLeft,
   FaRuler,
-  FaCut,
   FaEye,
 } from 'react-icons/fa';
 
@@ -241,33 +239,6 @@ const ButtonGroup = styled.div`
   margin-top: 12px;
 `;
 
-const ConvertStatusButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
 const SectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -363,7 +334,7 @@ const EmptyStateText = styled.p`
 const OrderDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { showError, showSuccess } = useToast();
+  const { showError } = useToast();
   const { t } = useTranslation();
 
   const [order, setOrder] = useState<ProductOrderDetails | null>(null);
@@ -371,7 +342,6 @@ const OrderDetailsPage = () => {
   const [isMeasurementsModalOpen, setIsMeasurementsModalOpen] = useState(false);
   const [measurements, setMeasurements] = useState<WorkpieceMeasurements | null>(null);
   const [loadingMeasurements, setLoadingMeasurements] = useState(false);
-  const [convertingStatus, setConvertingStatus] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -434,38 +404,6 @@ const OrderDetailsPage = () => {
       day: 'numeric',
     });
   };
-
-  const handleConvertPendingToCutting = async () => {
-    if (!id) return;
-
-    try {
-      setConvertingStatus(true);
-      const response = await convertPendingToCuttingService();
-      if (response.success === 200) {
-        // Refresh order details after conversion
-        await fetchOrderDetails();
-        showSuccess(
-          response.message || 'Successfully converted pending items to cutting',
-          'Success'
-        );
-      } else {
-        showError(response.message || 'Failed to convert pending items to cutting', 'Error');
-      }
-    } catch (err: unknown) {
-      console.error('Error converting pending to cutting:', err);
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        showError(axiosError.response?.data?.message || 'Failed to convert pending items to cutting', 'Error');
-      } else {
-        showError('Failed to convert pending items to cutting. Please try again.', 'Error');
-      }
-    } finally {
-      setConvertingStatus(false);
-    }
-  };
-
-  // Check if there are any pending work pieces
-  const hasPendingWorkPieces = order?.workPieces.some(wp => wp.currentStatus.toLowerCase() === 'pending') || false;
 
   if (loading) {
     return (
@@ -531,14 +469,6 @@ const OrderDetailsPage = () => {
 
       <SectionHeader>
         <SectionTitle>{t('orders.workPieces')} ({order.workPieces.length})</SectionTitle>
-        {hasPendingWorkPieces && (
-          <ConvertStatusButton
-            onClick={handleConvertPendingToCutting}
-            disabled={convertingStatus}
-          >
-            <FaCut /> {convertingStatus ? t('common.loading') : t('orders.convertPendingToCutting')}
-          </ConvertStatusButton>
-        )}
       </SectionHeader>
       {order.workPieces.length === 0 ? (
         <EmptyState>

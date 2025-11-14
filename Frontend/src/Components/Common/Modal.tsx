@@ -135,7 +135,7 @@ interface ModalProps {
   size?: 'small' | 'medium' | 'large';
 }
 
-const Modal = ({ isOpen, onClose, title, children, footer, size = 'medium' }: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, footer, size = 'large' }: ModalProps) => {
   if (!isOpen) return null;
 
   return (

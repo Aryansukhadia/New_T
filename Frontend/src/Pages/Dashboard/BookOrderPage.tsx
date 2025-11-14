@@ -10,7 +10,6 @@ import {
 import { getCustomersService, createCustomerService, type Customer } from '../../Services/ApiServices/customerServices';
 import { getProductsService, getProductVariantsService, type Product, type ProductVariant } from '../../Services/ApiServices/productServices';
 import { useToast } from '../../Utils/ToastContext';
-import Modal from '../../Components/Common/Modal';
 import {
   FormGroup,
   Label,
@@ -24,8 +23,11 @@ import {
   FaTrash,
   FaArrowLeft,
   FaUserPlus,
+  FaChevronDown,
+  FaChevronRight,
+  FaRuler,
 } from 'react-icons/fa';
-import ManageMeasurementModal from '../../Components/Common/ManageMeasurementModal';
+import ManageMeasurementPanel from '../../Components/Common/ManageMeasurementPanel';
 
 const PageContainer = styled.div`
   background: white;
@@ -106,6 +108,13 @@ const Select = styled.select`
   }
 `;
 
+const CustomerButtonContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+`;
+
 const OrderItemRow = styled.div`
   display: flex;
   gap: 12px;
@@ -161,6 +170,35 @@ const EmptyStateText = styled.p`
   margin: 0;
 `;
 
+const AccordionHeader = styled.button`
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  cursor: pointer;
+  font-weight: 700;
+  color: #333;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+`;
+
+const AccordionTitle = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 12px;
+`;
+
+const AccordionContent = styled.div`
+  width: 100%;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #ffffff;
+`;
+
 const FormActions = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -202,6 +240,12 @@ const CustomerActionButton = styled.button`
   }
 `;
 
+const AccordionSelectionBox = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+`;
+
 const BookOrderPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -213,10 +257,12 @@ const BookOrderPage = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const customerSelectRef = useRef<HTMLSelectElement>(null);
-  const [showCreateCustomerModal, setShowCreateCustomerModal] = useState(false);
+  const [showCreateCustomerForm, setShowCreateCustomerForm] = useState(false);
   const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
-  const [showMeasurementModal, setShowMeasurementModal] = useState(false);
   const [newlyCreatedCustomer, setNewlyCreatedCustomer] = useState<Customer | null>(null);
+  const [isCustomerAccordionOpen, setIsCustomerAccordionOpen] = useState(false);
+  const [isMeasurementAccordionOpen, setIsMeasurementAccordionOpen] = useState(false);
+  const [newCustomer, setNewCustomer] = useState(false);
 
   const [orderFormData, setOrderFormData] = useState<BookOrderRequest>({
     customerId: '',
@@ -361,9 +407,12 @@ const BookOrderPage = () => {
     });
   };
 
-  const handleOpenCreateCustomerModal = () => {
+  const handleOpenCreateCustomerForm = () => {
+    setNewCustomer(true);
     resetNewCustomerForm();
-    setShowCreateCustomerModal(true);
+    setShowCreateCustomerForm(true);
+    setIsCustomerAccordionOpen(true);
+    setIsMeasurementAccordionOpen(false);
   };
 
   const handleCreateCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -374,8 +423,7 @@ const BookOrderPage = () => {
     }));
   };
 
-  const handleCreateCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateCustomer = async () => {
     if (
       !newCustomerForm.fullName.trim() ||
       !newCustomerForm.emailId.trim() ||
@@ -402,8 +450,9 @@ const BookOrderPage = () => {
         setOrderFormData((prev) => ({ ...prev, customerId: createdCustomer.customerId }));
         setNewlyCreatedCustomer(createdCustomer);
         showSuccess(response.message || 'Customer created successfully!', 'Success');
-        setShowCreateCustomerModal(false);
-        setShowMeasurementModal(true);
+        // Keep accordions visible; move focus to measurement accordion
+        setIsCustomerAccordionOpen(false);
+        setIsMeasurementAccordionOpen(true);
       } else {
         const errorMsg = response.message || 'Failed to create customer';
         showError(errorMsg, 'Create Failed');
@@ -423,7 +472,8 @@ const BookOrderPage = () => {
 
   const handleMeasurementUpdated = () => {
     showSuccess('Measurements saved successfully!', 'Success');
-    setShowMeasurementModal(false);
+    setIsMeasurementAccordionOpen(false);
+    setNewCustomer(false);
   };
 
   if (loading) {
@@ -448,38 +498,162 @@ const BookOrderPage = () => {
       <form onSubmit={handleBookOrder} style={{ display: 'flex', flexDirection: 'column' }}>
         <FormGroup>
           <Label htmlFor="customerId">{t('orders.customer')} *</Label>
-          <CustomerActionButtons>
-            <CustomerActionButton
-              type="button"
-              onClick={handleOpenCreateCustomerModal}
+          <CustomerButtonContainer>
+            <CustomerActionButtons>
+              <CustomerActionButton
+                type="button"
+                onClick={handleOpenCreateCustomerForm}
+                disabled={formLoading || newCustomer}
+              >
+                {t('orders.newCustomerButton') || 'Create New Customer'}
+              </CustomerActionButton>
+              <CustomerActionButton
+                type="button"
+                onClick={() => {
+                  customerSelectRef.current?.focus();
+                  setNewCustomer(false)
+                }}
+                disabled={formLoading || !newCustomer}
+              >
+                {t('orders.existingCustomerButton') || 'Select Existing Customer'}
+              </CustomerActionButton>
+            </CustomerActionButtons>
+            {newCustomer && (
+              <AccordionSelectionBox>
+                <AccordionHeader
+                  type="button"
+                  onClick={() => setIsCustomerAccordionOpen((o) => !o)}
+                  aria-expanded={isCustomerAccordionOpen}
+                >
+                  <AccordionTitle>
+                    <FaUserPlus /> {t('customers.addNewCustomerTitle') || 'Add New Customer'}
+                  </AccordionTitle>
+                  {isCustomerAccordionOpen ? <FaChevronDown /> : <FaChevronRight />}
+                </AccordionHeader>
+                <AccordionHeader
+                  type="button"
+                  onClick={() => setIsMeasurementAccordionOpen((o) => !o)}
+                  aria-expanded={isMeasurementAccordionOpen}
+                >
+                  <AccordionTitle>
+                    <FaRuler /> {t('customers.measurements') || 'Measurements'}
+                  </AccordionTitle>
+                  {isMeasurementAccordionOpen ? <FaChevronDown /> : <FaChevronRight />}
+                </AccordionHeader>
+              </AccordionSelectionBox>
+            )}
+          </CustomerButtonContainer>
+          {!newCustomer && (
+            <Select
+              id="customerId"
+              ref={customerSelectRef}
+              value={orderFormData.customerId}
+              onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerId: e.target.value }))}
+              required
               disabled={formLoading}
             >
-              {t('orders.newCustomerButton') || 'Create New Customer'}
-            </CustomerActionButton>
-            <CustomerActionButton
-              type="button"
-              onClick={() => customerSelectRef.current?.focus()}
-              disabled={formLoading}
-            >
-              {t('orders.existingCustomerButton') || 'Select Existing Customer'}
-            </CustomerActionButton>
-          </CustomerActionButtons>
-          <Select
-            id="customerId"
-            ref={customerSelectRef}
-            value={orderFormData.customerId}
-            onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerId: e.target.value }))}
-            required
-            disabled={formLoading}
-          >
-            <option value="">{t('orders.customer')} {t('common.select') || 'Select'}</option>
-            {customers.map((customer) => (
-              <option key={customer.customerId} value={customer.customerId}>
-                {customer.fullName} ({customer.emailId})
-              </option>
-            ))}
-          </Select>
+              <option value="">{t('orders.customer')} {t('common.select') || 'Select'}</option>
+              {customers.map((customer) => (
+                <option key={customer.customerId} value={customer.customerId}>
+                  {customer.fullName} ({customer.emailId})
+                </option>
+              ))}
+            </Select>
+          )}
         </FormGroup>
+        {showCreateCustomerForm && newCustomer && (
+          <>
+            {isCustomerAccordionOpen && (
+              <AccordionContent>
+                <FormGroup>
+                  <Label htmlFor="newCustomerFullName">{t('customers.fullName')} *</Label>
+                  <Input
+                    id="newCustomerFullName"
+                    name="fullName"
+                    value={newCustomerForm.fullName}
+                    onChange={handleCreateCustomerChange}
+                    required
+                    disabled={createCustomerLoading}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <Label htmlFor="newCustomerEmail">{t('customers.email')} *</Label>
+                  <Input
+                    id="newCustomerEmail"
+                    type="email"
+                    name="emailId"
+                    value={newCustomerForm.emailId}
+                    onChange={handleCreateCustomerChange}
+                    required
+                    disabled={createCustomerLoading}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <Label htmlFor="newCustomerMobile">{t('customers.mobile')} *</Label>
+                  <Input
+                    id="newCustomerMobile"
+                    name="mobileNo"
+                    value={newCustomerForm.mobileNo}
+                    onChange={handleCreateCustomerChange}
+                    required
+                    disabled={createCustomerLoading}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <Label htmlFor="newCustomerAddress">{t('customers.address')} *</Label>
+                  <Input
+                    id="newCustomerAddress"
+                    name="address"
+                    value={newCustomerForm.address}
+                    onChange={handleCreateCustomerChange}
+                    required
+                    disabled={createCustomerLoading}
+                  />
+                </FormGroup>
+                <FormGroup>
+                  <Label htmlFor="newCustomerReference">{t('customers.reference') || 'Reference'} ({t('orders.optional')})</Label>
+                  <Input
+                    id="newCustomerReference"
+                    name="reference"
+                    value={newCustomerForm.reference}
+                    onChange={handleCreateCustomerChange}
+                    disabled={createCustomerLoading}
+                  />
+                </FormGroup>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                  <CustomerActionButton
+                    type="button"
+                    onClick={() => {
+                      setShowCreateCustomerForm(false);
+                      setIsCustomerAccordionOpen(false);
+                      setIsMeasurementAccordionOpen(false);
+                    }}
+                    disabled={createCustomerLoading}
+                  >
+                    {t('common.cancel')}
+                  </CustomerActionButton>
+                  <Button type="button" onClick={handleCreateCustomer} disabled={createCustomerLoading}>
+                    {createCustomerLoading ? <LoadingSpinner /> : <><FaUserPlus /> {t('customers.createCustomer') || 'Create Customer'}</>}
+                  </Button>
+                </div>
+              </AccordionContent>
+            )}
+            {isMeasurementAccordionOpen && (
+              <AccordionContent>
+                {newlyCreatedCustomer ? (
+                  <ManageMeasurementPanel
+                    customer={newlyCreatedCustomer}
+                    onMeasurementUpdated={handleMeasurementUpdated}
+                  />
+                ) : (
+                  <EmptyState>
+                    <EmptyStateText>{t('customers.createFirst') || 'Please create the customer first to add measurements.'}</EmptyStateText>
+                  </EmptyState>
+                )}
+              </AccordionContent>
+            )}
+          </>
+        )}
 
         <FormGroup>
           <Label htmlFor="deliveryDate">{t('orders.deliveryDate')} ({t('orders.optional')})</Label>
@@ -605,91 +779,7 @@ const BookOrderPage = () => {
         </FormActions>
       </form>
 
-      <Modal
-        isOpen={showCreateCustomerModal}
-        onClose={() => (!createCustomerLoading ? setShowCreateCustomerModal(false) : undefined)}
-        title={`${t('customers.addNewCustomerTitle') || 'Add New Customer'}`}
-        size="large"
-        footer={
-          <>
-            <CustomerActionButton
-              type="button"
-              onClick={() => setShowCreateCustomerModal(false)}
-              disabled={createCustomerLoading}
-            >
-              {t('common.cancel')}
-            </CustomerActionButton>
-            <Button onClick={handleCreateCustomer} disabled={createCustomerLoading}>
-              {createCustomerLoading ? <LoadingSpinner /> : <><FaUserPlus /> {t('customers.createCustomer') || 'Create Customer'}</>}
-            </Button>
-          </>
-        }
-      >
-        <form onSubmit={handleCreateCustomer}>
-          <FormGroup>
-            <Label htmlFor="newCustomerFullName">{t('customers.fullName')} *</Label>
-            <Input
-              id="newCustomerFullName"
-              name="fullName"
-              value={newCustomerForm.fullName}
-              onChange={handleCreateCustomerChange}
-              required
-              disabled={createCustomerLoading}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="newCustomerEmail">{t('customers.email')} *</Label>
-            <Input
-              id="newCustomerEmail"
-              type="email"
-              name="emailId"
-              value={newCustomerForm.emailId}
-              onChange={handleCreateCustomerChange}
-              required
-              disabled={createCustomerLoading}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="newCustomerMobile">{t('customers.mobile')} *</Label>
-            <Input
-              id="newCustomerMobile"
-              name="mobileNo"
-              value={newCustomerForm.mobileNo}
-              onChange={handleCreateCustomerChange}
-              required
-              disabled={createCustomerLoading}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="newCustomerAddress">{t('customers.address')} *</Label>
-            <Input
-              id="newCustomerAddress"
-              name="address"
-              value={newCustomerForm.address}
-              onChange={handleCreateCustomerChange}
-              required
-              disabled={createCustomerLoading}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label htmlFor="newCustomerReference">{t('customers.reference') || 'Reference'} ({t('orders.optional')})</Label>
-            <Input
-              id="newCustomerReference"
-              name="reference"
-              value={newCustomerForm.reference}
-              onChange={handleCreateCustomerChange}
-              disabled={createCustomerLoading}
-            />
-          </FormGroup>
-        </form>
-      </Modal>
-
-      <ManageMeasurementModal
-        isOpen={showMeasurementModal}
-        onClose={() => setShowMeasurementModal(false)}
-        customer={newlyCreatedCustomer}
-        onMeasurementUpdated={handleMeasurementUpdated}
-      />
+      {/* Measurement panel is rendered within the accordion above when opened */}
     </PageContainer>
   );
 };

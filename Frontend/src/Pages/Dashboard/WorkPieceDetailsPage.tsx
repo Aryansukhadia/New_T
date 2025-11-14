@@ -2,19 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { useTranslation } from '../../hooks/useTranslation';
-import {
-  getWorkpieceMeasurementsService,
-  type WorkpieceMeasurements,
-} from '../../Services/ApiServices/productOrderServices';
 import { useToast } from '../../Utils/ToastContext';
 import { LoadingSpinner } from '../../Components/Common/FormComponents';
 import {
   FaArrowLeft,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
+  FaCut,
   FaBox,
 } from 'react-icons/fa';
+import { convertWorkPiecePendingToCuttingService, getWorkPieceByIdService, type WorkPieceSummary } from '../../Services/ApiServices/workPieceServices';
 
 const PageContainer = styled.div`
   background: white;
@@ -58,6 +53,33 @@ const BackButton = styled.button`
     border-color: #ccc;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ConvertStatusButton = styled.button`
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
@@ -201,11 +223,12 @@ const EmptyStateText = styled.p`
 const WorkPieceDetailsPage = () => {
   const { workpieceId } = useParams<{ workpieceId: string }>();
   const navigate = useNavigate();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   const { t } = useTranslation();
 
-  const [measurements, setMeasurements] = useState<WorkpieceMeasurements | null>(null);
+  const [summary, setSummary] = useState<WorkPieceSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [convertingStatus, setConvertingStatus] = useState(false);
 
   const fetchWorkpieceDetails = useCallback(async () => {
     if (!workpieceId) {
@@ -215,15 +238,13 @@ const WorkPieceDetailsPage = () => {
 
     try {
       setLoading(true);
-      // Automatically call the measurements API when page opens
-      const response = await getWorkpieceMeasurementsService(workpieceId);
+      const response = await getWorkPieceByIdService(workpieceId);
 
       if (response.success === 200 && response.data) {
-        // Set the measurements data when API call succeeds
-        setMeasurements(response.data);
+        setSummary(response.data);
       } else {
         showError(response.message || 'Failed to load work piece details', 'Error');
-        setMeasurements(null);
+        setSummary(null);
       }
     } catch (err: unknown) {
       console.error('Error fetching work piece details:', err);
@@ -233,7 +254,7 @@ const WorkPieceDetailsPage = () => {
       } else {
         showError('Failed to load work piece details. Please try again.', 'Error');
       }
-      setMeasurements(null);
+      setSummary(null);
     } finally {
       setLoading(false);
     }
@@ -257,6 +278,26 @@ const WorkPieceDetailsPage = () => {
     });
   };
 
+  const handleConvertPendingToCutting = async () => {
+    if (!workpieceId) return;
+
+    try {
+      setConvertingStatus(true);
+      const response = await convertWorkPiecePendingToCuttingService(workpieceId);
+      if (response.success === 200) {
+        await fetchWorkpieceDetails();
+        showSuccess(response.message || 'Converted to Cutting', 'Success');
+      } else {
+        showError(response.message || 'Failed to convert', 'Error');
+      }
+    } catch (err: unknown) {
+      console.error('Error converting workpiece to cutting:', err);
+      showError('Failed to convert. Please try again.', 'Error');
+    } finally {
+      setConvertingStatus(false);
+    }
+  };
+
   const handleBack = () => {
     // Try to go back to the previous page, or default to orders
     if (window.history.length > 1) {
@@ -276,7 +317,7 @@ const WorkPieceDetailsPage = () => {
     );
   }
 
-  if (!measurements) {
+  if (!summary) {
     return (
       <PageContainer>
         <PageHeader>
@@ -295,7 +336,7 @@ const WorkPieceDetailsPage = () => {
   return (
     <PageContainer>
       <PageHeader>
-        <PageTitle>{t('orders.workpieceDetails')} - {measurements.workpiece.productItem.name}</PageTitle>
+        <PageTitle>{t('orders.workpieceDetails')} - {summary.productItem.name}</PageTitle>
         <BackButton onClick={handleBack}>
           <FaArrowLeft /> {t('common.back')}
         </BackButton>
@@ -307,59 +348,46 @@ const WorkPieceDetailsPage = () => {
           <CardTitle>
             <FaBox /> {t('orders.workpieceInfo')}
           </CardTitle>
-          {measurements.workpiece.productItem.imageUrl && (
+          {summary.productItem.imageUrl && (
             <WorkPieceImage
-              src={measurements.workpiece.productItem.imageUrl}
-              alt={measurements.workpiece.productItem.name}
+              src={summary.productItem.imageUrl}
+              alt={summary.productItem.name}
             />
           )}
           <InfoItem>
             <InfoLabel>{t('orders.product')}</InfoLabel>
-            <InfoValue>{measurements.workpiece.productItem.name}</InfoValue>
+            <InfoValue>{summary.productItem.name}</InfoValue>
           </InfoItem>
           <InfoItem>
             <InfoLabel>{t('orders.status')}</InfoLabel>
             <InfoValue>
-              <StatusBadge status={measurements.workpiece.currentStatus}>
-                {t(`status.${measurements.workpiece.currentStatus.toLowerCase()}`) || measurements.workpiece.currentStatus}
+              <StatusBadge status={summary.workPieceStage?.stage || 'pending'}>
+                {summary.workPieceStage?.stage ? (t(`status.${summary.workPieceStage.stage.toLowerCase()}`) || summary.workPieceStage.stage) : '—'}
               </StatusBadge>
             </InfoValue>
           </InfoItem>
-          {measurements.workpiece.remarks && (
-            <InfoItem>
-              <InfoLabel>{t('orders.remarks')}</InfoLabel>
-              <InfoValue>{measurements.workpiece.remarks}</InfoValue>
-            </InfoItem>
-          )}
+          <InfoItem>
+            <InfoLabel>{t('orders.orderDate')}</InfoLabel>
+            <InfoValue>{formatDate(summary.orderDate)}</InfoValue>
+          </InfoItem>
           <InfoItem>
             <InfoLabel>{t('orders.createdAt')}</InfoLabel>
-            <InfoValue>{formatDate(measurements.workpiece.createdAt)}</InfoValue>
+            <InfoValue>{formatDate(summary.productItem.createdAt)}</InfoValue>
           </InfoItem>
-        </InfoCard>
+          <InfoItem>
+            <InfoLabel>{t('orders.lastUpdated') || 'Last Updated'}</InfoLabel>
+            <InfoValue>{formatDate(summary.lastUpdated)}</InfoValue>
+          </InfoItem>
 
-        {/* Customer Information */}
-        <InfoCard>
-          <CardTitle>
-            <FaUser /> {t('orders.customerInfo')}
-          </CardTitle>
-          <InfoItem>
-            <InfoLabel>{t('customers.fullName')}</InfoLabel>
-            <InfoValue>{measurements.customer.fullName}</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>
-              <FaEnvelope style={{ marginRight: '4px' }} />
-              {t('customers.email')}
-            </InfoLabel>
-            <InfoValue>{measurements.customer.emailId}</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>
-              <FaPhone style={{ marginRight: '4px' }} />
-              {t('customers.mobile')}
-            </InfoLabel>
-            <InfoValue>{measurements.customer.mobileNo}</InfoValue>
-          </InfoItem>
+          {summary.workPieceStage?.stage?.toLowerCase() === 'pending' && (
+            <ConvertStatusButton
+              onClick={handleConvertPendingToCutting}
+              disabled={convertingStatus}
+            >
+              <FaCut /> {convertingStatus ? t('common.loading') : t('orders.convertPendingToCutting')}
+            </ConvertStatusButton>
+          )}
+
         </InfoCard>
       </ContentGrid>
     </PageContainer>

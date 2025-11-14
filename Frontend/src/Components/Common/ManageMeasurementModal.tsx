@@ -13,13 +13,11 @@ import {
   editMeasurementService,
   addMeasurementService,
   type CustomerMeasurementResponse,
-  type TopMeasurement,
-  type BottomMeasurement,
   type EditMeasurementRequest,
   type AddMeasurementRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import { FaRuler, FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus } from 'react-icons/fa';
+import { FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus } from 'react-icons/fa';
 import type { Customer } from '../../Services/ApiServices';
 
 const ModalContent = styled.div`
@@ -218,7 +216,7 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
       const response = await getCustomerMeasurementsService(customer.customerId);
       if (response.success === 200 && response.data) {
         setMeasurements(response.data);
-        
+
         // Pre-fill form data if measurements exist
         if (response.data.topMeasurement) {
           setTopFormData({
@@ -232,7 +230,7 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
             neck: Number(response.data.topMeasurement.neck),
           });
         }
-        
+
         if (response.data.bottomMeasurement) {
           setBottomFormData({
             length: Number(response.data.bottomMeasurement.length),
@@ -270,6 +268,16 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
       ...prev,
       [name]: parseFloat(value) || 0,
     }));
+  };
+
+  const handleSaveAll = async () => {
+    // Save whichever section(s) are currently in add/edit mode
+    if (isEditingTop || isAddingTop) {
+      await handleSaveTop();
+    }
+    if (isEditingBottom || isAddingBottom) {
+      await handleSaveBottom();
+    }
   };
 
   const handleSaveTop = async () => {
@@ -530,14 +538,6 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
                       />
                     </FormGroup>
                   </GridContainer>
-                  <ButtonContainer>
-                    <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                      Cancel
-                    </CancelButton>
-                    <Button onClick={handleSaveTop} disabled={formLoading}>
-                      {formLoading ? <LoadingSpinner /> : 'Save'}
-                    </Button>
-                  </ButtonContainer>
                 </div>
               ) : measurements?.topMeasurement ? (
                 <MeasurementDisplay>
@@ -720,14 +720,6 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
                       />
                     </FormGroup>
                   </GridContainer>
-                  <ButtonContainer>
-                    <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                      Cancel
-                    </CancelButton>
-                    <Button onClick={handleSaveBottom} disabled={formLoading}>
-                      {formLoading ? <LoadingSpinner /> : 'Save'}
-                    </Button>
-                  </ButtonContainer>
                 </div>
               ) : measurements?.bottomMeasurement ? (
                 <MeasurementDisplay>
@@ -770,6 +762,16 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
                 </EmptyState>
               )}
             </MeasurementSection>
+            {(isEditingTop || isAddingTop || isEditingBottom || isAddingBottom) && (
+              <ButtonContainer>
+                <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
+                  Cancel
+                </CancelButton>
+                <Button onClick={handleSaveAll} disabled={formLoading}>
+                  {formLoading ? <LoadingSpinner /> : 'Save'}
+                </Button>
+              </ButtonContainer>
+            )}
           </>
         )}
       </ModalContent>

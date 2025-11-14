@@ -272,6 +272,20 @@ export const API_CONFIG: ApiConfig = {
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
+
+        // ============================================
+        // WORK PIECE ENDPOINTS
+        // ============================================
+        convertWorkPiecePendingToCutting: {
+            path: '/workPieces/{workpieceId}/convert-pending-to-cutting',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getWorkPieceById: {
+            path: '/workPieces/{workpieceId}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 
