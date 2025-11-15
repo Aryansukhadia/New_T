@@ -16,7 +16,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +28,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   Inventory as BoxIcon,
   Add as AddIcon,
@@ -362,12 +362,17 @@ const ProductItemsPage = () => {
                   <TableCell>{formatDate(item.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <MUICustomBtn
                         onClick={() => handleOpenEditModal(item)}
-                        title="Edit Product Item"
+                        tooltip="Edit Product Item"
+                        variant="contained"
                         sx={{
                           bgcolor: '#e3f2fd',
                           color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#bbdefb',
                             transform: 'translateY(-2px)',
@@ -376,13 +381,18 @@ const ProductItemsPage = () => {
                         }}
                       >
                         <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
+                      </MUICustomBtn>
+                      <MUICustomBtn
                         onClick={() => handleOpenDeleteModal(item)}
-                        title="Delete Product Item"
+                        tooltip="Delete Product Item"
+                        variant="contained"
                         sx={{
                           bgcolor: '#ffebee',
                           color: '#d32f2f',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#ffcdd2',
                             transform: 'translateY(-2px)',
@@ -391,7 +401,7 @@ const ProductItemsPage = () => {
                         }}
                       >
                         <DeleteIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
+                      </MUICustomBtn>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -477,8 +487,10 @@ const ProductItemsPage = () => {
                       objectFit: 'cover',
                     }}
                   />
-                  <IconButton
+                  <MUICustomBtn
                     onClick={handleRemoveImage}
+                    tooltip="Remove image"
+                    variant="contained"
                     sx={{
                       position: 'absolute',
                       top: 8,
@@ -487,6 +499,8 @@ const ProductItemsPage = () => {
                       color: 'white',
                       width: 32,
                       height: 32,
+                      minWidth: 32,
+                      padding: 0,
                       '&:hover': {
                         bgcolor: '#c82333',
                         transform: 'scale(1.1)',
@@ -494,7 +508,7 @@ const ProductItemsPage = () => {
                     }}
                   >
                     <CloseIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
+                  </MUICustomBtn>
                 </Box>
               )}
             </Box>

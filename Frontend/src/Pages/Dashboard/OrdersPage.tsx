@@ -12,10 +12,10 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   Chip,
   CircularProgress,
 } from '@mui/material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   ShoppingCart as ShoppingCartIcon,
   Add as AddIcon,
@@ -168,13 +168,18 @@ const OrdersPage = () => {
                     </TableCell>
                     <TableCell>{order.totalAmount ? `$${order.totalAmount.toFixed(2)}` : '—'}</TableCell>
                     <TableCell>
-                      <IconButton
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleViewOrderDetails(order.id)}
-                        title={t('orders.viewDetails')}
+                        tooltip={t('orders.viewDetails')}
+                        variant="contained"
                         sx={{
                           bgcolor: '#e3f2fd',
                           color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#bbdefb',
                             transform: 'translateY(-2px)',
@@ -183,7 +188,7 @@ const OrdersPage = () => {
                         }}
                       >
                         <VisibilityIcon />
-                      </IconButton>
+                      </MUICustomBtn>
                     </TableCell>
                   </TableRow>
                 ))}

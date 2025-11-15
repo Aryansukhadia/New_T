@@ -9,10 +9,10 @@ import {
     CircularProgress,
     Checkbox,
     FormControlLabel,
-    IconButton,
     MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
     Add as AddIcon,
     ArrowBack as ArrowBackIcon,
@@ -311,8 +311,10 @@ const CreateProductVariantPage = () => {
                                     objectFit: 'cover',
                                 }}
                             />
-                            <IconButton
+                            <MUICustomBtn
                                 onClick={handleRemovePhoto}
+                                tooltip="Remove photo"
+                                variant="contained"
                                 sx={{
                                     position: 'absolute',
                                     top: 8,
@@ -321,6 +323,8 @@ const CreateProductVariantPage = () => {
                                     color: 'white',
                                     width: 32,
                                     height: 32,
+                                    minWidth: 32,
+                                    padding: 0,
                                     '&:hover': {
                                         bgcolor: '#c82333',
                                         transform: 'scale(1.1)',
@@ -328,7 +332,7 @@ const CreateProductVariantPage = () => {
                                 }}
                             >
                                 <CloseIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
+                            </MUICustomBtn>
                         </Box>
                     )}
                 </Box>
@@ -392,20 +396,22 @@ const CreateProductVariantPage = () => {
                         borderTop: '2px solid #e0e0e0',
                     }}
                 >
-                    <Button
+                    <MUICustomBtn
                         type="button"
                         variant="outlined"
                         onClick={() => navigate('/dashboard/product-variants')}
                         disabled={formLoading}
+                        tooltip="Cancel and go back to product variants"
                         sx={{ textTransform: 'none', fontWeight: 600, minWidth: 140 }}
                     >
                         {t('common.cancel')}
-                    </Button>
-                    <Button
+                    </MUICustomBtn>
+                    <MUICustomBtn
                         type="submit"
                         variant="contained"
                         disabled={formLoading}
                         startIcon={formLoading ? <CircularProgress size={20} /> : <AddIcon />}
+                        tooltip="Create new product variant"
                         sx={{
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             '&:hover': {
@@ -419,7 +425,7 @@ const CreateProductVariantPage = () => {
                         }}
                     >
                         {formLoading ? '' : t('productVariants.createVariant')}
-                    </Button>
+                    </MUICustomBtn>
                 </Box>
             </Box>
         </Card>

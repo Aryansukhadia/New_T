@@ -12,13 +12,13 @@ import {
   Label,
   Input,
   Select,
-  Button,
   LoadingSpinner,
   LinkText,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
 import { registerService, getRolesService, type Role } from '../Services/ApiServices';
 import axios from 'axios';
+import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const PasswordInputWrapper = styled.div`
   position: relative;
@@ -207,9 +207,14 @@ const Register = () => {
             </Select>
           </FormGroup>
 
-          <Button type="submit" disabled={loading || loadingRoles}>
+          <MUICustomBtn
+            type="submit"
+            disabled={loading || loadingRoles}
+            tooltip="Create your account"
+            fullWidth
+          >
             {loading ? <LoadingSpinner /> : 'Create Account'}
-          </Button>
+          </MUICustomBtn>
         </Form>
 
         <LinkText>

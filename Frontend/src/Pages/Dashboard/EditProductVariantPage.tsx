@@ -18,11 +18,11 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
-  IconButton,
   Checkbox,
   FormControlLabel,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
@@ -335,8 +335,10 @@ const EditProductVariantPage = () => {
                   objectFit: 'cover',
                 }}
               />
-              <IconButton
+              <MUICustomBtn
                 onClick={handleRemovePhoto}
+                tooltip="Remove photo"
+                variant="contained"
                 sx={{
                   position: 'absolute',
                   top: 8,
@@ -345,6 +347,8 @@ const EditProductVariantPage = () => {
                   color: 'white',
                   width: 32,
                   height: 32,
+                  minWidth: 32,
+                  padding: 0,
                   '&:hover': {
                     bgcolor: '#c82333',
                     transform: 'scale(1.1)',
@@ -352,7 +356,7 @@ const EditProductVariantPage = () => {
                 }}
               >
                 <CloseIcon sx={{ fontSize: 16 }} />
-              </IconButton>
+              </MUICustomBtn>
             </Box>
           )}
         </Box>

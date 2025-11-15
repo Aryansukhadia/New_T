@@ -6,11 +6,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  IconButton,
   Typography,
   Box,
   Button,
 } from '@mui/material';
+import MUICustomBtn from '../Common/MUICustomBtn';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -137,17 +137,21 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
         >
           {isOpen ? 'Tailor' : 'T'}
         </Typography>
-        <IconButton
+        <MUICustomBtn
           onClick={toggleSidebar}
+          tooltip={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          variant="text"
           sx={{
             color: 'white',
+            minWidth: 'auto',
+            padding: '8px',
             '&:hover': {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
             },
           }}
         >
           {isOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-        </IconButton>
+        </MUICustomBtn>
       </Box>
 
       {/* User Info */}

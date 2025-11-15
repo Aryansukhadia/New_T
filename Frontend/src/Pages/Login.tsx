@@ -6,7 +6,6 @@ import {
   CardContent,
   Typography,
   TextField,
-  Button,
   IconButton,
   InputAdornment,
   CircularProgress,
@@ -17,6 +16,7 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useToast } from '../Utils/ToastContext';
 import { loginService, setAuthToken, setUserInfo } from '../Services/ApiServices';
 import axios from 'axios';
+import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -159,26 +159,16 @@ const Login = () => {
                 }}
               />
 
-              <Button
+              <MUICustomBtn
                 fullWidth
-                type="submit"
                 variant="contained"
                 disabled={loading}
-                sx={{
-                  mt: 3,
-                  mb: 2,
-                  py: 1.5,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                  },
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                }}
+                type="submit"
+                tooltip="Sign In"
+                tooltipPlacement="bottom"
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
-              </Button>
+              </MUICustomBtn>
             </Box>
 
             <Typography variant="body2" align="center" sx={{ mt: 2 }}>

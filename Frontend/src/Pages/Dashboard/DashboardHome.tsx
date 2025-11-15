@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Typography, Button } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { getUserInfo, type LoginResponse } from '../../Services/ApiServices';
 import {
@@ -8,6 +8,7 @@ import {
   AttachMoney as AttachMoneyIcon,
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 
 const DashboardHome = () => {
   const userInfo: LoginResponse | null = getUserInfo();
@@ -139,10 +140,11 @@ const DashboardHome = () => {
           </Typography>
           <Grid container spacing={2}>
             <Grid xs={12} sm={6} md={3}>
-              <Button
+              <MUICustomBtn
                 fullWidth
                 variant="outlined"
                 startIcon={<PeopleIcon />}
+                tooltip="Add a new customer to the system"
                 sx={{
                   py: 2,
                   textAlign: 'left',
@@ -159,13 +161,14 @@ const DashboardHome = () => {
                 }}
               >
                 + Add New Customer
-              </Button>
+              </MUICustomBtn>
             </Grid>
             <Grid xs={12} sm={6} md={3}>
-              <Button
+              <MUICustomBtn
                 fullWidth
                 variant="outlined"
                 startIcon={<StraightenIcon />}
+                tooltip="Add measurements for customers"
                 sx={{
                   py: 2,
                   textAlign: 'left',
@@ -182,13 +185,14 @@ const DashboardHome = () => {
                 }}
               >
                 Add Measurements
-              </Button>
+              </MUICustomBtn>
             </Grid>
             <Grid xs={12} sm={6} md={3}>
-              <Button
+              <MUICustomBtn
                 fullWidth
                 variant="outlined"
                 startIcon={<ShoppingCartIcon />}
+                tooltip="Create a new order"
                 sx={{
                   py: 2,
                   textAlign: 'left',
@@ -205,14 +209,15 @@ const DashboardHome = () => {
                 }}
               >
                 Create Order
-              </Button>
+              </MUICustomBtn>
             </Grid>
             {(role.toLowerCase() === 'admin' || role.toLowerCase() === 'accountant') && (
               <Grid xs={12} sm={6} md={3}>
-                <Button
+                <MUICustomBtn
                   fullWidth
                   variant="outlined"
                   startIcon={<TrendingUpIcon />}
+                  tooltip="View detailed reports and analytics"
                   sx={{
                     py: 2,
                     textAlign: 'left',
@@ -229,7 +234,7 @@ const DashboardHome = () => {
                   }}
                 >
                   View Reports
-                </Button>
+                </MUICustomBtn>
               </Grid>
             )}
           </Grid>

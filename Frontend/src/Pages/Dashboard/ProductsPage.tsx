@@ -12,13 +12,13 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   ShoppingBag as ShoppingBagIcon,
   Add as AddIcon,
@@ -306,13 +306,18 @@ const ProductsPage = () => {
                   <TableCell>{formatDate(product.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleOpenEditModal(product)}
-                        title="Edit Product"
+                        tooltip="Edit Product"
+                        variant="contained"
                         sx={{
                           bgcolor: '#e3f2fd',
                           color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#bbdefb',
                             transform: 'translateY(-2px)',
@@ -321,14 +326,19 @@ const ProductsPage = () => {
                         }}
                       >
                         <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      </MUICustomBtn>
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleOpenDeleteModal(product)}
-                        title="Delete Product"
+                        tooltip="Delete Product"
+                        variant="contained"
                         sx={{
                           bgcolor: '#ffebee',
                           color: '#d32f2f',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#ffcdd2',
                             transform: 'translateY(-2px)',
@@ -337,7 +347,7 @@ const ProductsPage = () => {
                         }}
                       >
                         <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      </MUICustomBtn>
                     </Box>
                   </TableCell>
                 </TableRow>

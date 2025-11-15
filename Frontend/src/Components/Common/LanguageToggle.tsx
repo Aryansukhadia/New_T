@@ -1,7 +1,8 @@
-import { Button, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { Language as LanguageIcon } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleLanguage } from '../../store/slices/languageSlice';
+import MUICustomBtn from './MUICustomBtn';
 
 const LanguageToggle = () => {
   const dispatch = useAppDispatch();
@@ -12,10 +13,10 @@ const LanguageToggle = () => {
   };
 
   return (
-    <Button
+    <MUICustomBtn
       onClick={handleToggle}
       startIcon={<LanguageIcon />}
-      title={`Switch to ${currentLanguage === 'en' ? 'Gujarati' : 'English'}`}
+      tooltip={`Switch to ${currentLanguage === 'en' ? 'Gujarati' : 'English'}`}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -44,7 +45,7 @@ const LanguageToggle = () => {
       >
         {currentLanguage === 'en' ? 'EN' : 'GU'}
       </Typography>
-    </Button>
+    </MUICustomBtn>
   );
 };
 

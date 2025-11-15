@@ -13,7 +13,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -27,6 +26,7 @@ import {
   PersonAdd as PersonAddIcon,
   Straighten as StraightenIcon,
 } from '@mui/icons-material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   getCustomersService,
   deleteCustomerService,
@@ -158,10 +158,11 @@ const CustomersPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Customer Management
         </Typography>
-        <Button
+        <MUICustomBtn
           variant="contained"
           startIcon={<PersonAddIcon />}
           onClick={handleAddCustomer}
+          tooltip="Add a new customer to the system"
           sx={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             '&:hover': {
@@ -174,7 +175,7 @@ const CustomersPage = () => {
           }}
         >
           Add New Customer
-        </Button>
+        </MUICustomBtn>
       </Box>
 
       <Box sx={{ mb: 3 }}>
@@ -226,13 +227,18 @@ const CustomersPage = () => {
                   <TableCell>{formatDate(customer.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleManageMeasurements(customer)}
-                        title="Manage Measurements"
+                        tooltip="Manage Measurements"
+                        variant="contained"
                         sx={{
                           bgcolor: '#fff3e0',
                           color: '#f57c00',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#ffe0b2',
                             transform: 'translateY(-2px)',
@@ -241,14 +247,19 @@ const CustomersPage = () => {
                         }}
                       >
                         <StraightenIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      </MUICustomBtn>
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleEditCustomer(customer)}
-                        title="Edit Customer"
+                        tooltip="Edit Customer"
+                        variant="contained"
                         sx={{
                           bgcolor: '#e3f2fd',
                           color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#bbdefb',
                             transform: 'translateY(-2px)',
@@ -257,14 +268,19 @@ const CustomersPage = () => {
                         }}
                       >
                         <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      </MUICustomBtn>
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleOpenDeleteModal(customer)}
-                        title="Delete Customer"
+                        tooltip="Delete Customer"
+                        variant="contained"
                         sx={{
                           bgcolor: '#ffebee',
                           color: '#d32f2f',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#ffcdd2',
                             transform: 'translateY(-2px)',
@@ -273,7 +289,7 @@ const CustomersPage = () => {
                         }}
                       >
                         <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      </MUICustomBtn>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -296,25 +312,27 @@ const CustomersPage = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button
+          <MUICustomBtn
             onClick={handleCloseDeleteModal}
             variant="outlined"
+            tooltip="Cancel delete operation"
             sx={{ textTransform: 'none', fontWeight: 600 }}
           >
             Cancel
-          </Button>
-          <Button
+          </MUICustomBtn>
+          <MUICustomBtn
             onClick={handleDelete}
             disabled={deleteLoading}
             variant="contained"
             color="error"
+            tooltip="Permanently delete this customer"
             sx={{
               textTransform: 'none',
               fontWeight: 600,
             }}
           >
             {deleteLoading ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
-          </Button>
+          </MUICustomBtn>
         </DialogActions>
       </Dialog>
     </Card>

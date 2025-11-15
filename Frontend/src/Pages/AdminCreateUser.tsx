@@ -12,7 +12,7 @@ import {
   Label,
   Input,
   Select,
-  Button,
+  MUICustomBtn,
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
@@ -211,17 +211,26 @@ const AdminCreateUser = () => {
             </Select>
           </FormGroup>
 
-          <Button type="submit" disabled={loading || loadingRoles}>
+          <MUICustomBtn
+            type="submit"
+            disabled={loading || loadingRoles}
+            tooltip="Create new user account"
+            fullWidth
+          >
             {loading ? <LoadingSpinner /> : 'Create User'}
-          </Button>
+          </MUICustomBtn>
         </Form>
 
-        <Button
+        <MUICustomBtn
           onClick={() => navigate(-1)}
-          style={{ marginTop: '12px', background: '#6c757d' }}
+          tooltip="Go back to previous page"
+          variant="outlined"
+          color="secondary"
+          sx={{ marginTop: '12px' }}
+          fullWidth
         >
           Go Back
-        </Button>
+        </MUICustomBtn>
       </FormCard>
     </FormContainer>
   );

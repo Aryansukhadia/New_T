@@ -20,6 +20,7 @@ import {
   Button,
   LoadingSpinner,
 } from '../../Components/Common/FormComponents';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   FaTags,
   FaPlus,
@@ -143,72 +144,6 @@ const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
 const ActionCell = styled(TableCell)`
   display: flex;
   gap: 8px;
-`;
-
-const IconButton = styled.button<{ variant?: 'edit' | 'delete' | 'link' | 'unlink' }>`
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-
-  ${(props) => {
-    if (props.variant === 'edit') {
-      return `
-        background: #e3f2fd;
-        color: #1976d2;
-        &:hover {
-          background: #bbdefb;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'delete') {
-      return `
-        background: #ffebee;
-        color: #d32f2f;
-        &:hover {
-          background: #ffcdd2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'link' || props.variant === 'unlink') {
-      return `
-        background: #fff3e0;
-        color: #f57c00;
-        &:hover {
-          background: #ffe0b2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(245, 124, 0, 0.2);
-        }
-      `;
-    }
-    return '';
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
 `;
 
 const EmptyState = styled.div`
@@ -639,27 +574,63 @@ const ProductVariantsPage = () => {
                   </TableCell>
                   <TableCell>{formatDate(variant.createdAt)}</TableCell>
                   <ActionCell>
-                    <IconButton
-                      variant="link"
+                    <MUICustomBtn
                       onClick={() => handleOpenManageItemsModal(variant)}
-                      title="Manage Product Items"
+                      tooltip="Manage Product Items"
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#e8f5e8',
+                        color: '#2e7d32',
+                        minWidth: 38,
+                        width: 38,
+                        height: 38,
+                        padding: 0,
+                        '&:hover': {
+                          bgcolor: '#c8e6c9',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
                     >
                       <FaLink />
-                    </IconButton>
-                    <IconButton
-                      variant="edit"
+                    </MUICustomBtn>
+                    <MUICustomBtn
                       onClick={() => handleEditVariant(variant)}
-                      title="Edit Variant"
+                      tooltip="Edit Variant"
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#e3f2fd',
+                        color: '#1976d2',
+                        minWidth: 38,
+                        width: 38,
+                        height: 38,
+                        padding: 0,
+                        '&:hover': {
+                          bgcolor: '#bbdefb',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
                     >
                       <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      variant="delete"
+                    </MUICustomBtn>
+                    <MUICustomBtn
                       onClick={() => handleOpenDeleteModal(variant)}
-                      title="Delete Variant"
+                      tooltip="Delete Variant"
+                      variant="contained"
+                      sx={{
+                        bgcolor: '#ffebee',
+                        color: '#d32f2f',
+                        minWidth: 38,
+                        width: 38,
+                        height: 38,
+                        padding: 0,
+                        '&:hover': {
+                          bgcolor: '#ffcdd2',
+                          transform: 'translateY(-2px)',
+                        },
+                      }}
                     >
                       <FaTrash />
-                    </IconButton>
+                    </MUICustomBtn>
                   </ActionCell>
                 </TableRow>
               ))}
@@ -719,13 +690,16 @@ const ProductVariantsPage = () => {
         footer={
           <>
             <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-            <Button
+            <MUICustomBtn
               onClick={handleDelete}
               disabled={formLoading}
-              style={{ background: '#dc3545', marginTop: 0 }}
+              tooltip="Permanently delete this variant"
+              variant="contained"
+              color="error"
+              sx={{ backgroundColor: '#dc3545', marginTop: 0 }}
             >
               {formLoading ? <LoadingSpinner /> : 'Delete'}
-            </Button>
+            </MUICustomBtn>
           </>
         }
       >

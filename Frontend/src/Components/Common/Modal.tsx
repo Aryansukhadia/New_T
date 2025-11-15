@@ -4,11 +4,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
+import MUICustomBtn from './MUICustomBtn';
 
 interface ModalProps {
   isOpen: boolean;
@@ -66,10 +66,14 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'large' }: Mod
         }}
       >
         {title}
-        <IconButton
+        <MUICustomBtn
           onClick={onClose}
+          tooltip="Close modal"
+          variant="text"
           sx={{
             color: '#666',
+            minWidth: 'auto',
+            padding: '8px',
             '&:hover': {
               backgroundColor: '#f0f0f0',
               color: '#333',
@@ -77,7 +81,7 @@ const Modal = ({ isOpen, onClose, title, children, footer, size = 'large' }: Mod
           }}
         >
           <CloseIcon />
-        </IconButton>
+        </MUICustomBtn>
       </DialogTitle>
       <DialogContent
         sx={{

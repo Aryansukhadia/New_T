@@ -12,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -22,6 +21,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   People as PeopleIcon,
   Person as PersonIcon,
@@ -329,14 +329,19 @@ const UsersPage = () => {
                   <TableCell>{formatDate(user.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <IconButton
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleOpenEditModal(user)}
                         disabled={user.userId === currentUser?.userId}
-                        title="Edit User"
+                        tooltip="Edit User"
+                        variant="contained"
                         sx={{
                           bgcolor: '#e3f2fd',
                           color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#bbdefb',
                             transform: 'translateY(-2px)',
@@ -345,15 +350,20 @@ const UsersPage = () => {
                         }}
                       >
                         <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      </MUICustomBtn>
+                      <MUICustomBtn
                         size="small"
                         onClick={() => handleOpenDeleteModal(user)}
                         disabled={user.userId === currentUser?.userId}
-                        title="Delete User"
+                        tooltip="Delete User"
+                        variant="contained"
                         sx={{
                           bgcolor: '#ffebee',
                           color: '#d32f2f',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
                           '&:hover': {
                             bgcolor: '#ffcdd2',
                             transform: 'translateY(-2px)',
@@ -362,7 +372,7 @@ const UsersPage = () => {
                         }}
                       >
                         <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      </MUICustomBtn>
                     </Box>
                   </TableCell>
                 </TableRow>
