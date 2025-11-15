@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   bookOrderService,
@@ -11,240 +10,26 @@ import { getCustomersService, createCustomerService, type Customer } from '../..
 import { getProductsService, getProductVariantsService, type Product, type ProductVariant } from '../../Services/ApiServices/productServices';
 import { useToast } from '../../Utils/ToastContext';
 import {
-  FormGroup,
-  Label,
-  Input,
+  Box,
+  Card,
+  Typography,
   Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
+  TextField,
+  MenuItem,
+  CircularProgress,
+  Collapse,
+} from '@mui/material';
 import {
-  FaShoppingCart,
-  FaPlus,
-  FaTrash,
-  FaArrowLeft,
-  FaUserPlus,
-  FaChevronDown,
-  FaChevronRight,
-  FaRuler,
-} from 'react-icons/fa';
+  ShoppingCart as ShoppingCartIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  ArrowBack as ArrowBackIcon,
+  PersonAdd as PersonAddIcon,
+  ExpandMore as ChevronDownIcon,
+  ChevronRight as ChevronRightIcon,
+  Straighten as RulerIcon,
+} from '@mui/icons-material';
 import ManageMeasurementPanel from '../../Components/Common/ManageMeasurementPanel';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ActionButton = styled(Button)`
-  padding: 14px 28px;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &:disabled {
-    background: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const CustomerButtonContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const OrderItemRow = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-  margin-bottom: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-`;
-
-const OrderItemFields = styled.div`
-  display: flex;
-  gap: 12px;
-  flex: 1;
-  flex-wrap: wrap;
-`;
-
-const OrderItemField = styled.div`
-  flex: 1;
-  min-width: 150px;
-`;
-
-const RemoveItemButton = styled.button`
-  padding: 12px;
-  background: #ffebee;
-  color: #d32f2f;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  height: fit-content;
-
-  &:hover {
-    background: #ffcdd2;
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 20px;
-  color: #666;
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 14px;
-  margin: 0;
-`;
-
-const AccordionHeader = styled.button`
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: #f8f9fa;
-  cursor: pointer;
-  font-weight: 700;
-  color: #333;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-`;
-
-const AccordionTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-right: 12px;
-`;
-
-const AccordionContent = styled.div`
-  width: 100%;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 16px;
-  background: #ffffff;
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 2px solid #e0e0e0;
-`;
-
-const CustomerActionButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-`;
-
-const CustomerActionButton = styled.button`
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  background: #f8f9fa;
-  color: #333;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #667eea;
-    color: #667eea;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-`;
-
-const AccordionSelectionBox = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
-`;
 
 const BookOrderPage = () => {
   const navigate = useNavigate();
@@ -478,186 +263,275 @@ const BookOrderPage = () => {
 
   if (loading) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Card>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('orders.bookNewOrder')}</PageTitle>
-        <BackButton onClick={() => navigate('/dashboard/orders')}>
-          <FaArrowLeft /> {t('common.back')} {t('orders.title')}
-        </BackButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('orders.bookNewOrder')}
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/dashboard/orders')}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          {t('common.back')} {t('orders.title')}
+        </Button>
+      </Box>
 
-      <form onSubmit={handleBookOrder} style={{ display: 'flex', flexDirection: 'column' }}>
-        <FormGroup>
-          <Label htmlFor="customerId">{t('orders.customer')} *</Label>
-          <CustomerButtonContainer>
-            <CustomerActionButtons>
-              <CustomerActionButton
+      <Box component="form" onSubmit={handleBookOrder} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+            {t('orders.customer')} *
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', gap: 1.5, mt: 1, flexWrap: 'wrap' }}>
+              <Button
                 type="button"
+                variant="outlined"
                 onClick={handleOpenCreateCustomerForm}
                 disabled={formLoading || newCustomer}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: '#e0e0e0',
+                  color: '#333',
+                  bgcolor: '#f8f9fa',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    color: '#667eea',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.2)',
+                  },
+                }}
               >
                 {t('orders.newCustomerButton') || 'Create New Customer'}
-              </CustomerActionButton>
-              <CustomerActionButton
+              </Button>
+              <Button
                 type="button"
+                variant="outlined"
                 onClick={() => {
                   customerSelectRef.current?.focus();
                   setNewCustomer(false)
                 }}
                 disabled={formLoading || !newCustomer}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  borderColor: '#e0e0e0',
+                  color: '#333',
+                  bgcolor: '#f8f9fa',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    color: '#667eea',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 8px rgba(102, 126, 234, 0.2)',
+                  },
+                }}
               >
                 {t('orders.existingCustomerButton') || 'Select Existing Customer'}
-              </CustomerActionButton>
-            </CustomerActionButtons>
+              </Button>
+            </Box>
             {newCustomer && (
-              <AccordionSelectionBox>
-                <AccordionHeader
+              <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
+                <Button
                   type="button"
+                  variant="outlined"
+                  startIcon={<PersonAddIcon />}
+                  endIcon={isCustomerAccordionOpen ? <ChevronDownIcon /> : <ChevronRightIcon />}
                   onClick={() => setIsCustomerAccordionOpen((o) => !o)}
-                  aria-expanded={isCustomerAccordionOpen}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderColor: '#e0e0e0',
+                    color: '#333',
+                    bgcolor: '#f8f9fa',
+                  }}
                 >
-                  <AccordionTitle>
-                    <FaUserPlus /> {t('customers.addNewCustomerTitle') || 'Add New Customer'}
-                  </AccordionTitle>
-                  {isCustomerAccordionOpen ? <FaChevronDown /> : <FaChevronRight />}
-                </AccordionHeader>
-                <AccordionHeader
+                  {t('customers.addNewCustomerTitle') || 'Add New Customer'}
+                </Button>
+                <Button
                   type="button"
+                  variant="outlined"
+                  startIcon={<RulerIcon />}
+                  endIcon={isMeasurementAccordionOpen ? <ChevronDownIcon /> : <ChevronRightIcon />}
                   onClick={() => setIsMeasurementAccordionOpen((o) => !o)}
-                  aria-expanded={isMeasurementAccordionOpen}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderColor: '#e0e0e0',
+                    color: '#333',
+                    bgcolor: '#f8f9fa',
+                  }}
                 >
-                  <AccordionTitle>
-                    <FaRuler /> {t('customers.measurements') || 'Measurements'}
-                  </AccordionTitle>
-                  {isMeasurementAccordionOpen ? <FaChevronDown /> : <FaChevronRight />}
-                </AccordionHeader>
-              </AccordionSelectionBox>
+                  {t('customers.measurements') || 'Measurements'}
+                </Button>
+              </Box>
             )}
-          </CustomerButtonContainer>
+          </Box>
           {!newCustomer && (
-            <Select
+            <TextField
+              fullWidth
+              select
               id="customerId"
-              ref={customerSelectRef}
+              inputRef={customerSelectRef}
               value={orderFormData.customerId}
               onChange={(e) => setOrderFormData((prev) => ({ ...prev, customerId: e.target.value }))}
               required
               disabled={formLoading}
             >
-              <option value="">{t('orders.customer')} {t('common.select') || 'Select'}</option>
+              <MenuItem value="">{t('orders.customer')} {t('common.select') || 'Select'}</MenuItem>
               {customers.map((customer) => (
-                <option key={customer.customerId} value={customer.customerId}>
+                <MenuItem key={customer.customerId} value={customer.customerId}>
                   {customer.fullName} ({customer.emailId})
-                </option>
+                </MenuItem>
               ))}
-            </Select>
+            </TextField>
           )}
-        </FormGroup>
+        </Box>
         {showCreateCustomerForm && newCustomer && (
           <>
-            {isCustomerAccordionOpen && (
-              <AccordionContent>
-                <FormGroup>
-                  <Label htmlFor="newCustomerFullName">{t('customers.fullName')} *</Label>
-                  <Input
-                    id="newCustomerFullName"
-                    name="fullName"
-                    value={newCustomerForm.fullName}
-                    onChange={handleCreateCustomerChange}
-                    required
-                    disabled={createCustomerLoading}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label htmlFor="newCustomerEmail">{t('customers.email')} *</Label>
-                  <Input
-                    id="newCustomerEmail"
-                    type="email"
-                    name="emailId"
-                    value={newCustomerForm.emailId}
-                    onChange={handleCreateCustomerChange}
-                    required
-                    disabled={createCustomerLoading}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label htmlFor="newCustomerMobile">{t('customers.mobile')} *</Label>
-                  <Input
-                    id="newCustomerMobile"
-                    name="mobileNo"
-                    value={newCustomerForm.mobileNo}
-                    onChange={handleCreateCustomerChange}
-                    required
-                    disabled={createCustomerLoading}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label htmlFor="newCustomerAddress">{t('customers.address')} *</Label>
-                  <Input
-                    id="newCustomerAddress"
-                    name="address"
-                    value={newCustomerForm.address}
-                    onChange={handleCreateCustomerChange}
-                    required
-                    disabled={createCustomerLoading}
-                  />
-                </FormGroup>
-                <FormGroup>
-                  <Label htmlFor="newCustomerReference">{t('customers.reference') || 'Reference'} ({t('orders.optional')})</Label>
-                  <Input
-                    id="newCustomerReference"
-                    name="reference"
-                    value={newCustomerForm.reference}
-                    onChange={handleCreateCustomerChange}
-                    disabled={createCustomerLoading}
-                  />
-                </FormGroup>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <CustomerActionButton
-                    type="button"
-                    onClick={() => {
-                      setShowCreateCustomerForm(false);
-                      setIsCustomerAccordionOpen(false);
-                      setIsMeasurementAccordionOpen(false);
-                    }}
-                    disabled={createCustomerLoading}
-                  >
-                    {t('common.cancel')}
-                  </CustomerActionButton>
-                  <Button type="button" onClick={handleCreateCustomer} disabled={createCustomerLoading}>
-                    {createCustomerLoading ? <LoadingSpinner /> : <><FaUserPlus /> {t('customers.createCustomer') || 'Create Customer'}</>}
-                  </Button>
-                </div>
-              </AccordionContent>
-            )}
-            {isMeasurementAccordionOpen && (
-              <AccordionContent>
+            <Collapse in={isCustomerAccordionOpen}>
+              <Box sx={{ width: '100%', border: '2px solid #e0e0e0', borderRadius: 1.5, p: 2, bgcolor: '#ffffff', mb: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('customers.fullName')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="newCustomerFullName"
+                      name="fullName"
+                      value={newCustomerForm.fullName}
+                      onChange={handleCreateCustomerChange}
+                      required
+                      disabled={createCustomerLoading}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('customers.email')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="newCustomerEmail"
+                      type="email"
+                      name="emailId"
+                      value={newCustomerForm.emailId}
+                      onChange={handleCreateCustomerChange}
+                      required
+                      disabled={createCustomerLoading}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('customers.mobile')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="newCustomerMobile"
+                      name="mobileNo"
+                      value={newCustomerForm.mobileNo}
+                      onChange={handleCreateCustomerChange}
+                      required
+                      disabled={createCustomerLoading}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('customers.address')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="newCustomerAddress"
+                      name="address"
+                      value={newCustomerForm.address}
+                      onChange={handleCreateCustomerChange}
+                      required
+                      disabled={createCustomerLoading}
+                    />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('customers.reference') || 'Reference'} ({t('orders.optional')})
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      id="newCustomerReference"
+                      name="reference"
+                      value={newCustomerForm.reference}
+                      onChange={handleCreateCustomerChange}
+                      disabled={createCustomerLoading}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', mt: 1 }}>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      onClick={() => {
+                        setShowCreateCustomerForm(false);
+                        setIsCustomerAccordionOpen(false);
+                        setIsMeasurementAccordionOpen(false);
+                      }}
+                      disabled={createCustomerLoading}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="contained"
+                      onClick={handleCreateCustomer}
+                      disabled={createCustomerLoading}
+                      startIcon={createCustomerLoading ? <CircularProgress size={20} /> : <PersonAddIcon />}
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {createCustomerLoading ? '' : t('customers.createCustomer') || 'Create Customer'}
+                    </Button>
+                  </Box>
+                </Box>
+              </Box>
+            </Collapse>
+            <Collapse in={isMeasurementAccordionOpen}>
+              <Box sx={{ width: '100%', border: '2px solid #e0e0e0', borderRadius: 1.5, p: 2, bgcolor: '#ffffff', mb: 2 }}>
                 {newlyCreatedCustomer ? (
                   <ManageMeasurementPanel
                     customer={newlyCreatedCustomer}
                     onMeasurementUpdated={handleMeasurementUpdated}
                   />
                 ) : (
-                  <EmptyState>
-                    <EmptyStateText>{t('customers.createFirst') || 'Please create the customer first to add measurements.'}</EmptyStateText>
-                  </EmptyState>
+                  <Box sx={{ textAlign: 'center', py: 2.5, color: 'text.secondary' }}>
+                    <Typography variant="body2">
+                      {t('customers.createFirst') || 'Please create the customer first to add measurements.'}
+                    </Typography>
+                  </Box>
                 )}
-              </AccordionContent>
-            )}
+              </Box>
+            </Collapse>
           </>
         )}
 
-        <FormGroup>
-          <Label htmlFor="deliveryDate">{t('orders.deliveryDate')} ({t('orders.optional')})</Label>
-          <Input
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+            {t('orders.deliveryDate')} ({t('orders.optional')})
+          </Typography>
+          <TextField
+            fullWidth
             type="date"
             id="deliveryDate"
             value={orderFormData.deliveryDate || ''}
@@ -668,13 +542,16 @@ const BookOrderPage = () => {
               }))
             }
             disabled={formLoading}
+            InputLabelProps={{ shrink: true }}
           />
-        </FormGroup>
+        </Box>
 
-        <FormGroup>
-          <Label htmlFor="notes">{t('orders.notes')} ({t('orders.optional')})</Label>
-          <Input
-            type="text"
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+            {t('orders.notes')} ({t('orders.optional')})
+          </Typography>
+          <TextField
+            fullWidth
             id="notes"
             value={orderFormData.notes || ''}
             onChange={(e) =>
@@ -686,101 +563,170 @@ const BookOrderPage = () => {
             placeholder="Enter any additional notes"
             disabled={formLoading}
           />
-        </FormGroup>
+        </Box>
 
-        <div style={{ marginTop: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <Label style={{ margin: 0 }}>{t('orders.orderItems')} *</Label>
-            <ActionButton type="button" onClick={handleAddOrderItem} style={{ padding: '8px 16px', fontSize: '12px' }}>
-              <FaPlus /> {t('orders.addItem')}
-            </ActionButton>
-          </div>
+        <Box sx={{ mt: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, m: 0 }}>
+              {t('orders.orderItems')} *
+            </Typography>
+            <Button
+              type="button"
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddOrderItem}
+              sx={{
+                py: 1,
+                px: 2,
+                fontSize: 12,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                },
+                textTransform: 'none',
+                fontWeight: 600,
+              }}
+            >
+              {t('orders.addItem')}
+            </Button>
+          </Box>
 
           {orderFormData.items.length === 0 ? (
-            <EmptyState>
-              <EmptyStateText>{t('orders.noItemsAdded') || 'No items added. Click "Add Item" to add products to the order.'}</EmptyStateText>
-            </EmptyState>
+            <Box sx={{ textAlign: 'center', py: 2.5, color: 'text.secondary' }}>
+              <Typography variant="body2">
+                {t('orders.noItemsAdded') || 'No items added. Click "Add Item" to add products to the order.'}
+              </Typography>
+            </Box>
           ) : (
             orderFormData.items.map((item, index) => (
-              <OrderItemRow key={index}>
-                <OrderItemFields>
-                  <OrderItemField>
-                    <Label>{t('orders.product')} *</Label>
-                    <Select
+              <Box
+                key={index}
+                sx={{
+                  display: 'flex',
+                  gap: 1.5,
+                  alignItems: 'flex-end',
+                  mb: 2,
+                  p: 2,
+                  bgcolor: '#f8f9fa',
+                  borderRadius: 1,
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 1.5, flex: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: 1, minWidth: 150 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('orders.product')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      select
                       value={item.productId}
                       onChange={(e) => handleOrderItemChange(index, 'productId', e.target.value)}
                       required
                       disabled={formLoading}
                     >
-                      <option value="">{t('orders.product')} {t('common.select') || 'Select'}</option>
+                      <MenuItem value="">{t('orders.product')} {t('common.select') || 'Select'}</MenuItem>
                       {products.map((product) => (
-                        <option key={product.id} value={product.id}>
+                        <MenuItem key={product.id} value={product.id}>
                           {product.name}
-                        </option>
+                        </MenuItem>
                       ))}
-                    </Select>
-                  </OrderItemField>
-                  <OrderItemField>
-                    <Label>{t('orders.variant')} *</Label>
-                    <Select
+                    </TextField>
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 150 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('orders.variant')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      select
                       value={item.productVariantId}
                       onChange={(e) => handleOrderItemChange(index, 'productVariantId', e.target.value)}
                       required
                       disabled={formLoading || !item.productId}
                     >
-                      <option value="">{t('orders.variant')} {t('common.select') || 'Select'}</option>
+                      <MenuItem value="">{t('orders.variant')} {t('common.select') || 'Select'}</MenuItem>
                       {productVariants
                         .filter((variant) => variant.productId === item.productId)
                         .map((variant) => (
-                          <option key={variant.id} value={variant.id}>
+                          <MenuItem key={variant.id} value={variant.id}>
                             {variant.name}
-                          </option>
+                          </MenuItem>
                         ))}
-                    </Select>
-                  </OrderItemField>
-                  <OrderItemField>
-                    <Label>{t('orders.quantity')} *</Label>
-                    <Input
+                    </TextField>
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 150 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      {t('orders.quantity')} *
+                    </Typography>
+                    <TextField
+                      fullWidth
                       type="number"
-                      min="1"
+                      inputProps={{ min: 1 }}
                       value={item.quantity}
                       onChange={(e) => handleOrderItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
                       required
                       disabled={formLoading}
                     />
-                  </OrderItemField>
-                </OrderItemFields>
-                <RemoveItemButton
+                  </Box>
+                </Box>
+                <Button
                   type="button"
                   onClick={() => handleRemoveOrderItem(index)}
                   disabled={formLoading}
                   title="Remove Item"
+                  sx={{
+                    p: 1.5,
+                    bgcolor: '#ffebee',
+                    color: '#d32f2f',
+                    border: 'none',
+                    borderRadius: 1,
+                    minWidth: 'auto',
+                    height: 'fit-content',
+                    '&:hover': {
+                      bgcolor: '#ffcdd2',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
                 >
-                  <FaTrash />
-                </RemoveItemButton>
-              </OrderItemRow>
+                  <DeleteIcon sx={{ fontSize: 16 }} />
+                </Button>
+              </Box>
             ))
           )}
-        </div>
+        </Box>
 
-        <FormActions>
-          <BackButton type="button" onClick={() => navigate('/dashboard/orders')} disabled={formLoading}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3, pt: 3, borderTop: '2px solid #e0e0e0' }}>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={() => navigate('/dashboard/orders')}
+            disabled={formLoading}
+            sx={{ textTransform: 'none', fontWeight: 600, minWidth: 140 }}
+          >
             {t('common.cancel')}
-          </BackButton>
-          <ActionButton type="submit" disabled={formLoading || orderFormData.items.length === 0}>
-            {formLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <>
-                <FaShoppingCart /> {t('orders.bookOrder')}
-              </>
-            )}
-          </ActionButton>
-        </FormActions>
-      </form>
-
-      {/* Measurement panel is rendered within the accordion above when opened */}
-    </PageContainer>
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={formLoading || orderFormData.items.length === 0}
+            startIcon={formLoading ? <CircularProgress size={20} /> : <ShoppingCartIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: 140,
+            }}
+          >
+            {formLoading ? '' : t('orders.bookOrder')}
+          </Button>
+        </Box>
+      </Box>
+    </Card>
   );
 };
 

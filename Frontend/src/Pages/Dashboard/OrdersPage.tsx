@@ -1,250 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Chip,
+  CircularProgress,
+} from '@mui/material';
+import {
+  ShoppingCart as ShoppingCartIcon,
+  Add as AddIcon,
+  Visibility as VisibilityIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+} from '@mui/icons-material';
 import {
   getBookedOrdersService,
   type ProductOrder,
 } from '../../Services/ApiServices/productOrderServices';
 import { useToast } from '../../Utils/ToastContext';
-import { LoadingSpinner } from '../../Components/Common/FormComponents';
 import { useTranslation } from '../../hooks/useTranslation';
-import {
-  FaShoppingCart,
-  FaPlus,
-  FaEye,
-  FaChevronLeft,
-  FaChevronRight,
-} from 'react-icons/fa';
 
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const ActionButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+const getStatusColor = (status: string): 'warning' | 'info' | 'success' | 'error' | 'default' => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'warning';
+    case 'in_progress':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'cancelled':
+      return 'error';
+    default:
+      return 'default';
   }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr<{ isHeader?: boolean }>`
-  border-bottom: 1px solid #e0e0e0;
-
-  &:hover {
-    background: ${(props) => (props.isHeader ? 'none' : '#f8f9fa')};
-  }
-`;
-
-const TableCell = styled.td<{ isHeader?: boolean }>`
-  padding: 16px;
-  text-align: left;
-  font-weight: ${(props) => (props.isHeader ? '600' : '400')};
-  color: ${(props) => (props.isHeader ? '#666' : '#333')};
-  font-size: 14px;
-`;
-
-const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
-  background: #f8f9fa;
-`;
-
-const ActionCell = styled(TableCell)`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconButton = styled.button<{ variant?: 'view' }>`
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-
-  ${(props) => {
-    if (props.variant === 'view') {
-      return `
-        background: #e3f2fd;
-        color: #1976d2;
-        &:hover {
-          background: #bbdefb;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
-        }
-      `;
-    }
-    return `
-      background: #f5f5f5;
-      color: #666;
-      &:hover {
-        background: #e0e0e0;
-      }
-    `;
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-
-  svg {
-    width: 48px;
-    height: 48px;
-  }
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 24px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-`;
-
-const PaginationInfo = styled.div`
-  font-size: 14px;
-  color: #666;
-`;
-
-const PaginationButtons = styled.div`
-  display: flex;
-  gap: 8px;
-`;
-
-const PaginationButton = styled.button<{ active?: boolean }>`
-  padding: 8px 16px;
-  border: 2px solid ${(props) => (props.active ? '#667eea' : '#e0e0e0')};
-  background: ${(props) => (props.active ? '#667eea' : 'white')};
-  color: ${(props) => (props.active ? 'white' : '#333')};
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover:not(:disabled) {
-    border-color: #667eea;
-    background: ${(props) => (props.active ? '#667eea' : '#f0f0ff')};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const StatusBadge = styled.span<{ status: string }>`
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#fff3e0';
-      case 'in_progress':
-        return '#e3f2fd';
-      case 'completed':
-        return '#e8f5e9';
-      case 'cancelled':
-        return '#ffebee';
-      default:
-        return '#f5f5f5';
-    }
-  }};
-  color: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#f57c00';
-      case 'in_progress':
-        return '#1976d2';
-      case 'completed':
-        return '#388e3c';
-      case 'cancelled':
-        return '#d32f2f';
-      default:
-        return '#666';
-    }
-  }};
-`;
+};
 
 const OrdersPage = () => {
   const navigate = useNavigate();
@@ -304,88 +103,132 @@ const OrdersPage = () => {
   };
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('orders.title')}</PageTitle>
-        <ActionButton onClick={handleBookOrder}>
-          <FaPlus /> {t('orders.bookNewOrder')}
-        </ActionButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('orders.title')}
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleBookOrder}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          {t('orders.bookNewOrder')}
+        </Button>
+      </Box>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : orders.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
-            <FaShoppingCart />
-          </EmptyStateIcon>
-          <EmptyStateText>{t('orders.noOrders')}</EmptyStateText>
-        </EmptyState>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <ShoppingCartIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="body1">{t('orders.noOrders')}</Typography>
+        </Box>
       ) : (
         <>
-          <TableContainer>
+          <TableContainer component={Paper} variant="outlined">
             <Table>
-              <TableHeader>
-                <TableRow isHeader>
-                  <TableHeaderCell>{t('orders.orderId')}</TableHeaderCell>
-                  <TableHeaderCell>{t('orders.customer')}</TableHeaderCell>
-                  <TableHeaderCell>{t('orders.orderDate')}</TableHeaderCell>
-                  <TableHeaderCell>{t('orders.deliveryDate')}</TableHeaderCell>
-                  <TableHeaderCell>{t('orders.status')}</TableHeaderCell>
-                  <TableHeaderCell>{t('orders.totalAmount')}</TableHeaderCell>
-                  <TableHeaderCell>{t('common.actions')}</TableHeaderCell>
+              <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.orderId')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.customer')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.orderDate')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.deliveryDate')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.status')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('orders.totalAmount')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <tbody>
+              </TableHead>
+              <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} hover>
                     <TableCell>{order.id.substring(0, 8)}...</TableCell>
                     <TableCell>{order.customerName || '—'}</TableCell>
                     <TableCell>{formatDate(order.orderDate)}</TableCell>
                     <TableCell>{formatDate(order.deliveryDate)}</TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status}>{order.status}</StatusBadge>
+                      <Chip
+                        label={order.status}
+                        color={getStatusColor(order.status)}
+                        size="small"
+                        sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+                      />
                     </TableCell>
                     <TableCell>{order.totalAmount ? `$${order.totalAmount.toFixed(2)}` : '—'}</TableCell>
-                    <ActionCell>
+                    <TableCell>
                       <IconButton
-                        variant="view"
+                        size="small"
                         onClick={() => handleViewOrderDetails(order.id)}
                         title={t('orders.viewDetails')}
+                        sx={{
+                          bgcolor: '#e3f2fd',
+                          color: '#1976d2',
+                          '&:hover': {
+                            bgcolor: '#bbdefb',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                          },
+                        }}
                       >
-                        <FaEye />
+                        <VisibilityIcon />
                       </IconButton>
-                    </ActionCell>
+                    </TableCell>
                   </TableRow>
                 ))}
-              </tbody>
+              </TableBody>
             </Table>
           </TableContainer>
 
-          <PaginationContainer>
-            <PaginationInfo>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mt: 3,
+              p: 2,
+              bgcolor: '#f8f9fa',
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
               {t('pagination.showing')} {((currentPage - 1) * limit) + 1} {t('pagination.to')} {Math.min(currentPage * limit, totalCount)} {t('pagination.of')} {totalCount} {t('orders.title').toLowerCase()}
-            </PaginationInfo>
-            <PaginationButtons>
-              <PaginationButton
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<ChevronLeftIcon />}
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
               >
-                <FaChevronLeft /> {t('pagination.previous')}
-              </PaginationButton>
-              <PaginationButton
+                {t('pagination.previous')}
+              </Button>
+              <Button
+                variant="outlined"
+                endIcon={<ChevronRightIcon />}
                 onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
               >
-                {t('pagination.next')} <FaChevronRight />
-              </PaginationButton>
-            </PaginationButtons>
-          </PaginationContainer>
+                {t('pagination.next')}
+              </Button>
+            </Box>
+          </Box>
         </>
       )}
-    </PageContainer>
+    </Card>
   );
 };
 

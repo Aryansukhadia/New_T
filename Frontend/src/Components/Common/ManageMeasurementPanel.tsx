@@ -16,7 +16,7 @@ import {
   type AddMeasurementRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import { FaRuler, FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus } from 'react-icons/fa';
+import { FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus } from 'react-icons/fa';
 import type { Customer } from '../../Services/ApiServices';
 
 const PanelContainer = styled.div`

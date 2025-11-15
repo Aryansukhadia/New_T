@@ -1,244 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import {
+  People as PeopleIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  PersonAdd as PersonAddIcon,
+  Straighten as StraightenIcon,
+} from '@mui/icons-material';
 import {
   getCustomersService,
   deleteCustomerService,
   type Customer,
 } from '../../Services/ApiServices';
-import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
-import { Button, LoadingSpinner } from '../../Components/Common/FormComponents';
-import {
-  FaUsers,
-  FaEdit,
-  FaTrash,
-  FaUserPlus,
-  FaRuler,
-} from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const ActionButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const SearchBar = styled.div`
-  margin-bottom: 24px;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  max-width: 400px;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr<{ isHeader?: boolean }>`
-  border-bottom: 1px solid #e0e0e0;
-
-  &:hover {
-    background: ${(props) => (props.isHeader ? 'none' : '#f8f9fa')};
-  }
-`;
-
-const TableCell = styled.td<{ isHeader?: boolean }>`
-  padding: 16px;
-  text-align: left;
-  font-weight: ${(props) => (props.isHeader ? '600' : '400')};
-  color: ${(props) => (props.isHeader ? '#666' : '#333')};
-  font-size: 14px;
-`;
-
-const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
-  background: #f8f9fa;
-`;
-
-const ActionCell = styled(TableCell)`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconButton = styled.button<{ variant?: 'edit' | 'delete' | 'measurement' }>`
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-
-  ${(props) => {
-    if (props.variant === 'edit') {
-      return `
-        background: #e3f2fd;
-        color: #1976d2;
-        &:hover {
-          background: #bbdefb;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'delete') {
-      return `
-        background: #ffebee;
-        color: #d32f2f;
-        &:hover {
-          background: #ffcdd2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'measurement') {
-      return `
-        background: #fff3e0;
-        color: #f57c00;
-        &:hover {
-          background: #ffe0b2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(245, 124, 0, 0.2);
-        }
-      `;
-    }
-    return `
-      background: #f5f5f5;
-      color: #666;
-      &:hover {
-        background: #e0e0e0;
-      }
-    `;
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-
-  svg {
-    width: 48px;
-    height: 48px;
-  }
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
-
-const ModalButtonSecondary = styled.button`
-  padding: 14px 28px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -359,119 +153,171 @@ const CustomersPage = () => {
   };
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>Customer Management</PageTitle>
-        <ActionButton onClick={handleAddCustomer}>
-          <FaUserPlus style={{ marginRight: '8px' }} />
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Customer Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={handleAddCustomer}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
           Add New Customer
-        </ActionButton>
-      </PageHeader>
+        </Button>
+      </Box>
 
-      <SearchBar>
-        <SearchInput
-          type="text"
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
           placeholder="Search customers by name, email, mobile, address, or reference..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          variant="outlined"
+          sx={{ maxWidth: 500 }}
         />
-      </SearchBar>
+      </Box>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : filteredCustomers.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
-            <FaUsers />
-          </EmptyStateIcon>
-          <EmptyStateText>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="body1">
             {searchTerm
               ? 'No customers found matching your search'
               : 'No customers found. Add your first customer to get started!'}
-          </EmptyStateText>
-        </EmptyState>
+          </Typography>
+        </Box>
       ) : (
-        <TableContainer>
+        <TableContainer component={Paper} variant="outlined">
           <Table>
-            <TableHeader>
-              <TableRow isHeader>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
-                <TableHeaderCell>Mobile</TableHeaderCell>
-                <TableHeaderCell>Address</TableHeaderCell>
-                <TableHeaderCell>Reference</TableHeaderCell>
-                <TableHeaderCell>Created At</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
+            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Mobile</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Address</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Reference</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
               </TableRow>
-            </TableHeader>
-            <tbody>
+            </TableHead>
+            <TableBody>
               {filteredCustomers.map((customer) => (
-                <TableRow key={customer.customerId}>
+                <TableRow key={customer.customerId} hover>
                   <TableCell>{customer.fullName}</TableCell>
                   <TableCell>{customer.emailId}</TableCell>
                   <TableCell>{customer.mobileNo}</TableCell>
                   <TableCell>{customer.address}</TableCell>
                   <TableCell>{customer.reference || '—'}</TableCell>
                   <TableCell>{formatDate(customer.createdAt)}</TableCell>
-                  <ActionCell>
-                    <IconButton
-                      variant="measurement"
-                      onClick={() => handleManageMeasurements(customer)}
-                      title="Manage Measurements"
-                    >
-                      <FaRuler />
-                    </IconButton>
-                    <IconButton
-                      variant="edit"
-                      onClick={() => handleEditCustomer(customer)}
-                      title="Edit Customer"
-                    >
-                      <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      variant="delete"
-                      onClick={() => handleOpenDeleteModal(customer)}
-                      title="Delete Customer"
-                    >
-                      <FaTrash />
-                    </IconButton>
-                  </ActionCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleManageMeasurements(customer)}
+                        title="Manage Measurements"
+                        sx={{
+                          bgcolor: '#fff3e0',
+                          color: '#f57c00',
+                          '&:hover': {
+                            bgcolor: '#ffe0b2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
+                          },
+                        }}
+                      >
+                        <StraightenIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditCustomer(customer)}
+                        title="Edit Customer"
+                        sx={{
+                          bgcolor: '#e3f2fd',
+                          color: '#1976d2',
+                          '&:hover': {
+                            bgcolor: '#bbdefb',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenDeleteModal(customer)}
+                        title="Delete Customer"
+                        sx={{
+                          bgcolor: '#ffebee',
+                          color: '#d32f2f',
+                          '&:hover': {
+                            bgcolor: '#ffcdd2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))}
-            </tbody>
+            </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        title="Delete Customer"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-            <Button
-              onClick={handleDelete}
-              disabled={deleteLoading}
-              style={{ background: '#dc3545', marginTop: 0 }}
-            >
-              {deleteLoading ? <LoadingSpinner /> : 'Delete'}
-            </Button>
-          </>
-        }
-      >
-        {customerToDelete && (
-          <p>
-            Are you sure you want to delete customer <strong>{customerToDelete.fullName}</strong> (
-            {customerToDelete.emailId})? This action will soft delete the customer and cannot be
-            undone.
-          </p>
-        )}
-      </Modal>
-    </PageContainer>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Customer</DialogTitle>
+        <DialogContent>
+          {customerToDelete && (
+            <Typography>
+              Are you sure you want to delete customer <strong>{customerToDelete.fullName}</strong> (
+              {customerToDelete.emailId})? This action will soft delete the customer and cannot be
+              undone.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={handleCloseDeleteModal}
+            variant="outlined"
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={deleteLoading}
+            variant="contained"
+            color="error"
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {deleteLoading ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 

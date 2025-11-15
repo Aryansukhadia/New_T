@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import styled from 'styled-components';
 import {
   getProductItemsService,
   createProductItemService,
@@ -9,337 +8,36 @@ import {
   type CreateProductItemRequest,
   type UpdateProductItemRequest,
 } from '../../Services/ApiServices';
-import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
 import {
-  FormGroup,
-  Label,
-  Input,
+  Box,
+  Card,
+  Typography,
   Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
+  TextField,
+  CircularProgress,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import {
-  FaBox,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaImage,
-  FaTimes,
-  FaUpload,
-} from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const ActionButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const SearchBar = styled.div`
-  margin-bottom: 24px;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  max-width: 400px;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr<{ isHeader?: boolean }>`
-  border-bottom: 1px solid #e0e0e0;
-
-  &:hover {
-    background: ${(props) => (props.isHeader ? 'none' : '#f8f9fa')};
-  }
-`;
-
-const TableCell = styled.td<{ isHeader?: boolean }>`
-  padding: 16px;
-  text-align: left;
-  font-weight: ${(props) => (props.isHeader ? '600' : '400')};
-  color: ${(props) => (props.isHeader ? '#666' : '#333')};
-  font-size: 14px;
-`;
-
-const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
-  background: #f8f9fa;
-`;
-
-const ActionCell = styled(TableCell)`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconButton = styled.button<{ variant?: 'edit' | 'delete' }>`
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-
-  ${(props) => {
-    if (props.variant === 'edit') {
-      return `
-        background: #e3f2fd;
-        color: #1976d2;
-        &:hover {
-          background: #bbdefb;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'delete') {
-      return `
-        background: #ffebee;
-        color: #d32f2f;
-        &:hover {
-          background: #ffcdd2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
-        }
-      `;
-    }
-    return '';
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-
-  svg {
-    width: 48px;
-    height: 48px;
-  }
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
-
-const ModalButton = styled(Button)`
-  margin-top: 0;
-  min-width: 140px;
-  padding: 14px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const ModalButtonSecondary = styled.button`
-  padding: 14px 28px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const FileInputWrapper = styled.div`
-  position: relative;
-`;
-
-const FileInputLabel = styled.label`
-  display: inline-block;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-`;
-
-const ImagePreviewContainer = styled.div`
-  margin-top: 16px;
-  position: relative;
-  display: inline-block;
-`;
-
-const ImagePreview = styled.img`
-  max-width: 300px;
-  max-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  object-fit: cover;
-`;
-
-const RemoveImageButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #c82333;
-    transform: scale(1.1);
-  }
-`;
-
-const TableImage = styled.img`
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const ImageCell = styled(TableCell)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+  Inventory as BoxIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
+  Close as CloseIcon,
+  Upload as UploadIcon,
+} from '@mui/icons-material';
 
 const ProductItemsPage = () => {
   const [productItems, setProductItems] = useState<ProductItem[]>([]);
@@ -570,59 +268,89 @@ const ProductItemsPage = () => {
   };
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>Product Items Management</PageTitle>
-        <ActionButton onClick={handleOpenCreateModal}>
-          <FaPlus style={{ marginRight: '8px' }} />
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Product Items Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreateModal}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
           Add New Product Item
-        </ActionButton>
-      </PageHeader>
+        </Button>
+      </Box>
 
-      <SearchBar>
-        <SearchInput
-          type="text"
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
           placeholder="Search product items by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ maxWidth: 400 }}
         />
-      </SearchBar>
+      </Box>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : filteredProductItems.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
-            <FaBox />
-          </EmptyStateIcon>
-          <EmptyStateText>
+        <Box sx={{ textAlign: 'center', py: 7.5, color: 'text.secondary' }}>
+          <Box sx={{ fontSize: 48, mb: 2, color: '#ccc', display: 'flex', justifyContent: 'center' }}>
+            <BoxIcon sx={{ fontSize: 48 }} />
+          </Box>
+          <Typography variant="body1">
             {searchTerm
               ? 'No product items found matching your search'
               : 'No product items found. Add your first product item to get started!'}
-          </EmptyStateText>
-        </EmptyState>
+          </Typography>
+        </Box>
       ) : (
-        <TableContainer>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e0e0e0' }}>
           <Table>
-            <TableHeader>
-              <TableRow isHeader>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Image</TableHeaderCell>
-                <TableHeaderCell>Created At</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
+            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Created At</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Actions</TableCell>
               </TableRow>
-            </TableHeader>
-            <tbody>
+            </TableHead>
+            <TableBody>
               {filteredProductItems.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}>
                   <TableCell>{item.name}</TableCell>
-                  <ImageCell>
+                  <TableCell sx={{ textAlign: 'center' }}>
                     {item.imageUrl ? (
-                      <TableImage
+                      <Box
+                        component="img"
                         src={item?.imageUrl || ''}
                         alt={item.name}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          border: '2px solid #e0e0e0',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.1)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                          },
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
@@ -630,135 +358,205 @@ const ProductItemsPage = () => {
                     ) : (
                       <span style={{ color: '#999' }}>—</span>
                     )}
-                  </ImageCell>
+                  </TableCell>
                   <TableCell>{formatDate(item.createdAt)}</TableCell>
-                  <ActionCell>
-                    <IconButton
-                      variant="edit"
-                      onClick={() => handleOpenEditModal(item)}
-                      title="Edit Product Item"
-                    >
-                      <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      variant="delete"
-                      onClick={() => handleOpenDeleteModal(item)}
-                      title="Delete Product Item"
-                    >
-                      <FaTrash />
-                    </IconButton>
-                  </ActionCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        onClick={() => handleOpenEditModal(item)}
+                        title="Edit Product Item"
+                        sx={{
+                          bgcolor: '#e3f2fd',
+                          color: '#1976d2',
+                          '&:hover': {
+                            bgcolor: '#bbdefb',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                          },
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => handleOpenDeleteModal(item)}
+                        title="Delete Product Item"
+                        sx={{
+                          bgcolor: '#ffebee',
+                          color: '#d32f2f',
+                          '&:hover': {
+                            bgcolor: '#ffcdd2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+                          },
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))}
-            </tbody>
+            </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={isEditMode ? 'Edit Product Item' : 'Create New Product Item'}
-        size="large"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
-            <ModalButton onClick={handleSubmit} disabled={formLoading}>
-              {formLoading ? (
-                <LoadingSpinner />
-              ) : isEditMode ? (
-                <>
-                  <FaEdit /> Update Product Item
-                </>
-              ) : (
-                <>
-                  <FaPlus /> Create Product Item
-                </>
-              )}
-            </ModalButton>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-          <FormGroup>
-            <Label htmlFor="name">
-              <FaBox />
-              Product Item Name
-            </Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleFormChange}
-              placeholder="Enter product item name (e.g., Shirt, Pant, Blazer)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
+      {/* Create/Edit Dialog */}
+      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+        <DialogTitle>{isEditMode ? 'Edit Product Item' : 'Create New Product Item'}</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <BoxIcon sx={{ fontSize: 20 }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Product Item Name
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleFormChange}
+                placeholder="Enter product item name (e.g., Shirt, Pant, Blazer)"
+                required
+                disabled={formLoading}
+              />
+            </Box>
 
-          <FormGroup>
-            <Label htmlFor="imageFile">
-              <FaImage />
-              Upload Image (Optional)
-            </Label>
-            <FileInputWrapper>
-              <FileInputLabel htmlFor="imageFile">
-                <FaUpload style={{ marginRight: '8px' }} />
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <ImageIcon sx={{ fontSize: 20 }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Upload Image (Optional)
+                </Typography>
+              </Box>
+              <Button
+                component="label"
+                variant="contained"
+                startIcon={<UploadIcon />}
+                disabled={formLoading}
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  },
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
                 Choose Image File
                 <input
                   type="file"
+                  hidden
                   id="imageFile"
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleImageFileChange}
                   disabled={formLoading}
                 />
-              </FileInputLabel>
+              </Button>
               {selectedImageFile && (
-                <p style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
+                <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
                   Selected: {selectedImageFile.name}
-                </p>
+                </Typography>
               )}
-            </FileInputWrapper>
-            {imagePreview && (
-              <ImagePreviewContainer>
-                <ImagePreview src={imagePreview} alt="Preview" />
-                <RemoveImageButton onClick={handleRemoveImage} type="button">
-                  <FaTimes />
-                </RemoveImageButton>
-              </ImagePreviewContainer>
-            )}
-          </FormGroup>
-        </form>
-      </Modal>
+              {imagePreview && (
+                <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+                  <Box
+                    component="img"
+                    src={imagePreview}
+                    alt="Preview"
+                    sx={{
+                      maxWidth: 300,
+                      maxHeight: 200,
+                      borderRadius: 1,
+                      border: '2px solid #e0e0e0',
+                      objectFit: 'cover',
+                    }}
+                  />
+                  <IconButton
+                    onClick={handleRemoveImage}
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      bgcolor: '#dc3545',
+                      color: 'white',
+                      width: 32,
+                      height: 32,
+                      '&:hover': {
+                        bgcolor: '#c82333',
+                        transform: 'scale(1.1)',
+                      },
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={formLoading}
+            variant="contained"
+            startIcon={formLoading ? <CircularProgress size={20} /> : isEditMode ? <EditIcon /> : <AddIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: 140,
+            }}
+          >
+            {formLoading ? '' : isEditMode ? 'Update Product Item' : 'Create Product Item'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        title="Delete Product Item"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-            <Button
-              onClick={handleDelete}
-              disabled={formLoading}
-              style={{ background: '#dc3545', marginTop: 0 }}
-            >
-              {formLoading ? <LoadingSpinner /> : 'Delete'}
-            </Button>
-          </>
-        }
-      >
-        {productItemToDelete && (
-          <p>
-            Are you sure you want to delete product item <strong>{productItemToDelete.name}</strong>?
-            This action cannot be undone.
-          </p>
-        )}
-      </Modal>
-    </PageContainer>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Product Item</DialogTitle>
+        <DialogContent>
+          {productItemToDelete && (
+            <Typography variant="body1">
+              Are you sure you want to delete product item <strong>{productItemToDelete.name}</strong>?
+              This action cannot be undone.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDeleteModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={formLoading}
+            variant="contained"
+            sx={{
+              bgcolor: '#dc3545',
+              '&:hover': {
+                bgcolor: '#c82333',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 

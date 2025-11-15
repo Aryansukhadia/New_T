@@ -1,36 +1,7 @@
-import styled from 'styled-components';
+import { Button, Typography } from '@mui/material';
+import { Language as LanguageIcon } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleLanguage } from '../../store/slices/languageSlice';
-import { FaLanguage } from 'react-icons/fa';
-
-const ToggleButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const LanguageText = styled.span`
-  text-transform: uppercase;
-  font-weight: 700;
-`;
 
 const LanguageToggle = () => {
   const dispatch = useAppDispatch();
@@ -41,10 +12,39 @@ const LanguageToggle = () => {
   };
 
   return (
-    <ToggleButton onClick={handleToggle} title={`Switch to ${currentLanguage === 'en' ? 'Gujarati' : 'English'}`}>
-      <FaLanguage />
-      <LanguageText>{currentLanguage === 'en' ? 'EN' : 'GU'}</LanguageText>
-    </ToggleButton>
+    <Button
+      onClick={handleToggle}
+      startIcon={<LanguageIcon />}
+      title={`Switch to ${currentLanguage === 'en' ? 'Gujarati' : 'English'}`}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        padding: '10px 16px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        borderRadius: '8px',
+        fontSize: '14px',
+        fontWeight: 600,
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+        },
+        '&:active': {
+          transform: 'translateY(0)',
+        },
+      }}
+    >
+      <Typography
+        sx={{
+          textTransform: 'uppercase',
+          fontWeight: 700,
+        }}
+      >
+        {currentLanguage === 'en' ? 'EN' : 'GU'}
+      </Typography>
+    </Button>
   );
 };
 

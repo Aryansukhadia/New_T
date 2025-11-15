@@ -1,5 +1,38 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  InputAdornment,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import {
+  People as PeopleIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Lock as LockIcon,
+  PersonAdd as PersonAddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
 import {
   getUsersService,
   updateUserService,
@@ -10,279 +43,7 @@ import {
   type UserResponse,
   type Role,
 } from '../../Services/ApiServices';
-import Modal from '../../Components/Common/Modal';
-import { FormGroup, Label, Input, Select, Button, LoadingSpinner } from '../../Components/Common/FormComponents';
 import { useToast } from '../../Utils/ToastContext';
-import { FaUsers, FaUser, FaEnvelope, FaLock, FaUserTag, FaUserPlus, FaEdit, FaTrash, FaEye, FaEyeSlash } from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const ActionButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const SearchBar = styled.div`
-  margin-bottom: 24px;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  max-width: 400px;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr<{ isHeader?: boolean }>`
-  border-bottom: 1px solid #e0e0e0;
-  
-  &:hover {
-    background: ${props => props.isHeader ? 'none' : '#f8f9fa'};
-  }
-`;
-
-const TableCell = styled.td<{ isHeader?: boolean }>`
-  padding: 16px;
-  text-align: left;
-  font-weight: ${props => props.isHeader ? '600' : '400'};
-  color: ${props => props.isHeader ? '#666' : '#333'};
-  font-size: 14px;
-`;
-
-const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
-  background: #f8f9fa;
-`;
-
-const ActionCell = styled(TableCell)`
-  display: flex;
-  gap: 8px;
-`;
-
-const IconButton = styled.button<{ variant?: 'edit' | 'delete' }>`
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  
-  ${props => {
-    if (props.variant === 'edit') {
-      return `
-        background: #e3f2fd;
-        color: #1976d2;
-        &:hover {
-          background: #bbdefb;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(25, 118, 210, 0.2);
-        }
-      `;
-    }
-    if (props.variant === 'delete') {
-      return `
-        background: #ffebee;
-        color: #d32f2f;
-        &:hover {
-          background: #ffcdd2;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
-        }
-      `;
-    }
-    return `
-      background: #f5f5f5;
-      color: #666;
-      &:hover {
-        background: #e0e0e0;
-      }
-    `;
-  }}
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-  
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-  
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-  
-  svg {
-    width: 48px;
-    height: 48px;
-  }
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
-
-const ModalButton = styled(Button)`
-  margin-top: 0;
-  min-width: 140px;
-  padding: 14px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-  
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const ModalButtonSecondary = styled.button`
-  padding: 14px 28px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
-  
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const PasswordInputWrapper = styled.div`
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-`;
-
-const PasswordToggleButton = styled.button`
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: color 0.2s ease;
-  z-index: 1;
-  
-  &:hover {
-    color: #667eea;
-  }
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const PasswordInput = styled(Input)`
-  padding-right: 45px;
-  box-sizing: border-box;
-  width: 100%;
-`;
 
 const UsersPage = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
@@ -395,8 +156,17 @@ const UsersPage = () => {
     setUserToDelete(null);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    const { name, value } = event.target;
+    if (!name) return;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -492,246 +262,250 @@ const UsersPage = () => {
   };
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>User Management</PageTitle>
-        <ActionButton onClick={handleOpenCreateModal}>+ Add New User</ActionButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          User Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={handleOpenCreateModal}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
+        >
+          Add New User
+        </Button>
+      </Box>
 
-      <SearchBar>
-        <SearchInput
-          type="text"
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
           placeholder="Search users by name, email, or role..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          variant="outlined"
+          sx={{ maxWidth: 500 }}
         />
-      </SearchBar>
-
+      </Box>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : filteredUsers.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
-            <FaUsers />
-          </EmptyStateIcon>
-          <EmptyStateText>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="body1">
             {searchTerm ? 'No users found matching your search' : 'No users found'}
-          </EmptyStateText>
-        </EmptyState>
+          </Typography>
+        </Box>
       ) : (
-        <TableContainer>
+        <TableContainer component={Paper} variant="outlined">
           <Table>
-            <TableHeader>
-              <TableRow isHeader>
-                <TableHeaderCell>Name</TableHeaderCell>
-                <TableHeaderCell>Email</TableHeaderCell>
-                <TableHeaderCell>Role</TableHeaderCell>
-                <TableHeaderCell>Created At</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
+            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
               </TableRow>
-            </TableHeader>
-            <tbody>
+            </TableHead>
+            <TableBody>
               {filteredUsers.map((user) => (
-                <TableRow key={user.userId}>
+                <TableRow key={user.userId} hover>
                   <TableCell>{user.fullName}</TableCell>
                   <TableCell>{user.emailId}</TableCell>
                   <TableCell>{user.role.roleName}</TableCell>
                   <TableCell>{formatDate(user.createdAt)}</TableCell>
-                  <ActionCell>
-                    <IconButton
-                      variant="edit"
-                      onClick={() => handleOpenEditModal(user)}
-                      disabled={user.userId === currentUser?.userId}
-                      title="Edit User"
-                    >
-                      <FaEdit />
-                    </IconButton>
-                    <IconButton
-                      variant="delete"
-                      onClick={() => handleOpenDeleteModal(user)}
-                      disabled={user.userId === currentUser?.userId}
-                      title="Delete User"
-                    >
-                      <FaTrash />
-                    </IconButton>
-                  </ActionCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenEditModal(user)}
+                        disabled={user.userId === currentUser?.userId}
+                        title="Edit User"
+                        sx={{
+                          bgcolor: '#e3f2fd',
+                          color: '#1976d2',
+                          '&:hover': {
+                            bgcolor: '#bbdefb',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenDeleteModal(user)}
+                        disabled={user.userId === currentUser?.userId}
+                        title="Delete User"
+                        sx={{
+                          bgcolor: '#ffebee',
+                          color: '#d32f2f',
+                          '&:hover': {
+                            bgcolor: '#ffcdd2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))}
-            </tbody>
+            </TableBody>
           </Table>
         </TableContainer>
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={isEditMode ? 'Edit User' : 'Create New User'}
-        size="large"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseModal}>Cancel</ModalButtonSecondary>
-            <ModalButton onClick={handleSubmit} disabled={formLoading}>
-              {formLoading ? (
-                <LoadingSpinner />
-              ) : isEditMode ? (
-                <>
-                  <FaEdit /> Update User
-                </>
-              ) : (
-                <>
-                  <FaUserPlus /> Create User
-                </>
-              )}
-            </ModalButton>
-          </>
-        }
-      >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column' }}>
-
-          <FormGroup>
-            <Label htmlFor="fullName">
-              <FaUser />
-              Full Name
-            </Label>
-            <Input
-              type="text"
-              id="fullName"
+      {/* Create/Edit Dialog */}
+      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+        <DialogTitle>{isEditMode ? 'Edit User' : 'Create New User'}</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              fullWidth
+              label="Full Name"
               name="fullName"
               value={formData.fullName}
-              onChange={handleFormChange}
+              onChange={handleInputChange}
               placeholder="Enter full name (e.g., John Doe)"
               required
               disabled={formLoading}
+              InputProps={{
+                startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.active' }} />,
+              }}
             />
-          </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="emailId">
-              <FaEnvelope />
-              Email Address
-            </Label>
-            <Input
+            <TextField
+              fullWidth
               type="email"
-              id="emailId"
+              label="Email Address"
               name="emailId"
               value={formData.emailId}
-              onChange={handleFormChange}
+              onChange={handleInputChange}
               placeholder="Enter email address (e.g., john.doe@example.com)"
               required
               disabled={formLoading || isEditMode}
+              InputProps={{
+                startAdornment: <EmailIcon sx={{ mr: 1, color: 'action.active' }} />,
+              }}
+              helperText={isEditMode ? 'Email address cannot be modified after account creation' : ''}
             />
-            {isEditMode && (
-              <p style={{
-                fontSize: '13px',
-                color: '#999',
-                marginTop: '4px',
-                fontStyle: 'italic',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 12px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                border: '1px solid #e0e0e0'
-              }}>
-                <FaEnvelope style={{ fontSize: '12px', color: '#667eea' }} />
-                Email address cannot be modified after account creation
-              </p>
+
+            {!isEditMode && (
+              <TextField
+                fullWidth
+                type={showPassword ? 'text' : 'password'}
+                label="Password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter password (minimum 6 characters)"
+                required
+                disabled={formLoading}
+                inputProps={{ minLength: 6 }}
+                InputProps={{
+                  startAdornment: <LockIcon sx={{ mr: 1, color: 'action.active' }} />,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={formLoading}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                helperText="Password must be at least 6 characters long"
+              />
             )}
-          </FormGroup>
 
-          {!isEditMode && (
-            <FormGroup>
-              <Label htmlFor="password">
-                <FaLock />
-                Password
-              </Label>
-              <PasswordInputWrapper>
-                <PasswordInput
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleFormChange}
-                  placeholder="Enter password (minimum 6 characters)"
-                  required
-                  disabled={formLoading}
-                  minLength={6}
-                />
-                <PasswordToggleButton
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={formLoading}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </PasswordToggleButton>
-              </PasswordInputWrapper>
-              <p style={{
-                fontSize: '12px',
-                color: '#666',
-                marginTop: '4px',
-                paddingLeft: '4px'
-              }}>
-                Password must be at least 6 characters long
-              </p>
-            </FormGroup>
-          )}
-
-          <FormGroup>
-            <Label htmlFor="roleId">
-              <FaUserTag />
-              Role
-            </Label>
-            <Select
-              id="roleId"
+            <TextField
+              fullWidth
+              select
+              label="Role"
               name="roleId"
               value={formData.roleId}
-              onChange={handleFormChange}
+              onChange={(event) => handleSelectChange(event as SelectChangeEvent<string>)}
               required
               disabled={formLoading}
             >
-              <option value="">-- Select a role --</option>
+              <MenuItem value="">-- Select a role --</MenuItem>
               {roles.map((role) => (
-                <option key={role.roleId} value={role.roleId}>
+                <MenuItem key={role.roleId} value={role.roleId}>
                   {role.roleName}
-                </option>
+                </MenuItem>
               ))}
-            </Select>
-          </FormGroup>
-        </form>
-      </Modal>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={formLoading}
+            variant="contained"
+            startIcon={isEditMode ? <EditIcon /> : <PersonAddIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {formLoading ? <CircularProgress size={20} color="inherit" /> : isEditMode ? 'Update User' : 'Create User'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        title="Delete User"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-            <Button
-              onClick={handleDelete}
-              disabled={formLoading}
-              style={{ background: '#dc3545', marginTop: 0 }}
-            >
-              {formLoading ? <LoadingSpinner /> : 'Delete'}
-            </Button>
-          </>
-        }
-      >
-        {userToDelete && (
-          <p>
-            Are you sure you want to delete user <strong>{userToDelete.fullName}</strong> (
-            {userToDelete.emailId})? This action cannot be undone.
-          </p>
-        )}
-      </Modal>
-    </PageContainer>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete User</DialogTitle>
+        <DialogContent>
+          {userToDelete && (
+            <Typography>
+              Are you sure you want to delete user <strong>{userToDelete.fullName}</strong> (
+              {userToDelete.emailId})? This action cannot be undone.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDeleteModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={formLoading}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            {formLoading ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 

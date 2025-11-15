@@ -1,26 +1,14 @@
-import styled from 'styled-components';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 24px;
-`;
+import { Card, Typography } from '@mui/material';
 
 const ReportsPage = () => {
   return (
-    <PageContainer>
-      <PageTitle>Reports</PageTitle>
-      <p>Reports page - Admin and Accountant access</p>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
+        Reports
+      </Typography>
+      <Typography variant="body1">Reports page - Admin and Accountant access</Typography>
       {/* TODO: Implement reports functionality */}
-    </PageContainer>
+    </Card>
   );
 };
 

@@ -1,491 +1,429 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+    Box,
+    Card,
+    Typography,
+    Button,
+    TextField,
+    CircularProgress,
+    Checkbox,
+    FormControlLabel,
+    IconButton,
+    MenuItem,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
+import {
+    Add as AddIcon,
+    ArrowBack as ArrowBackIcon,
+    Image as ImageIcon,
+    Inventory as InventoryIcon,
+    ShoppingBag as ShoppingBagIcon,
+    LocalOffer as LocalOfferIcon,
+    Upload as UploadIcon,
+    Close as CloseIcon,
+} from '@mui/icons-material';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
-  getProductsService,
-  getProductItemsService,
-  createProductVariantService,
-  type Product,
-  type ProductItem,
-  type CreateProductVariantRequest,
+    getProductsService,
+    getProductItemsService,
+    createProductVariantService,
+    type Product,
+    type ProductItem,
+    type CreateProductVariantRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import {
-  FormGroup,
-  Label,
-  Input,
-  Select,
-  Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
-import {
-  FaPlus,
-  FaArrowLeft,
-  FaImage,
-  FaBox,
-  FaShoppingBag,
-  FaTags,
-  FaUpload,
-  FaTimes,
-} from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ActionButton = styled(Button)`
-  padding: 14px 28px;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const FileInputWrapper = styled.div`
-  position: relative;
-`;
-
-const FileInputLabel = styled.label`
-  display: inline-block;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-`;
-
-const ImagePreviewContainer = styled.div`
-  margin-top: 16px;
-  position: relative;
-  display: inline-block;
-`;
-
-const ImagePreview = styled.img`
-  max-width: 300px;
-  max-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  object-fit: cover;
-`;
-
-const RemoveImageButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #c82333;
-    transform: scale(1.1);
-  }
-`;
-
-const CheckboxContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fafafa;
-`;
-
-const CheckboxItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f0f0f0;
-  }
-
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-
-  span {
-    font-size: 14px;
-    color: #333;
-  }
-`;
-
-const FormRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 2px solid #e0e0e0;
-`;
 
 const CreateProductVariantPage = () => {
-  const navigate = useNavigate();
-  const { showSuccess, showError } = useToast();
-  const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
+    const { t } = useTranslation();
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [formLoading, setFormLoading] = useState(false);
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [formLoading, setFormLoading] = useState(false);
 
-  const [formData, setFormData] = useState<CreateProductVariantRequest>({
-    productId: '',
-    name: '',
-    description: null,
-    photoUrl: null,
-    productItemIds: [],
-  });
+    const [formData, setFormData] = useState<CreateProductVariantRequest>({
+        productId: '',
+        name: '',
+        description: null,
+        photoUrl: null,
+        productItemIds: [],
+    });
 
-  const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
-  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
+    const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [productsResponse, itemsResponse] = await Promise.all([
-        getProductsService(),
-        getProductItemsService(),
-      ]);
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [productsResponse, itemsResponse] = await Promise.all([
+                getProductsService(),
+                getProductItemsService(),
+            ]);
 
-      if (productsResponse.success === 200 && productsResponse.data) {
-        setAllProducts(productsResponse.data);
-      }
+            if (productsResponse.success === 200 && productsResponse.data) {
+                setAllProducts(productsResponse.data);
+            }
 
-      if (itemsResponse.success === 200 && itemsResponse.data) {
-        setAllProductItems(itemsResponse.data);
-      }
-    } catch (err: unknown) {
-      console.error('Error fetching data:', err);
-      showError('Failed to load data. Please try again.', 'Error');
-    } finally {
-      setLoading(false);
+            if (itemsResponse.success === 200 && itemsResponse.data) {
+                setAllProductItems(itemsResponse.data);
+            }
+        } catch (err: unknown) {
+            console.error('Error fetching data:', err);
+            showError('Failed to load data. Please try again.', 'Error');
+        } finally {
+            setLoading(false);
+        }
+    }, [showError]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const handleFormChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>,
+    ) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: name === 'photoUrl' || name === 'description' ? (value === '' ? null : value) : value,
+        }));
+    };
+
+    const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedPhotoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhotoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemovePhoto = () => {
+        setSelectedPhotoFile(null);
+        setPhotoPreview(null);
+        setFormData((prev) => ({ ...prev, photoUrl: null }));
+    };
+
+    const handleProductItemToggle = (itemId: string) => {
+        setSelectedProductItems((prev) =>
+            prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId],
+        );
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormLoading(true);
+
+        try {
+            const createData: CreateProductVariantRequest = {
+                productId: formData.productId,
+                name: formData.name,
+                description: formData.description || null,
+                photoUrl: formData.photoUrl || null,
+                productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
+            };
+
+            const response = await createProductVariantService(createData, selectedPhotoFile);
+
+            if (response.success === 201) {
+                showSuccess(response.message || 'Product variant created successfully!', 'Success');
+                setTimeout(() => {
+                    navigate('/dashboard/product-variants');
+                }, 1000);
+            } else {
+                const errorMsg = response.message || 'Failed to create product variant';
+                showError(errorMsg, 'Create Failed');
+            }
+        } catch (err: unknown) {
+            if (err && typeof err === 'object' && 'response' in err) {
+                const axiosError = err as { response?: { data?: { message?: string } } };
+                const errorMsg = axiosError.response?.data?.message || 'An error occurred';
+                showError(errorMsg, 'Create Failed');
+            } else {
+                const errorMsg = 'An unexpected error occurred';
+                showError(errorMsg, 'Create Failed');
+            }
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <Card sx={{ borderRadius: 1.5, p: 3 }}>
+                <Box sx={{ textAlign: 'center', py: 5 }}>
+                    <CircularProgress />
+                </Box>
+            </Card>
+        );
     }
-  }, [showError]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'photoUrl' || name === 'description' ? (value === '' ? null : value) : value,
-    }));
-  };
-
-  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedPhotoFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setSelectedPhotoFile(null);
-    setPhotoPreview(null);
-    setFormData((prev) => ({ ...prev, photoUrl: null }));
-  };
-
-  const handleProductItemToggle = (itemId: string) => {
-    setSelectedProductItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-
-    try {
-      const createData: CreateProductVariantRequest = {
-        productId: formData.productId,
-        name: formData.name,
-        description: formData.description || null,
-        photoUrl: formData.photoUrl || null,
-        productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
-      };
-
-      const response = await createProductVariantService(createData, selectedPhotoFile);
-
-      if (response.success === 201) {
-        showSuccess(response.message || 'Product variant created successfully!', 'Success');
-        setTimeout(() => {
-          navigate('/dashboard/product-variants');
-        }, 1000);
-      } else {
-        const errorMsg = response.message || 'Failed to create product variant';
-        showError(errorMsg, 'Create Failed');
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        const errorMsg = axiosError.response?.data?.message || 'An error occurred';
-        showError(errorMsg, 'Create Failed');
-      } else {
-        const errorMsg = 'An unexpected error occurred';
-        showError(errorMsg, 'Create Failed');
-      }
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  if (loading) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      </PageContainer>
-    );
-  }
-
-  return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('productVariants.createNewVariant')}</PageTitle>
-        <BackButton onClick={() => navigate('/dashboard/product-variants')}>
-          <FaArrowLeft /> {t('common.back')} {t('productVariants.title')}
-        </BackButton>
-      </PageHeader>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <FormRow>
-          <FormGroup>
-            <Label htmlFor="productId">
-              <FaShoppingBag />
-              {t('productVariants.product')} *
-            </Label>
-            <Select
-              id="productId"
-              name="productId"
-              value={formData.productId}
-              onChange={handleFormChange}
-              required
-              disabled={formLoading}
+        <Card sx={{ borderRadius: 1.5, p: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
             >
-              <option value="">{t('common.select')} {t('productVariants.product')}</option>
-              {allProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {t('productVariants.createNewVariant')}
+                </Typography>
+                <Button
+                    variant="outlined"
+                    startIcon={<ArrowBackIcon />}
+                    onClick={() => navigate('/dashboard/product-variants')}
+                    sx={{ textTransform: 'none', fontWeight: 600 }}
+                >
+                    {t('common.back')} {t('productVariants.title')}
+                </Button>
+            </Box>
 
-          <FormGroup>
-            <Label htmlFor="name">
-              <FaTags />
-              {t('productVariants.variantName')} *
-            </Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleFormChange}
-              placeholder="Enter variant name (e.g., Normal, 2 Piece, 3 Piece)"
-              required
-              disabled={formLoading}
-            />
-          </FormGroup>
-        </FormRow>
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+                    gap: 2.5
+                }}>
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <ShoppingBagIcon sx={{ fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {t('productVariants.product')} *
+                            </Typography>
+                        </Box>
+                        <TextField
+                            fullWidth
+                            select
+                            id="productId"
+                            name="productId"
+                            value={formData.productId}
+                            onChange={handleFormChange}
+                            required
+                            disabled={formLoading}
+                        >
+                            <MenuItem value="">{t('common.select')} {t('productVariants.product')}</MenuItem>
+                            {allProducts.map((product) => (
+                                <MenuItem key={product.id} value={product.id}>
+                                    {product.name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Box>
 
-        <FormGroup>
-          <Label htmlFor="description">{t('productVariants.description')} ({t('orders.optional')})</Label>
-          <Input
-            as="textarea"
-            id="description"
-            name="description"
-            value={formData.description || ''}
-            onChange={handleFormChange}
-            placeholder="Enter variant description (optional)"
-            rows={3}
-            disabled={formLoading}
-            style={{ resize: 'vertical', minHeight: '80px' }}
-          />
-        </FormGroup>
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <LocalOfferIcon sx={{ fontSize: 20 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {t('productVariants.variantName')} *
+                            </Typography>
+                        </Box>
+                        <TextField
+                            fullWidth
+                            id="name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleFormChange}
+                            placeholder="Enter variant name (e.g., Normal, 2 Piece, 3 Piece)"
+                            required
+                            disabled={formLoading}
+                        />
+                    </Box>
+                </Box>
 
-        <FormGroup>
-          <Label htmlFor="photoFile">
-            <FaImage />
-            {t('productVariants.uploadPhoto')} ({t('orders.optional')})
-          </Label>
-          <FileInputWrapper>
-            <FileInputLabel htmlFor="photoFile">
-              <FaUpload style={{ marginRight: '8px' }} />
-              {t('productVariants.choosePhotoFile')}
-              <input
-                type="file"
-                id="photoFile"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                onChange={handlePhotoFileChange}
-                disabled={formLoading}
-              />
-            </FileInputLabel>
-            {selectedPhotoFile && (
-              <p style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-                Selected: {selectedPhotoFile.name}
-              </p>
-            )}
-          </FileInputWrapper>
-          {photoPreview && (
-            <ImagePreviewContainer>
-              <ImagePreview src={photoPreview} alt="Preview" />
-              <RemoveImageButton onClick={handleRemovePhoto} type="button">
-                <FaTimes />
-              </RemoveImageButton>
-            </ImagePreviewContainer>
-          )}
-        </FormGroup>
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        {t('productVariants.description')} ({t('orders.optional')})
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        id="description"
+                        name="description"
+                        value={formData.description || ''}
+                        onChange={handleFormChange}
+                        placeholder="Enter variant description (optional)"
+                        multiline
+                        rows={3}
+                        disabled={formLoading}
+                    />
+                </Box>
 
-        <FormGroup>
-          <Label>
-            <FaBox />
-            {t('productVariants.productItems')} ({t('orders.optional')})
-          </Label>
-          <CheckboxContainer>
-            {allProductItems.length === 0 ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                {t('productVariants.noProductItems')}
-              </p>
-            ) : (
-              allProductItems.map((item) => (
-                <CheckboxItem key={item.id}>
-                  <input
-                    type="checkbox"
-                    checked={selectedProductItems.includes(item.id)}
-                    onChange={() => handleProductItemToggle(item.id)}
-                    disabled={formLoading}
-                  />
-                  <span>{item.name}</span>
-                </CheckboxItem>
-              ))
-            )}
-          </CheckboxContainer>
-        </FormGroup>
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <ImageIcon sx={{ fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {t('productVariants.uploadPhoto')} ({t('orders.optional')})
+                        </Typography>
+                    </Box>
+                    <Button
+                        component="label"
+                        variant="contained"
+                        startIcon={<UploadIcon />}
+                        disabled={formLoading}
+                        sx={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                            },
+                            textTransform: 'none',
+                            fontWeight: 600,
+                        }}
+                    >
+                        {t('productVariants.choosePhotoFile')}
+                        <input
+                            type="file"
+                            hidden
+                            id="photoFile"
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            onChange={handlePhotoFileChange}
+                            disabled={formLoading}
+                        />
+                    </Button>
+                    {selectedPhotoFile && (
+                        <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                            Selected: {selectedPhotoFile.name}
+                        </Typography>
+                    )}
+                    {photoPreview && (
+                        <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+                            <Box
+                                component="img"
+                                src={photoPreview}
+                                alt="Preview"
+                                sx={{
+                                    maxWidth: 300,
+                                    maxHeight: 200,
+                                    borderRadius: 1,
+                                    border: '2px solid #e0e0e0',
+                                    objectFit: 'cover',
+                                }}
+                            />
+                            <IconButton
+                                onClick={handleRemovePhoto}
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    bgcolor: '#dc3545',
+                                    color: 'white',
+                                    width: 32,
+                                    height: 32,
+                                    '&:hover': {
+                                        bgcolor: '#c82333',
+                                        transform: 'scale(1.1)',
+                                    },
+                                }}
+                            >
+                                <CloseIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Box>
+                    )}
+                </Box>
 
-        <FormActions>
-          <BackButton type="button" onClick={() => navigate('/dashboard/product-variants')} disabled={formLoading}>
-            {t('common.cancel')}
-          </BackButton>
-          <ActionButton type="submit" disabled={formLoading}>
-            {formLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <>
-                <FaPlus /> {t('productVariants.createVariant')}
-              </>
-            )}
-          </ActionButton>
-        </FormActions>
-      </form>
-    </PageContainer>
-  );
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <InventoryIcon sx={{ fontSize: 20 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {t('productVariants.productItems')} ({t('orders.optional')})
+                        </Typography>
+                    </Box>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1.5,
+                            maxHeight: 300,
+                            overflowY: 'auto',
+                            p: 1.5,
+                            border: '2px solid #e0e0e0',
+                            borderRadius: 1,
+                            bgcolor: '#fafafa',
+                        }}
+                    >
+                        {allProductItems.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 2 }}>
+                                {t('productVariants.noProductItems')}
+                            </Typography>
+                        ) : (
+                            allProductItems.map((item) => (
+                                <FormControlLabel
+                                    key={item.id}
+                                    control={
+                                        <Checkbox
+                                            checked={selectedProductItems.includes(item.id)}
+                                            onChange={() => handleProductItemToggle(item.id)}
+                                            disabled={formLoading}
+                                        />
+                                    }
+                                    label={item.name}
+                                    sx={{
+                                        p: 1,
+                                        borderRadius: 0.5,
+                                        '&:hover': {
+                                            bgcolor: '#f0f0f0',
+                                        },
+                                    }}
+                                />
+                            ))
+                        )}
+                    </Box>
+                </Box>
+
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 1.5,
+                        mt: 3,
+                        pt: 3,
+                        borderTop: '2px solid #e0e0e0',
+                    }}
+                >
+                    <Button
+                        type="button"
+                        variant="outlined"
+                        onClick={() => navigate('/dashboard/product-variants')}
+                        disabled={formLoading}
+                        sx={{ textTransform: 'none', fontWeight: 600, minWidth: 140 }}
+                    >
+                        {t('common.cancel')}
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={formLoading}
+                        startIcon={formLoading ? <CircularProgress size={20} /> : <AddIcon />}
+                        sx={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                            },
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            minWidth: 140,
+                        }}
+                    >
+                        {formLoading ? '' : t('productVariants.createVariant')}
+                    </Button>
+                </Box>
+            </Box>
+        </Card>
+    );
 };
 
 export default CreateProductVariantPage;

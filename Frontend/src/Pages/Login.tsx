@@ -1,65 +1,22 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import styled from 'styled-components';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
-  FormContainer,
-  FormCard,
-  FormTitle,
-  FormSubtitle,
-  Form,
-  FormGroup,
-  Label,
-  Input,
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
   Button,
-  LoadingSpinner,
-  LinkText,
-} from '../Components/Common/FormComponents';
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+  Link,
+  Container,
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useToast } from '../Utils/ToastContext';
 import { loginService, setAuthToken, setUserInfo } from '../Services/ApiServices';
 import axios from 'axios';
-
-const PasswordInputWrapper = styled.div`
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-`;
-
-const PasswordToggleButton = styled.button`
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: color 0.2s ease;
-  z-index: 1;
-  
-  &:hover {
-    color: #667eea;
-  }
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const PasswordInput = styled(Input)`
-  padding-right: 45px;
-  box-sizing: border-box;
-  width: 100%;
-`;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -113,60 +70,138 @@ const Login = () => {
   };
 
   return (
-    <FormContainer>
-      <FormCard>
-        <FormTitle>Welcome Back</FormTitle>
-        <FormSubtitle>Sign in to your account</FormSubtitle>
+    <Container maxWidth="sm">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4,
+        }}
+      >
+        <Card
+          sx={{
+            width: '100%',
+            maxWidth: 450,
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: 2,
+          }}
+        >
+          <CardContent sx={{ p: 4 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              align="center"
+              sx={{
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                mb: 1,
+              }}
+            >
+              Welcome Back
+            </Typography>
+            <Typography
+              variant="body1"
+              align="center"
+              color="text.secondary"
+              sx={{ mb: 4 }}
+            >
+              Sign in to your account
+            </Typography>
 
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="emailId">Email Address</Label>
-            <Input
-              type="email"
-              id="emailId"
-              name="emailId"
-              value={formData.emailId}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-              disabled={loading}
-            />
-          </FormGroup>
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
+                fullWidth
+                type="email"
+                id="emailId"
+                name="emailId"
+                label="Email Address"
+                value={formData.emailId}
+                onChange={handleChange}
+                placeholder="Enter your email"
+                required
+                disabled={loading}
+                margin="normal"
+                variant="outlined"
+              />
 
-          <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <PasswordInputWrapper>
-              <PasswordInput
+              <TextField
+                fullWidth
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
+                label="Password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
                 required
                 disabled={loading}
+                margin="normal"
+                variant="outlined"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={loading}
+                        edge="end"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
-              <PasswordToggleButton
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
+
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
                 disabled={loading}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                  },
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                }}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </PasswordToggleButton>
-            </PasswordInputWrapper>
-          </FormGroup>
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+              </Button>
+            </Box>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? <LoadingSpinner /> : 'Sign In'}
-          </Button>
-        </Form>
-
-        <LinkText>
-          Don't have an account? <Link to="/register">Sign up here</Link>
-        </LinkText>
-      </FormCard>
-    </FormContainer>
+            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+              Don't have an account?{' '}
+              <Link
+                component={RouterLink}
+                to="/register"
+                sx={{
+                  color: '#667eea',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Sign up here
+              </Link>
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
+    </Container>
   );
 };
 

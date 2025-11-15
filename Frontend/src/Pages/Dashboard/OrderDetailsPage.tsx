@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  CircularProgress,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
+import {
+  ArrowBack as ArrowBackIcon,
+  Straighten as StraightenIcon,
+  Visibility as VisibilityIcon,
+} from '@mui/icons-material';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   getOrderDetailsService,
@@ -8,328 +25,22 @@ import {
   type ProductOrderDetails,
   type WorkpieceMeasurements,
 } from '../../Services/ApiServices/productOrderServices';
-import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
-import { LoadingSpinner } from '../../Components/Common/FormComponents';
-import {
-  FaArrowLeft,
-  FaRuler,
-  FaEye,
-} from 'react-icons/fa';
 
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'warning';
+    case 'in_progress':
+      return 'info';
+    case 'completed':
+      return 'success';
+    case 'cancelled':
+      return 'error';
+    default:
+      return 'default';
   }
-`;
-
-const StatusBadge = styled.span<{ status: string }>`
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#fff3e0';
-      case 'in_progress':
-        return '#e3f2fd';
-      case 'completed':
-        return '#e8f5e9';
-      case 'cancelled':
-        return '#ffebee';
-      default:
-        return '#f5f5f5';
-    }
-  }};
-  color: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#f57c00';
-      case 'in_progress':
-        return '#1976d2';
-      case 'completed':
-        return '#388e3c';
-      case 'cancelled':
-        return '#d32f2f';
-      default:
-        return '#666';
-    }
-  }};
-`;
-
-const OrderInfo = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const InfoLabel = styled.span`
-  font-size: 12px;
-  color: #666;
-  font-weight: 600;
-  text-transform: uppercase;
-`;
-
-const InfoValue = styled.span`
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-`;
-
-const WorkPieceGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-`;
-
-const WorkPieceCard = styled.div`
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #667eea;
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
-  }
-`;
-
-const WorkPieceImage = styled.img`
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 12px;
-`;
-
-const WorkPieceInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const WorkPieceTitle = styled.h4`
-  margin: 0;
-  font-size: 16px;
-  color: #333;
-`;
-
-const WorkPieceDetail = styled.p`
-  margin: 0;
-  font-size: 12px;
-  color: #666;
-`;
-
-const ViewMeasurementsButton = styled.button`
-  width: 100%;
-  padding: 10px;
-  margin-top: 12px;
-  background: #fff3e0;
-  color: #f57c00;
-  border: 2px solid #ffe0b2;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:hover {
-    background: #ffe0b2;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(245, 124, 0, 0.2);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const ViewDetailsButton = styled.button`
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const SectionTitle = styled.h3`
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-`;
-
-const ModalButtonSecondary = styled.button`
-  padding: 14px 28px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const MeasurementsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-`;
-
-const MeasurementCard = styled.div`
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-`;
-
-const MeasurementTitle = styled.h4`
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  color: #333;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 8px;
-`;
-
-const MeasurementRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #e0e0e0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const MeasurementLabel = styled.span`
-  font-weight: 600;
-  color: #666;
-`;
-
-const MeasurementValue = styled.span`
-  color: #333;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
+};
 
 const OrderDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -407,222 +118,320 @@ const OrderDetailsPage = () => {
 
   if (loading) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Card>
     );
   }
 
   if (!order) {
     return (
-      <PageContainer>
-        <PageHeader>
-          <PageTitle>Order Details</PageTitle>
-          <BackButton onClick={() => navigate('/dashboard/orders')}>
-            <FaArrowLeft /> Back to Orders
-          </BackButton>
-        </PageHeader>
-        <EmptyState>
-          <EmptyStateText>{t('orders.orderDetails')} {t('common.noData')}</EmptyStateText>
-        </EmptyState>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Order Details
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/dashboard/orders')}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Back to Orders
+          </Button>
+        </Box>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <Typography variant="body1">
+            {t('orders.orderDetails')} {t('common.noData')}
+          </Typography>
+        </Box>
+      </Card>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('orders.orderDetails')} - {order.id.substring(0, 8)}...</PageTitle>
-        <BackButton onClick={() => navigate('/dashboard/orders')}>
-          <FaArrowLeft /> {t('common.back')} {t('orders.title')}
-        </BackButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('orders.orderDetails')} - {order.id.substring(0, 8)}...
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/dashboard/orders')}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          {t('common.back')} {t('orders.title')}
+        </Button>
+      </Box>
 
-      <OrderInfo>
-        <InfoItem>
-          <InfoLabel>{t('orders.customer')}</InfoLabel>
-          <InfoValue>{order.customerName || '—'}</InfoValue>
-        </InfoItem>
-        <InfoItem>
-          <InfoLabel>{t('orders.orderDate')}</InfoLabel>
-          <InfoValue>{formatDate(order.orderDate)}</InfoValue>
-        </InfoItem>
-        <InfoItem>
-          <InfoLabel>{t('orders.deliveryDate')}</InfoLabel>
-          <InfoValue>{formatDate(order.deliveryDate)}</InfoValue>
-        </InfoItem>
-        <InfoItem>
-          <InfoLabel>{t('orders.status')}</InfoLabel>
-          <InfoValue>
-            <StatusBadge status={order.status}>{t(`status.${order.status.toLowerCase()}`) || order.status}</StatusBadge>
-          </InfoValue>
-        </InfoItem>
+      <Grid container spacing={2} sx={{ p: 2.5, bgcolor: '#f8f9fa', borderRadius: 1, mb: 3 }}>
+        <Grid xs={12} sm={6} md={4}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+            {t('orders.customer')}
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {order.customerName || '—'}
+          </Typography>
+        </Grid>
+        <Grid xs={12} sm={6} md={4}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+            {t('orders.orderDate')}
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {formatDate(order.orderDate)}
+          </Typography>
+        </Grid>
+        <Grid xs={12} sm={6} md={4}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+            {t('orders.deliveryDate')}
+          </Typography>
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {formatDate(order.deliveryDate)}
+          </Typography>
+        </Grid>
+        <Grid xs={12} sm={6} md={4}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+            {t('orders.status')}
+          </Typography>
+          <Chip
+            label={t(`status.${order.status.toLowerCase()}`) || order.status}
+            color={getStatusColor(order.status)}
+            size="small"
+            sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+          />
+        </Grid>
         {order.notes && (
-          <InfoItem>
-            <InfoLabel>{t('orders.notes')}</InfoLabel>
-            <InfoValue>{order.notes}</InfoValue>
-          </InfoItem>
+          <Grid xs={12}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+              {t('orders.notes')}
+            </Typography>
+            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+              {order.notes}
+            </Typography>
+          </Grid>
         )}
-      </OrderInfo>
+      </Grid>
 
-      <SectionHeader>
-        <SectionTitle>{t('orders.workPieces')} ({order.workPieces.length})</SectionTitle>
-      </SectionHeader>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {t('orders.workPieces')} ({order.workPieces.length})
+        </Typography>
+      </Box>
+
       {order.workPieces.length === 0 ? (
-        <EmptyState>
-          <EmptyStateText>{t('orders.workPieces')} {t('common.noData')}</EmptyStateText>
-        </EmptyState>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <Typography variant="body1">
+            {t('orders.workPieces')} {t('common.noData')}
+          </Typography>
+        </Box>
       ) : (
-        <WorkPieceGrid>
+        <Grid container spacing={2} sx={{ mt: 2 }}>
           {order.workPieces.map((workPiece) => (
-            <WorkPieceCard key={workPiece.id}>
-              {workPiece.productItem.imageUrl && (
-                <WorkPieceImage src={workPiece.productItem.imageUrl} alt={workPiece.productItem.name} />
-              )}
-              <WorkPieceInfo>
-                <WorkPieceTitle>{workPiece.productItem.name}</WorkPieceTitle>
-                <WorkPieceDetail>
-                  {t('orders.status')}: <StatusBadge status={workPiece.currentStatus}>{t(`status.${workPiece.currentStatus.toLowerCase()}`) || workPiece.currentStatus}</StatusBadge>
-                </WorkPieceDetail>
-                {workPiece.assignedTo && (
-                  <WorkPieceDetail>{t('orders.assignedTo') || 'Assigned to'}: {workPiece.assignedTo.fullName}</WorkPieceDetail>
+            <Grid xs={12} sm={6} md={4} key={workPiece.id}>
+              <Card sx={{ p: 2, bgcolor: '#f8f9fa', border: '2px solid #e0e0e0', transition: 'all 0.2s ease', '&:hover': { borderColor: '#667eea', boxShadow: '0 4px 8px rgba(102, 126, 234, 0.2)' } }}>
+                {workPiece.productItem.imageUrl && (
+                  <Box
+                    component="img"
+                    src={workPiece.productItem.imageUrl}
+                    alt={workPiece.productItem.name}
+                    sx={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 1, mb: 1.5 }}
+                  />
                 )}
-                {workPiece.remarks && (
-                  <WorkPieceDetail>{t('orders.remarks') || 'Remarks'}: {workPiece.remarks}</WorkPieceDetail>
-                )}
-                <ButtonGroup>
-                  <ViewDetailsButton
-                    onClick={() => navigate(`/dashboard/workpiece/${workPiece.id}`)}
-                  >
-                    <FaEye /> {t('orders.viewDetails')}
-                  </ViewDetailsButton>
-                  <ViewMeasurementsButton
-                    onClick={() => handleViewMeasurements(workPiece.id)}
-                    disabled={loadingMeasurements}
-                  >
-                    <FaRuler /> {t('orders.viewMeasurements')}
-                  </ViewMeasurementsButton>
-                </ButtonGroup>
-              </WorkPieceInfo>
-            </WorkPieceCard>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography variant="h6" sx={{ fontSize: 16 }}>
+                    {workPiece.productItem.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: 12, color: 'text.secondary' }}>
+                    {t('orders.status')}: <Chip label={t(`status.${workPiece.currentStatus.toLowerCase()}`) || workPiece.currentStatus} color={getStatusColor(workPiece.currentStatus)} size="small" sx={{ fontWeight: 600 }} />
+                  </Typography>
+                  {workPiece.assignedTo && (
+                    <Typography variant="caption" sx={{ fontSize: 12, color: 'text.secondary' }}>
+                      {t('orders.assignedTo') || 'Assigned to'}: {workPiece.assignedTo.fullName}
+                    </Typography>
+                  )}
+                  {workPiece.remarks && (
+                    <Typography variant="caption" sx={{ fontSize: 12, color: 'text.secondary' }}>
+                      {t('orders.remarks') || 'Remarks'}: {workPiece.remarks}
+                    </Typography>
+                  )}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1.5 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => navigate(`/dashboard/workpiece/${workPiece.id}`)}
+                      sx={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t('orders.viewDetails')}
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<StraightenIcon />}
+                      onClick={() => handleViewMeasurements(workPiece.id)}
+                      disabled={loadingMeasurements}
+                      sx={{
+                        borderColor: '#ffe0b2',
+                        color: '#f57c00',
+                        bgcolor: '#fff3e0',
+                        '&:hover': {
+                          borderColor: '#f57c00',
+                          bgcolor: '#ffe0b2',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t('orders.viewMeasurements')}
+                    </Button>
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
           ))}
-        </WorkPieceGrid>
+        </Grid>
       )}
 
-      {/* Measurements Modal */}
-      <Modal
-        isOpen={isMeasurementsModalOpen}
-        onClose={() => setIsMeasurementsModalOpen(false)}
-        title={t('orders.viewMeasurements')}
-        size="large"
-        footer={
-          <ModalButtonSecondary onClick={() => setIsMeasurementsModalOpen(false)}>{t('common.close')}</ModalButtonSecondary>
-        }
-      >
-        {measurements && (
-          <div>
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ marginBottom: '12px' }}>{t('orders.customerInfo')}</h3>
-              <p><strong>{t('customers.fullName')}:</strong> {measurements.customer.fullName}</p>
-              <p><strong>{t('customers.email')}:</strong> {measurements.customer.emailId}</p>
-              <p><strong>{t('customers.mobile')}:</strong> {measurements.customer.mobileNo}</p>
-            </div>
+      {/* Measurements Dialog */}
+      <Dialog open={isMeasurementsModalOpen} onClose={() => setIsMeasurementsModalOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>{t('orders.viewMeasurements')}</DialogTitle>
+        <DialogContent>
+          {measurements && (
+            <Box>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1.5 }}>{t('orders.customerInfo')}</Typography>
+                <Typography variant="body2"><strong>{t('customers.fullName')}:</strong> {measurements.customer.fullName}</Typography>
+                <Typography variant="body2"><strong>{t('customers.email')}:</strong> {measurements.customer.emailId}</Typography>
+                <Typography variant="body2"><strong>{t('customers.mobile')}:</strong> {measurements.customer.mobileNo}</Typography>
+              </Box>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ marginBottom: '12px' }}>{t('orders.workpieceInfo')}</h3>
-              <p><strong>{t('orders.product')}:</strong> {measurements.workpiece.productItem.name}</p>
-              <p><strong>{t('orders.status')}:</strong> <StatusBadge status={measurements.workpiece.currentStatus}>{t(`status.${measurements.workpiece.currentStatus.toLowerCase()}`) || measurements.workpiece.currentStatus}</StatusBadge></p>
-            </div>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1.5 }}>{t('orders.workpieceInfo')}</Typography>
+                <Typography variant="body2"><strong>{t('orders.product')}:</strong> {measurements.workpiece.productItem.name}</Typography>
+                <Typography variant="body2">
+                  <strong>{t('orders.status')}:</strong> <Chip label={t(`status.${measurements.workpiece.currentStatus.toLowerCase()}`) || measurements.workpiece.currentStatus} color={getStatusColor(measurements.workpiece.currentStatus)} size="small" sx={{ fontWeight: 600 }} />
+                </Typography>
+              </Box>
 
-            <MeasurementsGrid>
-              {measurements.measurements.top && (
-                <MeasurementCard>
-                  <MeasurementTitle>{t('orders.topMeasurements')}</MeasurementTitle>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.length')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.length ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.shoulder')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.shoulder ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.sleeveLength')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.sleeveLength ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.sleeveBottom')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.sleeveBottom ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.chest')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.chest ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.waist')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.waist ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.hip')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.hip ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.neck')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.top.neck ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                </MeasurementCard>
+              <Grid container spacing={1.5} sx={{ mt: 2 }}>
+                {measurements.measurements.top && (
+                  <Grid xs={12} md={6}>
+                    <Card sx={{ p: 2, bgcolor: '#f8f9fa' }}>
+                      <Typography variant="h6" sx={{ mb: 1.5, pb: 1, borderBottom: '2px solid #e0e0e0' }}>
+                        {t('orders.topMeasurements')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.length')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.length ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.shoulder')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.shoulder ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.sleeveLength')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.sleeveLength ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.sleeveBottom')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.sleeveBottom ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.chest')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.chest ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.waist')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.waist ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.hip')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.hip ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.neck')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.top.neck ?? '—'}</Typography>
+                        </Box>
+                      </Box>
+                    </Card>
+                  </Grid>
+                )}
+
+                {measurements.measurements.bottom && (
+                  <Grid xs={12} md={6}>
+                    <Card sx={{ p: 2, bgcolor: '#f8f9fa' }}>
+                      <Typography variant="h6" sx={{ mb: 1.5, pb: 1, borderBottom: '2px solid #e0e0e0' }}>
+                        {t('orders.bottomMeasurements')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.length')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.length ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.waist')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.waist ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.hip')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.hip ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.thigh')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.thigh ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.knee')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.knee ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.calf')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.calf ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1, borderBottom: '1px solid #e0e0e0' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.bottom')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.bottom ?? '—'}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>{t('orders.langot')}:</Typography>
+                          <Typography variant="body2">{measurements.measurements.bottom.langot ?? '—'}</Typography>
+                        </Box>
+                      </Box>
+                    </Card>
+                  </Grid>
+                )}
+              </Grid>
+
+              {!measurements.measurements.top && !measurements.measurements.bottom && (
+                <Box sx={{ textAlign: 'center', py: 2.5, color: 'text.secondary' }}>
+                  <Typography variant="body1">{t('orders.viewMeasurements')} {t('common.noData')}</Typography>
+                </Box>
               )}
-
-              {measurements.measurements.bottom && (
-                <MeasurementCard>
-                  <MeasurementTitle>{t('orders.bottomMeasurements')}</MeasurementTitle>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.length')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.length ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.waist')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.waist ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.hip')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.hip ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.thigh')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.thigh ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.knee')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.knee ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.calf')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.calf ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.bottom')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.bottom ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>{t('orders.langot')}:</MeasurementLabel>
-                    <MeasurementValue>{measurements.measurements.bottom.langot ?? '—'}</MeasurementValue>
-                  </MeasurementRow>
-                </MeasurementCard>
-              )}
-            </MeasurementsGrid>
-
-            {!measurements.measurements.top && !measurements.measurements.bottom && (
-              <EmptyState style={{ padding: '20px' }}>
-                <EmptyStateText>{t('orders.viewMeasurements')} {t('common.noData')}</EmptyStateText>
-              </EmptyState>
-            )}
-          </div>
-        )}
-      </Modal>
-    </PageContainer>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setIsMeasurementsModalOpen(false)} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            {t('common.close')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 

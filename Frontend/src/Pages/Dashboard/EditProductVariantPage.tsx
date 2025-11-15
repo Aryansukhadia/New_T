@@ -1,218 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   getProductVariantByIdService,
-  getProductsService,
   getProductItemsService,
   updateProductVariantService,
   type ProductVariant,
-  type Product,
   type ProductItem,
   type UpdateProductVariantRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 import {
-  FormGroup,
-  Label,
-  Input,
-  Select,
+  Box,
+  Card,
+  Typography,
   Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
+  TextField,
+  MenuItem,
+  CircularProgress,
+  IconButton,
+  Checkbox,
+  FormControlLabel,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
-  FaEdit,
-  FaArrowLeft,
-  FaImage,
-  FaBox,
-  FaShoppingBag,
-  FaTags,
-  FaUpload,
-  FaTimes,
-} from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const ActionButton = styled(Button)`
-  padding: 14px 28px;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const FileInputWrapper = styled.div`
-  position: relative;
-`;
-
-const FileInputLabel = styled.label`
-  display: inline-block;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  input[type="file"] {
-    display: none;
-  }
-`;
-
-const ImagePreviewContainer = styled.div`
-  margin-top: 16px;
-  position: relative;
-  display: inline-block;
-`;
-
-const ImagePreview = styled.img`
-  max-width: 300px;
-  max-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  object-fit: cover;
-`;
-
-const RemoveImageButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #c82333;
-    transform: scale(1.1);
-  }
-`;
-
-const CheckboxContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fafafa;
-`;
-
-const CheckboxItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f0f0f0;
-  }
-
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-
-  span {
-    font-size: 14px;
-    color: #333;
-  }
-`;
-
-const FormRow = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FormActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 2px solid #e0e0e0;
-`;
+  Edit as EditIcon,
+  ArrowBack as ArrowBackIcon,
+  Image as ImageIcon,
+  Inventory as BoxIcon,
+  ShoppingBag as ShoppingBagIcon,
+  LocalOffer as TagsIcon,
+  Upload as UploadIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 
 const EditProductVariantPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -221,7 +41,6 @@ const EditProductVariantPage = () => {
   const { t } = useTranslation();
 
   const [variant, setVariant] = useState<ProductVariant | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [allProductItems, setAllProductItems] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
@@ -242,9 +61,8 @@ const EditProductVariantPage = () => {
 
     try {
       setLoading(true);
-      const [variantResponse, productsResponse, itemsResponse] = await Promise.all([
+      const [variantResponse, itemsResponse] = await Promise.all([
         getProductVariantByIdService(id),
-        getProductsService(),
         getProductItemsService(),
       ]);
 
@@ -261,10 +79,6 @@ const EditProductVariantPage = () => {
         setPhotoPreview(variantData.photoUrl ? variantData.photoUrl : null);
       } else {
         showError(variantResponse.message || 'Failed to load product variant', 'Error');
-      }
-
-      if (productsResponse.success === 200 && productsResponse.data) {
-        setAllProducts(productsResponse.data);
       }
 
       if (itemsResponse.success === 200 && itemsResponse.data) {
@@ -358,69 +172,89 @@ const EditProductVariantPage = () => {
 
   if (loading) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Card>
     );
   }
 
   if (!variant) {
     return (
-      <PageContainer>
-        <PageHeader>
-          <PageTitle>Edit Product Variant</PageTitle>
-          <BackButton onClick={() => navigate('/dashboard/product-variants')}>
-            <FaArrowLeft /> Back to Variants
-          </BackButton>
-        </PageHeader>
-        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-          Product variant not found
-        </div>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Edit Product Variant
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/dashboard/product-variants')}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Back to Variants
+          </Button>
+        </Box>
+        <Box sx={{ textAlign: 'center', py: 5, color: 'text.secondary' }}>
+          <Typography variant="body1">Product variant not found</Typography>
+        </Box>
+      </Card>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('productVariants.editVariant')} - {variant.name}</PageTitle>
-        <BackButton onClick={() => navigate('/dashboard/product-variants')}>
-          <FaArrowLeft /> {t('common.back')} {t('productVariants.title')}
-        </BackButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('productVariants.editVariant')} - {variant.name}
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/dashboard/product-variants')}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          {t('common.back')} {t('productVariants.title')}
+        </Button>
+      </Box>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <FormRow>
-          <FormGroup>
-            <Label htmlFor="productId">
-              <FaShoppingBag />
-              {t('productVariants.product')}
-            </Label>
-            <Select
+      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Grid container spacing={2.5}>
+          <Grid xs={12} md={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <ShoppingBagIcon sx={{ fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {t('productVariants.product')}
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
               id="productId"
               name="productId"
               value={variant.productId}
               disabled
-              style={{ background: '#f5f5f5', cursor: 'not-allowed' }}
+              select
+              sx={{ bgcolor: '#f5f5f5' }}
             >
-              <option value={variant.productId}>
+              <MenuItem value={variant.productId}>
                 {variant.product?.name || t('productVariants.product')}
-              </option>
-            </Select>
-            <p style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+              </MenuItem>
+            </TextField>
+            <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary', display: 'block' }}>
               {t('productVariants.productCannotChange')}
-            </p>
-          </FormGroup>
+            </Typography>
+          </Grid>
 
-          <FormGroup>
-            <Label htmlFor="name">
-              <FaTags />
-              {t('productVariants.variantName')} *
-            </Label>
-            <Input
-              type="text"
+          <Grid xs={12} md={6}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <TagsIcon sx={{ fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {t('productVariants.variantName')} *
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
               id="name"
               name="name"
               value={formData.name}
@@ -429,99 +263,182 @@ const EditProductVariantPage = () => {
               required
               disabled={formLoading}
             />
-          </FormGroup>
-        </FormRow>
+          </Grid>
+        </Grid>
 
-        <FormGroup>
-          <Label htmlFor="description">{t('productVariants.description')} ({t('orders.optional')})</Label>
-          <Input
-            as="textarea"
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+            {t('productVariants.description')} ({t('orders.optional')})
+          </Typography>
+          <TextField
+            fullWidth
             id="description"
             name="description"
             value={formData.description || ''}
             onChange={handleFormChange}
             placeholder="Enter variant description (optional)"
+            multiline
             rows={3}
             disabled={formLoading}
-            style={{ resize: 'vertical', minHeight: '80px' }}
           />
-        </FormGroup>
+        </Box>
 
-        <FormGroup>
-          <Label htmlFor="photoFile">
-            <FaImage />
-            {t('productVariants.uploadPhoto')} ({t('orders.optional')})
-          </Label>
-          <FileInputWrapper>
-            <FileInputLabel htmlFor="photoFile">
-              <FaUpload style={{ marginRight: '8px' }} />
-              {t('productVariants.choosePhotoFile')}
-              <input
-                type="file"
-                id="photoFile"
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                onChange={handlePhotoFileChange}
-                disabled={formLoading}
-              />
-            </FileInputLabel>
-            {selectedPhotoFile && (
-              <p style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-                Selected: {selectedPhotoFile.name}
-              </p>
-            )}
-          </FileInputWrapper>
-          {photoPreview && (
-            <ImagePreviewContainer>
-              <ImagePreview src={photoPreview} alt="Preview" />
-              <RemoveImageButton onClick={handleRemovePhoto} type="button">
-                <FaTimes />
-              </RemoveImageButton>
-            </ImagePreviewContainer>
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <ImageIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {t('productVariants.uploadPhoto')} ({t('orders.optional')})
+            </Typography>
+          </Box>
+          <Button
+            component="label"
+            variant="contained"
+            startIcon={<UploadIcon />}
+            disabled={formLoading}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {t('productVariants.choosePhotoFile')}
+            <input
+              type="file"
+              hidden
+              id="photoFile"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              onChange={handlePhotoFileChange}
+              disabled={formLoading}
+            />
+          </Button>
+          {selectedPhotoFile && (
+            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+              Selected: {selectedPhotoFile.name}
+            </Typography>
           )}
-        </FormGroup>
+          {photoPreview && (
+            <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+              <Box
+                component="img"
+                src={photoPreview}
+                alt="Preview"
+                sx={{
+                  maxWidth: 300,
+                  maxHeight: 200,
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                  objectFit: 'cover',
+                }}
+              />
+              <IconButton
+                onClick={handleRemovePhoto}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  bgcolor: '#dc3545',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    bgcolor: '#c82333',
+                    transform: 'scale(1.1)',
+                  },
+                }}
+              >
+                <CloseIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
+          )}
+        </Box>
 
-        <FormGroup>
-          <Label>
-            <FaBox />
-            {t('productVariants.productItems')} ({t('orders.optional')})
-          </Label>
-          <CheckboxContainer>
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <BoxIcon sx={{ fontSize: 20 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {t('productVariants.productItems')} ({t('orders.optional')})
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.5,
+              maxHeight: 300,
+              overflowY: 'auto',
+              p: 1.5,
+              border: '2px solid #e0e0e0',
+              borderRadius: 1,
+              bgcolor: '#fafafa',
+            }}
+          >
             {allProductItems.length === 0 ? (
-              <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center', py: 2.5 }}>
                 {t('productVariants.noProductItems')}
-              </p>
+              </Typography>
             ) : (
               allProductItems.map((item) => (
-                <CheckboxItem key={item.id}>
-                  <input
-                    type="checkbox"
-                    checked={selectedProductItems.includes(item.id)}
-                    onChange={() => handleProductItemToggle(item.id)}
-                    disabled={formLoading}
-                  />
-                  <span>{item.name}</span>
-                </CheckboxItem>
+                <FormControlLabel
+                  key={item.id}
+                  control={
+                    <Checkbox
+                      checked={selectedProductItems.includes(item.id)}
+                      onChange={() => handleProductItemToggle(item.id)}
+                      disabled={formLoading}
+                    />
+                  }
+                  label={item.name}
+                  sx={{
+                    p: 1,
+                    borderRadius: 0.5,
+                    transition: 'background 0.2s',
+                    '&:hover': {
+                      bgcolor: '#f0f0f0',
+                    },
+                  }}
+                />
               ))
             )}
-          </CheckboxContainer>
-        </FormGroup>
+          </Box>
+        </Box>
 
-        <FormActions>
-          <BackButton type="button" onClick={() => navigate('/dashboard/product-variants')} disabled={formLoading}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3, pt: 3, borderTop: '2px solid #e0e0e0' }}>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={() => navigate('/dashboard/product-variants')}
+            disabled={formLoading}
+            sx={{ textTransform: 'none', fontWeight: 600, minWidth: 140 }}
+          >
             {t('common.cancel')}
-          </BackButton>
-          <ActionButton type="submit" disabled={formLoading}>
-            {formLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <>
-                <FaEdit /> {t('productVariants.updateVariant')}
-              </>
-            )}
-          </ActionButton>
-        </FormActions>
-      </form>
-    </PageContainer>
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={formLoading}
+            startIcon={formLoading ? <CircularProgress size={20} /> : <EditIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: 140,
+            }}
+          >
+            {formLoading ? '' : t('productVariants.updateVariant')}
+          </Button>
+        </Box>
+      </Box>
+    </Card>
   );
 };
 

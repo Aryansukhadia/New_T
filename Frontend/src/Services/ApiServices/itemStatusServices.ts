@@ -1,6 +1,6 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
-import { getApiUrl, getApiUrlWithParams } from '../../Utils/api';
+import { getApiUrlWithParams } from '../../Utils/api';
 
 // ============================================
 // ITEM STATUS TYPES

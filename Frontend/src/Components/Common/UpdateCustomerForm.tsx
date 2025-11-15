@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+    Box,
+    Typography,
+    Button as MuiButton,
+    TextField,
+    Paper,
+    CircularProgress,
+} from '@mui/material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
     getCustomerByIdService,
@@ -9,78 +17,7 @@ import {
     type UpdateCustomerRequest,
 } from '../../Services/ApiServices/customerServices';
 import { useToast } from '../../Utils/ToastContext';
-import {
-    FormGroup,
-    Label,
-    Input,
-    Button,
-    LoadingSpinner,
-} from '../../Components/Common/FormComponents';
-import { FaArrowLeft, FaEdit } from 'react-icons/fa';
 
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const FormContainer = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 600px;
-`;
-
-const Actions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-`;
-
-const SubmitButton = styled(Button)`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 160px;
-`;
 
 const UpdateCustomerPage = () => {
     const { customerId } = useParams<{ customerId: string }>();
@@ -167,27 +104,88 @@ const UpdateCustomerPage = () => {
 
     if (loading) {
         return (
-            <PageContainer>
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                    <LoadingSpinner />
-                </div>
-            </PageContainer>
+            <Paper
+                sx={{
+                    background: 'white',
+                    borderRadius: 3,
+                    padding: 3,
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                }}
+            >
+                <Box sx={{ textAlign: 'center', padding: 5 }}>
+                    <CircularProgress size={40} />
+                </Box>
+            </Paper>
         );
     }
 
     return (
-        <PageContainer>
-            <PageHeader>
-                <PageTitle>{t('customers.editCustomerTitle') || 'Edit Customer'}</PageTitle>
-                <BackButton onClick={() => navigate(-1)}>
-                    <FaArrowLeft /> {t('common.back') || 'Back'}
-                </BackButton>
-            </PageHeader>
+        <Paper
+            sx={{
+                background: 'white',
+                borderRadius: 3,
+                padding: 3,
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+        >
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    sx={{
+                        fontWeight: 700,
+                        color: '#333',
+                        margin: 0,
+                    }}
+                >
+                    {t('customers.editCustomerTitle') || 'Edit Customer'}
+                </Typography>
+                <MuiButton
+                    onClick={() => navigate(-1)}
+                    startIcon={<ArrowBackIcon />}
+                    sx={{
+                        padding: '12px 24px',
+                        background: '#f5f5f5',
+                        color: '#333',
+                        border: '2px solid #e0e0e0',
+                        borderRadius: 2,
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                            background: '#e8e8e8',
+                            borderColor: '#ccc',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                        },
+                    }}
+                >
+                    {t('common.back') || 'Back'}
+                </MuiButton>
+            </Box>
 
-            <FormContainer onSubmit={handleSubmit}>
-                <FormGroup>
-                    <Label htmlFor="fullName">{t('customers.fullName')} *</Label>
-                    <Input
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    maxWidth: 600,
+                }}
+            >
+                <Box sx={{ marginBottom: 2 }}>
+                    <TextField
+                        label={`${t('customers.fullName')} *`}
                         type="text"
                         id="fullName"
                         name="fullName"
@@ -196,12 +194,35 @@ const UpdateCustomerPage = () => {
                         placeholder={t('customers.fullNamePlaceholder') || 'Enter full name'}
                         required
                         disabled={submitting}
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                background: '#fafafa',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                '& fieldset': {
+                                    borderColor: '#e0e0e0',
+                                    borderWidth: 2,
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: '#ccc',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#667eea',
+                                    boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                                },
+                                '&.Mui-focused': {
+                                    background: 'white',
+                                    transform: 'translateY(-1px)',
+                                },
+                            },
+                        }}
                     />
-                </FormGroup>
+                </Box>
 
-                <FormGroup>
-                    <Label htmlFor="emailId">{t('customers.email')} *</Label>
-                    <Input
+                <Box sx={{ marginBottom: 2 }}>
+                    <TextField
+                        label={`${t('customers.email')} *`}
                         type="email"
                         id="emailId"
                         name="emailId"
@@ -210,12 +231,35 @@ const UpdateCustomerPage = () => {
                         placeholder={t('customers.emailPlaceholder') || 'Enter email address'}
                         required
                         disabled={submitting}
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                background: '#fafafa',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                '& fieldset': {
+                                    borderColor: '#e0e0e0',
+                                    borderWidth: 2,
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: '#ccc',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#667eea',
+                                    boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                                },
+                                '&.Mui-focused': {
+                                    background: 'white',
+                                    transform: 'translateY(-1px)',
+                                },
+                            },
+                        }}
                     />
-                </FormGroup>
+                </Box>
 
-                <FormGroup>
-                    <Label htmlFor="mobileNo">{t('customers.mobile')} *</Label>
-                    <Input
+                <Box sx={{ marginBottom: 2 }}>
+                    <TextField
+                        label={`${t('customers.mobile')} *`}
                         type="tel"
                         id="mobileNo"
                         name="mobileNo"
@@ -224,12 +268,35 @@ const UpdateCustomerPage = () => {
                         placeholder={t('customers.mobilePlaceholder') || 'Enter mobile number'}
                         required
                         disabled={submitting}
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                background: '#fafafa',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                '& fieldset': {
+                                    borderColor: '#e0e0e0',
+                                    borderWidth: 2,
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: '#ccc',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#667eea',
+                                    boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                                },
+                                '&.Mui-focused': {
+                                    background: 'white',
+                                    transform: 'translateY(-1px)',
+                                },
+                            },
+                        }}
                     />
-                </FormGroup>
+                </Box>
 
-                <FormGroup>
-                    <Label htmlFor="address">{t('customers.address')} *</Label>
-                    <Input
+                <Box sx={{ marginBottom: 2 }}>
+                    <TextField
+                        label={`${t('customers.address')} *`}
                         type="text"
                         id="address"
                         name="address"
@@ -238,12 +305,35 @@ const UpdateCustomerPage = () => {
                         placeholder={t('customers.addressPlaceholder') || 'Enter complete address'}
                         required
                         disabled={submitting}
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                background: '#fafafa',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                '& fieldset': {
+                                    borderColor: '#e0e0e0',
+                                    borderWidth: 2,
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: '#ccc',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#667eea',
+                                    boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                                },
+                                '&.Mui-focused': {
+                                    background: 'white',
+                                    transform: 'translateY(-1px)',
+                                },
+                            },
+                        }}
                     />
-                </FormGroup>
+                </Box>
 
-                <FormGroup>
-                    <Label htmlFor="reference">{t('customers.reference') || 'Reference'} ({t('orders.optional')})</Label>
-                    <Input
+                <Box sx={{ marginBottom: 2 }}>
+                    <TextField
+                        label={`${t('customers.reference') || 'Reference'} (${t('orders.optional')})`}
                         type="text"
                         id="reference"
                         name="reference"
@@ -251,25 +341,100 @@ const UpdateCustomerPage = () => {
                         onChange={handleFormChange}
                         placeholder={t('customers.referencePlaceholder') || 'Enter reference (optional)'}
                         disabled={submitting}
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                background: '#fafafa',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s ease',
+                                '& fieldset': {
+                                    borderColor: '#e0e0e0',
+                                    borderWidth: 2,
+                                },
+                                '&:hover fieldset': {
+                                    borderColor: '#ccc',
+                                },
+                                '&.Mui-focused fieldset': {
+                                    borderColor: '#667eea',
+                                    boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                                },
+                                '&.Mui-focused': {
+                                    background: 'white',
+                                    transform: 'translateY(-1px)',
+                                },
+                            },
+                        }}
                     />
-                </FormGroup>
+                </Box>
 
-                <Actions>
-                    <BackButton type="button" onClick={() => navigate('/dashboard/customers')} disabled={submitting}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 1.5,
+                        marginTop: 3,
+                    }}
+                >
+                    <MuiButton
+                        type="button"
+                        onClick={() => navigate('/dashboard/customers')}
+                        disabled={submitting}
+                        sx={{
+                            padding: '12px 24px',
+                            background: '#f5f5f5',
+                            color: '#333',
+                            border: '2px solid #e0e0e0',
+                            borderRadius: 2,
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            '&:hover': {
+                                background: '#e8e8e8',
+                                borderColor: '#ccc',
+                            },
+                        }}
+                    >
                         {t('common.cancel') || 'Cancel'}
-                    </BackButton>
-                    <SubmitButton type="submit" disabled={submitting}>
-                        {submitting ? (
-                            <LoadingSpinner />
-                        ) : (
-                            <>
-                                <FaEdit /> {t('customers.updateCustomer') || 'Update Customer'}
-                            </>
-                        )}
-                    </SubmitButton>
-                </Actions>
-            </FormContainer>
-        </PageContainer>
+                    </MuiButton>
+                    <MuiButton
+                        type="submit"
+                        disabled={submitting}
+                        startIcon={
+                            submitting ? (
+                                <CircularProgress size={20} sx={{ color: 'white' }} />
+                            ) : (
+                                <EditIcon />
+                            )
+                        }
+                        sx={{
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            borderRadius: 1,
+                            fontSize: '16px',
+                            fontWeight: 600,
+                            minWidth: 160,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 10px 20px rgba(102, 126, 234, 0.3)',
+                            },
+                            '&:active': {
+                                transform: 'translateY(0)',
+                            },
+                            '&:disabled': {
+                                opacity: 0.6,
+                                transform: 'none',
+                            },
+                        }}
+                    >
+                        {submitting
+                            ? (t('common.submitting') || 'Submitting...')
+                            : (t('customers.updateCustomer') || 'Update Customer')
+                        }
+                    </MuiButton>
+                </Box>
+            </Box>
+        </Paper>
     );
 };
 

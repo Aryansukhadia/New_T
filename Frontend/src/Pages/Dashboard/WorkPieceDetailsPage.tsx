@@ -1,224 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
+import {
+  ArrowBack as ArrowBackIcon,
+  ContentCut as ContentCutIcon,
+  Inventory as InventoryIcon,
+} from '@mui/icons-material';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../Utils/ToastContext';
-import { LoadingSpinner } from '../../Components/Common/FormComponents';
-import {
-  FaArrowLeft,
-  FaCut,
-  FaBox,
-} from 'react-icons/fa';
 import { convertWorkPiecePendingToCuttingService, getWorkPieceByIdService, type WorkPieceSummary } from '../../Services/ApiServices/workPieceServices';
 
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const BackButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'warning';
+    case 'cutting':
+    case 'in_progress':
+      return 'info';
+    case 'stitching':
+      return 'primary';
+    case 'readytodeliver':
+    case 'ready_to_deliver':
+    case 'completed':
+      return 'success';
+    default:
+      return 'default';
   }
-`;
-
-const ConvertStatusButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const StatusBadge = styled.span<{ status: string }>`
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#fff3e0';
-      case 'cutting':
-        return '#e3f2fd';
-      case 'redaytostich':
-      case 'ready_to_stich':
-        return '#f3e5f5';
-      case 'stitching':
-        return '#e1f5fe';
-      case 'readytofinishing':
-      case 'ready_to_finishing':
-        return '#fff9c4';
-      case 'finishing':
-        return '#fce4ec';
-      case 'readytodeliver':
-      case 'ready_to_deliver':
-        return '#e8f5e9';
-      case 'in_progress':
-        return '#e3f2fd';
-      case 'completed':
-        return '#e8f5e9';
-      default:
-        return '#f5f5f5';
-    }
-  }};
-  color: ${(props) => {
-    switch (props.status.toLowerCase()) {
-      case 'pending':
-        return '#f57c00';
-      case 'cutting':
-        return '#1976d2';
-      case 'redaytostich':
-      case 'ready_to_stich':
-        return '#7b1fa2';
-      case 'stitching':
-        return '#0277bd';
-      case 'readytofinishing':
-      case 'ready_to_finishing':
-        return '#f57f17';
-      case 'finishing':
-        return '#c2185b';
-      case 'readytodeliver':
-      case 'ready_to_deliver':
-        return '#388e3c';
-      case 'in_progress':
-        return '#1976d2';
-      case 'completed':
-        return '#388e3c';
-      default:
-        return '#666';
-    }
-  }};
-`;
-
-const ContentGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
-
-  @media (max-width: 968px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const InfoCard = styled.div`
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-`;
-
-const CardTitle = styled.h3`
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e0e0e0;
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const InfoLabel = styled.span`
-  font-size: 12px;
-  color: #666;
-  font-weight: 600;
-  text-transform: uppercase;
-`;
-
-const InfoValue = styled.span`
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-`;
-
-const WorkPieceImage = styled.img`
-  width: 100%;
-  max-width: 300px;
-  height: 300px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  border: 2px solid #e0e0e0;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
+};
 
 const WorkPieceDetailsPage = () => {
   const { workpieceId } = useParams<{ workpieceId: string }>();
@@ -309,88 +125,158 @@ const WorkPieceDetailsPage = () => {
 
   if (loading) {
     return (
-      <PageContainer>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Card>
     );
   }
 
   if (!summary) {
     return (
-      <PageContainer>
-        <PageHeader>
-          <PageTitle>{t('orders.workpieceDetails')}</PageTitle>
-          <BackButton onClick={handleBack}>
-            <FaArrowLeft /> {t('common.back')}
-          </BackButton>
-        </PageHeader>
-        <EmptyState>
-          <EmptyStateText>{t('orders.workpieceDetails')} {t('common.noData')}</EmptyStateText>
-        </EmptyState>
-      </PageContainer>
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {t('orders.workpieceDetails')}
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={handleBack}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            {t('common.back')}
+          </Button>
+        </Box>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <Typography variant="body1">
+            {t('orders.workpieceDetails')} {t('common.noData')}
+          </Typography>
+        </Box>
+      </Card>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('orders.workpieceDetails')} - {summary.productItem.name}</PageTitle>
-        <BackButton onClick={handleBack}>
-          <FaArrowLeft /> {t('common.back')}
-        </BackButton>
-      </PageHeader>
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('orders.workpieceDetails')} - {summary.productItem.name}
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          {t('common.back')}
+        </Button>
+      </Box>
 
-      <ContentGrid>
-        {/* Work Piece Information */}
-        <InfoCard>
-          <CardTitle>
-            <FaBox /> {t('orders.workpieceInfo')}
-          </CardTitle>
-          {summary.productItem.imageUrl && (
-            <WorkPieceImage
-              src={summary.productItem.imageUrl}
-              alt={summary.productItem.name}
-            />
-          )}
-          <InfoItem>
-            <InfoLabel>{t('orders.product')}</InfoLabel>
-            <InfoValue>{summary.productItem.name}</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>{t('orders.status')}</InfoLabel>
-            <InfoValue>
-              <StatusBadge status={summary.workPieceStage?.stage || 'pending'}>
-                {summary.workPieceStage?.stage ? (t(`status.${summary.workPieceStage.stage.toLowerCase()}`) || summary.workPieceStage.stage) : '—'}
-              </StatusBadge>
-            </InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>{t('orders.orderDate')}</InfoLabel>
-            <InfoValue>{formatDate(summary.orderDate)}</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>{t('orders.createdAt')}</InfoLabel>
-            <InfoValue>{formatDate(summary.productItem.createdAt)}</InfoValue>
-          </InfoItem>
-          <InfoItem>
-            <InfoLabel>{t('orders.lastUpdated') || 'Last Updated'}</InfoLabel>
-            <InfoValue>{formatDate(summary.lastUpdated)}</InfoValue>
-          </InfoItem>
+      <Grid container spacing={3}>
+        <Grid xs={12} md={6}>
+          <Card sx={{ p: 3, bgcolor: '#f8f9fa', border: '2px solid #e0e0e0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, mb: 2, borderBottom: '2px solid #e0e0e0' }}>
+              <InventoryIcon />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                {t('orders.workpieceInfo')}
+              </Typography>
+            </Box>
 
-          {summary.workPieceStage?.stage?.toLowerCase() === 'pending' && (
-            <ConvertStatusButton
-              onClick={handleConvertPendingToCutting}
-              disabled={convertingStatus}
-            >
-              <FaCut /> {convertingStatus ? t('common.loading') : t('orders.convertPendingToCutting')}
-            </ConvertStatusButton>
-          )}
+            {summary.productItem.imageUrl && (
+              <Box
+                component="img"
+                src={summary.productItem.imageUrl}
+                alt={summary.productItem.name}
+                sx={{
+                  width: '100%',
+                  maxWidth: 300,
+                  height: 300,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  mb: 2,
+                  border: '2px solid #e0e0e0',
+                }}
+              />
+            )}
 
-        </InfoCard>
-      </ContentGrid>
-    </PageContainer>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                  {t('orders.product')}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {summary.productItem.name}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                  {t('orders.status')}
+                </Typography>
+                <Chip
+                  label={summary.workPieceStage?.stage ? (t(`status.${summary.workPieceStage.stage.toLowerCase()}`) || summary.workPieceStage.stage) : '—'}
+                  color={getStatusColor(summary.workPieceStage?.stage || 'pending')}
+                  size="small"
+                  sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+                />
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                  {t('orders.orderDate')}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formatDate(summary.orderDate)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                  {t('orders.createdAt')}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formatDate(summary.productItem.createdAt)}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                  {t('orders.lastUpdated') || 'Last Updated'}
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formatDate(summary.lastUpdated)}
+                </Typography>
+              </Box>
+            </Box>
+
+            {summary.workPieceStage?.stage?.toLowerCase() === 'pending' && (
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<ContentCutIcon />}
+                onClick={handleConvertPendingToCutting}
+                disabled={convertingStatus}
+                sx={{
+                  mt: 2,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  },
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                {convertingStatus ? t('common.loading') : t('orders.convertPendingToCutting')}
+              </Button>
+            )}
+          </Card>
+        </Grid>
+      </Grid>
+    </Card>
   );
 };
 
