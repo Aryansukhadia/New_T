@@ -420,7 +420,7 @@ const ProductsPage = () => {
         <DialogContent>
           {productToDelete && (
             <Typography>
-              Are you sure you want to delete product <strong>{productToDelete.name}</strong>? 
+              Are you sure you want to delete product <strong>{productToDelete.name}</strong>?
               This action cannot be undone. If this product has variants, you must delete them first.
             </Typography>
           )}

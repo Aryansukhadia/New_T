@@ -330,7 +330,6 @@ const UsersPage = () => {
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <MUICustomBtn
-                        size="small"
                         onClick={() => handleOpenEditModal(user)}
                         disabled={user.userId === currentUser?.userId}
                         tooltip="Edit User"
@@ -352,7 +351,6 @@ const UsersPage = () => {
                         <EditIcon fontSize="small" />
                       </MUICustomBtn>
                       <MUICustomBtn
-                        size="small"
                         onClick={() => handleOpenDeleteModal(user)}
                         disabled={user.userId === currentUser?.userId}
                         tooltip="Delete User"
@@ -433,13 +431,14 @@ const UsersPage = () => {
                   startAdornment: <LockIcon sx={{ mr: 1, color: 'action.active' }} />,
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton
+                      <MUICustomBtn
                         onClick={() => setShowPassword(!showPassword)}
                         disabled={formLoading}
-                        edge="end"
+                        tooltip="Toggle password visibility"
+                        variant="contained"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
+                      </MUICustomBtn>
                     </InputAdornment>
                   ),
                 }}

@@ -4,7 +4,6 @@ import {
   Box,
   Card,
   Typography,
-  Button,
   TextField,
   Table,
   TableBody,
@@ -228,7 +227,6 @@ const CustomersPage = () => {
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <MUICustomBtn
-                        size="small"
                         onClick={() => handleManageMeasurements(customer)}
                         tooltip="Manage Measurements"
                         variant="contained"
@@ -249,7 +247,6 @@ const CustomersPage = () => {
                         <StraightenIcon fontSize="small" />
                       </MUICustomBtn>
                       <MUICustomBtn
-                        size="small"
                         onClick={() => handleEditCustomer(customer)}
                         tooltip="Edit Customer"
                         variant="contained"
@@ -270,7 +267,6 @@ const CustomersPage = () => {
                         <EditIcon fontSize="small" />
                       </MUICustomBtn>
                       <MUICustomBtn
-                        size="small"
                         onClick={() => handleOpenDeleteModal(customer)}
                         tooltip="Delete Customer"
                         variant="contained"
