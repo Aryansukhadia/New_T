@@ -1,7 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { useTranslation } from '../../hooks/useTranslation';
+import {
+  Box,
+  Card,
+  Typography,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  MenuItem,
+  Chip,
+} from '@mui/material';
+import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
+import {
+  Category as CategoryIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Link as LinkIcon,
+} from '@mui/icons-material';
 import {
   getProductVariantsService,
   getProductsService,
@@ -12,276 +39,10 @@ import {
   type ProductVariant,
   type Product,
   type ProductItem,
+  type PaginationMeta,
 } from '../../Services/ApiServices';
-import Modal from '../../Components/Common/Modal';
 import { useToast } from '../../Utils/ToastContext';
-import {
-  Select,
-  Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
-import {
-  FaTags,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaLink,
-} from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-`;
-
-const ActionButton = styled.button`
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const FilterBar = styled.div`
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-`;
-
-const FilterSelect = styled(Select)`
-  max-width: 300px;
-`;
-
-const SearchBar = styled.div`
-  margin-bottom: 24px;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  max-width: 400px;
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr<{ isHeader?: boolean }>`
-  border-bottom: 1px solid #e0e0e0;
-
-  &:hover {
-    background: ${(props) => (props.isHeader ? 'none' : '#f8f9fa')};
-  }
-`;
-
-const TableCell = styled.td<{ isHeader?: boolean }>`
-  padding: 16px;
-  text-align: left;
-  font-weight: ${(props) => (props.isHeader ? '600' : '400')};
-  color: ${(props) => (props.isHeader ? '#666' : '#333')};
-  font-size: 14px;
-`;
-
-const TableHeaderCell = styled(TableCell).attrs({ isHeader: true })`
-  background: #f8f9fa;
-`;
-
-const ActionCell = styled(TableCell)`
-  display: flex;
-  gap: 8px;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #ccc;
-  display: flex;
-  justify-content: center;
-
-  svg {
-    width: 48px;
-    height: 48px;
-  }
-`;
-
-const EmptyStateText = styled.p`
-  font-size: 16px;
-  margin: 0;
-`;
-
-const ModalButton = styled(Button)`
-  margin-top: 0;
-  min-width: 140px;
-  padding: 14px 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-size: 15px;
-
-  svg {
-    font-size: 14px;
-  }
-`;
-
-const ModalButtonSecondary = styled.button`
-  padding: 14px 28px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const TableImage = styled.img`
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 2px solid #e0e0e0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const ImageCell = styled(TableCell)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const CheckboxContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  background: #fafafa;
-`;
-
-const CheckboxItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f0f0f0;
-  }
-
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-  }
-
-  span {
-    font-size: 14px;
-    color: #333;
-  }
-`;
-
-const ProductItemsList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-`;
-
-const ProductItemTag = styled.span`
-  padding: 4px 12px;
-  background: #e3f2fd;
-  color: #1976d2;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-`;
+import { useTranslation } from '../../hooks/useTranslation';
 
 const ProductVariantsPage = () => {
   const navigate = useNavigate();
@@ -301,19 +62,29 @@ const ProductVariantsPage = () => {
 
   const { showSuccess, showError } = useToast();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
   const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (page: number = 0) => {
     try {
       setLoading(true);
+      const apiPage = page + 1;
+
       const [variantsResponse, productsResponse, itemsResponse] = await Promise.all([
-        getProductVariantsService(),
-        getProductsService(),
-        getProductItemsService(),
+        getProductVariantsService(selectedProductFilter || undefined, apiPage, pageSize),
+        getProductsService(1, 10), // Get products for filter (max 100)
+        getProductItemsService(1, 10), // Get items for manage modal (max 100)
       ]);
 
       if (variantsResponse.success === 200 && variantsResponse.data) {
-        setProductVariants(variantsResponse.data.productVariants);
+        const { productVariants: variantsData, pagination } = variantsResponse.data;
+        setProductVariants(variantsData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
       }
 
       if (productsResponse.success === 200 && productsResponse.data) {
@@ -329,31 +100,27 @@ const ProductVariantsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, selectedProductFilter, pageSize]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(currentPage);
+  }, [fetchData, currentPage]);
 
   useEffect(() => {
-    let filtered = productVariants;
-
-    if (selectedProductFilter) {
-      filtered = filtered.filter((v) => v.productId === selectedProductFilter);
+    if (!searchTerm.trim()) {
+      setFilteredVariants(productVariants);
+      return;
     }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (variant) =>
-          variant.name.toLowerCase().includes(term) ||
-          (variant.description && variant.description.toLowerCase().includes(term)) ||
-          variant.product?.name.toLowerCase().includes(term)
-      );
-    }
-
+    const term = searchTerm.toLowerCase();
+    const filtered = productVariants.filter(
+      (variant) =>
+        variant.name.toLowerCase().includes(term) ||
+        (variant.description && variant.description.toLowerCase().includes(term)) ||
+        variant.product?.name.toLowerCase().includes(term)
+    );
     setFilteredVariants(filtered);
-  }, [searchTerm, selectedProductFilter, productVariants]);
+  }, [searchTerm, productVariants]);
 
   const handleCreateVariant = () => {
     navigate('/dashboard/product-variants/create');
@@ -374,7 +141,6 @@ const ProductVariantsPage = () => {
     setIsManageItemsModalOpen(true);
   };
 
-
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setVariantToDelete(null);
@@ -386,7 +152,6 @@ const ProductVariantsPage = () => {
     setSelectedProductItems([]);
   };
 
-
   const handleProductItemToggle = (itemId: string) => {
     setSelectedProductItems((prev) =>
       prev.includes(itemId)
@@ -394,7 +159,6 @@ const ProductVariantsPage = () => {
         : [...prev, itemId]
     );
   };
-
 
   const handleManageItems = async () => {
     if (!variantToManageItems) return;
@@ -406,7 +170,7 @@ const ProductVariantsPage = () => {
       const itemsToAdd = selectedProductItems.filter((id) => !currentItemIds.includes(id));
       const itemsToRemove = currentItemIds.filter((id) => !selectedProductItems.includes(id));
 
-      const promises: Promise<any>[] = [];
+      const promises: Promise<unknown>[] = [];
 
       if (itemsToAdd.length > 0) {
         promises.push(addProductItemsToVariantService(variantToManageItems.id, itemsToAdd));
@@ -419,7 +183,7 @@ const ProductVariantsPage = () => {
       if (promises.length > 0) {
         await Promise.all(promises);
         showSuccess('Product items updated successfully!', 'Success');
-        await fetchData();
+        await fetchData(currentPage);
         setTimeout(() => {
           handleCloseManageItemsModal();
         }, 1000);
@@ -450,7 +214,7 @@ const ProductVariantsPage = () => {
 
       if (response.success === 200) {
         showSuccess(response.message || 'Product variant deleted successfully!', 'Success');
-        await fetchData();
+        await fetchData(currentPage);
         setTimeout(() => {
           handleCloseDeleteModal();
         }, 1000);
@@ -481,238 +245,356 @@ const ProductVariantsPage = () => {
   };
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>{t('productVariants.title')}</PageTitle>
-        <ActionButton onClick={handleCreateVariant}>
-          <FaPlus style={{ marginRight: '8px' }} />
-          {t('productVariants.addNewVariant')}
-        </ActionButton>
-      </PageHeader>
-
-      <FilterBar>
-        <FilterSelect
-          value={selectedProductFilter}
-          onChange={(e) => setSelectedProductFilter(e.target.value)}
+    <Card sx={{ borderRadius: 1.5, p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('productVariants.title')}
+        </Typography>
+        <MUICustomBtn
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleCreateVariant}
+          tooltip="Create a new product variant"
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
         >
-          <option value="">All Products</option>
-          {allProducts.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </FilterSelect>
-      </FilterBar>
+          {t('productVariants.addNewVariant')}
+        </MUICustomBtn>
+      </Box>
 
-      <SearchBar>
-        <SearchInput
-          type="text"
+      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <TextField
+          select
+          label="Filter by Product"
+          value={selectedProductFilter}
+          onChange={(e) => {
+            setSelectedProductFilter(e.target.value);
+            setCurrentPage(0);
+          }}
+          sx={{ minWidth: 250 }}
+        >
+          <MenuItem value="">All Products</MenuItem>
+          {allProducts.map((product) => (
+            <MenuItem key={product.id} value={product.id}>
+              {product.name}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          fullWidth
           placeholder="Search variants by name, description, or product..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          variant="outlined"
+          sx={{ maxWidth: 500 }}
         />
-      </SearchBar>
+      </Box>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : filteredVariants.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>
-            <FaTags />
-          </EmptyStateIcon>
-          <EmptyStateText>
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <CategoryIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="body1">
             {searchTerm || selectedProductFilter
-              ? t('productVariants.noVariants')
+              ? 'No product variants found matching your criteria'
               : t('productVariants.noVariants')}
-          </EmptyStateText>
-        </EmptyState>
+          </Typography>
+        </Box>
       ) : (
-        <TableContainer>
+        <TableContainer component={Paper} variant="outlined">
           <Table>
-            <TableHeader>
-              <TableRow isHeader>
-                <TableHeaderCell>{t('productVariants.name')}</TableHeaderCell>
-                <TableHeaderCell>{t('productVariants.product')}</TableHeaderCell>
-                <TableHeaderCell>{t('productVariants.description')}</TableHeaderCell>
-                <TableHeaderCell>{t('productVariants.photo')}</TableHeaderCell>
-                <TableHeaderCell>{t('productVariants.productItems')}</TableHeaderCell>
-                <TableHeaderCell>{t('productVariants.createdAt')}</TableHeaderCell>
-                <TableHeaderCell>{t('common.actions')}</TableHeaderCell>
+            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.name')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.product')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.description')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.photo')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.productItems')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.createdAt')}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
               </TableRow>
-            </TableHeader>
-            <tbody>
+            </TableHead>
+            <TableBody>
               {filteredVariants.map((variant) => (
-                <TableRow key={variant.id}>
+                <TableRow key={variant.id} hover>
                   <TableCell>{variant.name}</TableCell>
                   <TableCell>{variant.product?.name || '—'}</TableCell>
                   <TableCell>{variant?.description || '—'}</TableCell>
-                  <ImageCell>
+                  <TableCell>
                     {variant.photoUrl ? (
-                      <TableImage
-                        src={variant?.photoUrl || ''}
+                      <Box
+                        component="img"
+                        src={variant.photoUrl}
                         alt={variant.name}
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          border: '2px solid #e0e0e0',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            transform: 'scale(1.1)',
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                          },
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     ) : (
-                      <span style={{ color: '#999' }}>—</span>
+                      <Typography variant="body2" color="text.secondary">
+                        —
+                      </Typography>
                     )}
-                  </ImageCell>
+                  </TableCell>
                   <TableCell>
                     {variant.productItems && variant.productItems.length > 0 ? (
-                      <ProductItemsList>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {variant.productItems.map((item) => (
-                          <ProductItemTag key={item.id}>{item.name}</ProductItemTag>
+                          <Chip
+                            key={item.id}
+                            label={item.name}
+                            size="small"
+                            sx={{
+                              bgcolor: '#e3f2fd',
+                              color: '#1976d2',
+                              fontWeight: 500,
+                            }}
+                          />
                         ))}
-                      </ProductItemsList>
+                      </Box>
                     ) : (
                       '—'
                     )}
                   </TableCell>
                   <TableCell>{formatDate(variant.createdAt)}</TableCell>
-                  <ActionCell>
-                    <MUICustomBtn
-                      onClick={() => handleOpenManageItemsModal(variant)}
-                      tooltip="Manage Product Items"
-                      variant="contained"
-                      sx={{
-                        bgcolor: '#e8f5e8',
-                        color: '#2e7d32',
-                        minWidth: 38,
-                        width: 38,
-                        height: 38,
-                        padding: 0,
-                        '&:hover': {
-                          bgcolor: '#c8e6c9',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <FaLink />
-                    </MUICustomBtn>
-                    <MUICustomBtn
-                      onClick={() => handleEditVariant(variant)}
-                      tooltip="Edit Variant"
-                      variant="contained"
-                      sx={{
-                        bgcolor: '#e3f2fd',
-                        color: '#1976d2',
-                        minWidth: 38,
-                        width: 38,
-                        height: 38,
-                        padding: 0,
-                        '&:hover': {
-                          bgcolor: '#bbdefb',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <FaEdit />
-                    </MUICustomBtn>
-                    <MUICustomBtn
-                      onClick={() => handleOpenDeleteModal(variant)}
-                      tooltip="Delete Variant"
-                      variant="contained"
-                      sx={{
-                        bgcolor: '#ffebee',
-                        color: '#d32f2f',
-                        minWidth: 38,
-                        width: 38,
-                        height: 38,
-                        padding: 0,
-                        '&:hover': {
-                          bgcolor: '#ffcdd2',
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <FaTrash />
-                    </MUICustomBtn>
-                  </ActionCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <MUICustomBtn
+                        onClick={() => handleOpenManageItemsModal(variant)}
+                        tooltip="Manage Product Items"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#e8f5e9',
+                          color: '#2e7d32',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          '&:hover': {
+                            bgcolor: '#c8e6c9',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+                          },
+                        }}
+                      >
+                        <LinkIcon fontSize="small" />
+                      </MUICustomBtn>
+                      <MUICustomBtn
+                        onClick={() => handleEditVariant(variant)}
+                        tooltip="Edit Variant"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#e3f2fd',
+                          color: '#1976d2',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          '&:hover': {
+                            bgcolor: '#bbdefb',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </MUICustomBtn>
+                      <MUICustomBtn
+                        onClick={() => handleOpenDeleteModal(variant)}
+                        tooltip="Delete Variant"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#ffebee',
+                          color: '#d32f2f',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          '&:hover': {
+                            bgcolor: '#ffcdd2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+                          },
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </MUICustomBtn>
+                    </Box>
+                  </TableCell>
                 </TableRow>
               ))}
-            </tbody>
+            </TableBody>
+            <tfoot>
+              <tr>
+                {!searchTerm && paginationMeta && (
+                  <CustomTablePaginationComponent
+                    count={paginationMeta.totalCount}
+                    page={currentPage}
+                    rowsPerPage={pageSize}
+                    onPageChange={(_event, page) => setCurrentPage(page)}
+                    onRowsPerPageChange={(event) => {
+                      const newRowsPerPage = parseInt(event.target.value, 10);
+                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                      setPageSize(actualRowsPerPage);
+                      setCurrentPage(0);
+                    }}
+                  />
+                )}
+              </tr>
+            </tfoot>
           </Table>
         </TableContainer>
       )}
 
-      {/* Manage Items Modal */}
-      <Modal
-        isOpen={isManageItemsModalOpen}
-        onClose={handleCloseManageItemsModal}
-        title="Manage Product Items"
-        size="large"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseManageItemsModal}>Cancel</ModalButtonSecondary>
-            <ModalButton onClick={handleManageItems} disabled={formLoading}>
-              {formLoading ? <LoadingSpinner /> : <>Update Items</>}
-            </ModalButton>
-          </>
-        }
-      >
-        {variantToManageItems && (
-          <div>
-            <p style={{ marginBottom: '16px', color: '#666' }}>
-              Manage product items for variant: <strong>{variantToManageItems.name}</strong>
-            </p>
-            <CheckboxContainer>
-              {allProductItems.length === 0 ? (
-                <p style={{ color: '#666', textAlign: 'center', padding: '20px' }}>
-                  No product items available
-                </p>
-              ) : (
-                allProductItems.map((item) => (
-                  <CheckboxItem key={item.id}>
-                    <input
-                      type="checkbox"
-                      checked={selectedProductItems.includes(item.id)}
-                      onChange={() => handleProductItemToggle(item.id)}
-                      disabled={formLoading}
-                    />
-                    <span>{item.name}</span>
-                  </CheckboxItem>
-                ))
-              )}
-            </CheckboxContainer>
-          </div>
-        )}
-      </Modal>
+      {/* Manage Items Dialog */}
+      <Dialog open={isManageItemsModalOpen} onClose={handleCloseManageItemsModal} maxWidth="md" fullWidth>
+        <DialogTitle>Manage Product Items</DialogTitle>
+        <DialogContent>
+          {variantToManageItems && (
+            <Box sx={{ pt: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Manage product items for variant: <strong>{variantToManageItems.name}</strong>
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  maxHeight: 400,
+                  overflowY: 'auto',
+                  p: 2,
+                  border: '2px solid #e0e0e0',
+                  borderRadius: 1,
+                  bgcolor: '#fafafa',
+                }}
+              >
+                {allProductItems.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 3 }}>
+                    No product items available
+                  </Typography>
+                ) : (
+                  allProductItems.map((item) => (
+                    <Box
+                      key={item.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 1,
+                        borderRadius: 0.5,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        '&:hover': {
+                          bgcolor: '#f0f0f0',
+                        },
+                      }}
+                      onClick={() => !formLoading && handleProductItemToggle(item.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedProductItems.includes(item.id)}
+                        onChange={() => handleProductItemToggle(item.id)}
+                        disabled={formLoading}
+                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                      />
+                      <Typography variant="body2">{item.name}</Typography>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <MUICustomBtn
+            onClick={handleCloseManageItemsModal}
+            variant="outlined"
+            tooltip="Cancel operation"
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Cancel
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={handleManageItems}
+            disabled={formLoading}
+            variant="contained"
+            tooltip="Update product items"
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {formLoading ? <CircularProgress size={20} color="inherit" /> : 'Update Items'}
+          </MUICustomBtn>
+        </DialogActions>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        title="Delete Product Variant"
-        footer={
-          <>
-            <ModalButtonSecondary onClick={handleCloseDeleteModal}>Cancel</ModalButtonSecondary>
-            <MUICustomBtn
-              onClick={handleDelete}
-              disabled={formLoading}
-              tooltip="Permanently delete this variant"
-              variant="contained"
-              color="error"
-              sx={{ backgroundColor: '#dc3545', marginTop: 0 }}
-            >
-              {formLoading ? <LoadingSpinner /> : 'Delete'}
-            </MUICustomBtn>
-          </>
-        }
-      >
-        {variantToDelete && (
-          <p>
-            Are you sure you want to delete product variant <strong>{variantToDelete.name}</strong>?
-            This action cannot be undone.
-          </p>
-        )}
-      </Modal>
-    </PageContainer>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Product Variant</DialogTitle>
+        <DialogContent>
+          {variantToDelete && (
+            <Typography>
+              Are you sure you want to delete product variant <strong>{variantToDelete.name}</strong>?
+              This action cannot be undone.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <MUICustomBtn
+            onClick={handleCloseDeleteModal}
+            variant="outlined"
+            tooltip="Cancel delete operation"
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          >
+            Cancel
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={handleDelete}
+            disabled={formLoading}
+            variant="contained"
+            color="error"
+            tooltip="Permanently delete this variant"
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {formLoading ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
+          </MUICustomBtn>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 
 export default ProductVariantsPage;
-
