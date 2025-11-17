@@ -19,6 +19,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   ShoppingBag as ShoppingBagIcon,
   Add as AddIcon,
@@ -34,6 +35,7 @@ import {
   type Product,
   type CreateProductRequest,
   type UpdateProductRequest,
+  type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 
@@ -51,17 +53,26 @@ const ProductsPage = () => {
 
   const { showSuccess, showError } = useToast();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
   const [formData, setFormData] = useState<CreateProductRequest>({
     name: '',
     description: null,
   });
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (page: number = 0) => {
     try {
       setLoading(true);
-      const response = await getProductsService();
+      const apiPage = page + 1;
+      const response = await getProductsService(apiPage, pageSize);
       if (response.success === 200 && response.data) {
-        setProducts(response.data);
+        const { products: productsData, pagination } = response.data;
+        setProducts(productsData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
       } else {
         showError(response.message || 'Failed to load products', 'Error');
       }
@@ -76,11 +87,11 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, pageSize]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    fetchProducts(currentPage);
+  }, [fetchProducts, currentPage]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -353,6 +364,24 @@ const ProductsPage = () => {
                 </TableRow>
               ))}
             </TableBody>
+            <tfoot>
+              <tr>
+                {!searchTerm && paginationMeta && (
+                  <CustomTablePaginationComponent
+                    count={paginationMeta.totalCount}
+                    page={currentPage}
+                    rowsPerPage={pageSize}
+                    onPageChange={(_event, page) => setCurrentPage(page)}
+                    onRowsPerPageChange={(event) => {
+                      const newRowsPerPage = parseInt(event.target.value, 10);
+                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                      setPageSize(actualRowsPerPage);
+                      setCurrentPage(0);
+                    }}
+                  />
+                )}
+              </tr>
+            </tfoot>
           </Table>
         </TableContainer>
       )}

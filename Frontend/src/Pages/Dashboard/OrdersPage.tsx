@@ -16,12 +16,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   ShoppingCart as ShoppingCartIcon,
   Add as AddIcon,
   Visibility as VisibilityIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import {
   getBookedOrdersService,
@@ -52,15 +51,16 @@ const OrdersPage = () => {
 
   const [orders, setOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0); // 0-based for MUI TablePagination
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [limit] = useState(10);
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getBookedOrdersService(currentPage, limit);
+      const apiPage = currentPage + 1; // Convert 0-based to 1-based for API
+      const response = await getBookedOrdersService(apiPage, pageSize);
       if (response.success === 200 && response.data) {
         setOrders(response.data.orders);
         setTotalPages(response.data.pagination.totalPages);
@@ -79,7 +79,7 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, showError]);
+  }, [currentPage, pageSize, showError]);
 
   useEffect(() => {
     fetchOrders();
@@ -193,44 +193,24 @@ const OrdersPage = () => {
                   </TableRow>
                 ))}
               </TableBody>
+              <tfoot>
+                <tr>
+                  <CustomTablePaginationComponent
+                    count={totalCount}
+                    page={currentPage}
+                    rowsPerPage={pageSize}
+                    onPageChange={(_event, page) => setCurrentPage(page)}
+                    onRowsPerPageChange={(event) => {
+                      const newRowsPerPage = parseInt(event.target.value, 10);
+                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                      setPageSize(actualRowsPerPage);
+                      setCurrentPage(0);
+                    }}
+                  />
+                </tr>
+              </tfoot>
             </Table>
           </TableContainer>
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              mt: 3,
-              p: 2,
-              bgcolor: '#f8f9fa',
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              {t('pagination.showing')} {((currentPage - 1) * limit) + 1} {t('pagination.to')} {Math.min(currentPage * limit, totalCount)} {t('pagination.of')} {totalCount} {t('orders.title').toLowerCase()}
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<ChevronLeftIcon />}
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                {t('pagination.previous')}
-              </Button>
-              <Button
-                variant="outlined"
-                endIcon={<ChevronRightIcon />}
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                sx={{ textTransform: 'none', fontWeight: 600 }}
-              >
-                {t('pagination.next')}
-              </Button>
-            </Box>
-          </Box>
         </>
       )}
     </Card>

@@ -82,7 +82,7 @@ const EditProductVariantPage = () => {
       }
 
       if (itemsResponse.success === 200 && itemsResponse.data) {
-        setAllProductItems(itemsResponse.data);
+        setAllProductItems(itemsResponse.data.productItems);
       }
     } catch (err: unknown) {
       console.error('Error fetching data:', err);

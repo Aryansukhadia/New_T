@@ -18,19 +18,41 @@ export interface UserResponse {
   };
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  limit: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface UsersPaginatedResponse {
+  users: UserResponse[];
+  pagination: PaginationMeta;
+}
+
 // ============================================
 // USER SERVICES
 // ============================================
 
 /**
- * Get All Users Service
- * GET /api/users
- * 
- * @returns Promise with list of users
+ * Get All Users Service with Pagination
+ * GET /api/users?page=1&limit=10
+ *
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated users data
  */
-export const getUsersService = async (): Promise<ApiResponse<UserResponse[]>> => {
-  const response = await apiInstance.get<ApiResponse<UserResponse[]>>(
-    getApiUrl('getUsers')
+export const getUsersService = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<UsersPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<UsersPaginatedResponse>>(
+    getApiUrl('getUsers'),
+    {
+      params: { page, limit }
+    }
   );
   return response.data;
 };

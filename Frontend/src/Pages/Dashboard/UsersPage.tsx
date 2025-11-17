@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   People as PeopleIcon,
   Person as PersonIcon,
@@ -42,6 +43,7 @@ import {
   getUserInfo,
   type UserResponse,
   type Role,
+  type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 
@@ -60,6 +62,11 @@ const UsersPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { showSuccess, showError } = useToast();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
   const [formData, setFormData] = useState({
     fullName: '',
     emailId: '',
@@ -69,10 +76,29 @@ const UsersPage = () => {
 
   const currentUser = getUserInfo();
 
+  const fetchUsers = async (page: number = 0) => {
+    try {
+      setLoading(true);
+      const apiPage = page + 1;
+      const response = await getUsersService(apiPage, pageSize);
+      if (response.success === 200 && response.data) {
+        const { users: usersData, pagination } = response.data;
+        setUsers(usersData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching users:', err);
+      showError('Failed to load users', 'Error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(currentPage);
     fetchRoles();
-  }, []);
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -89,21 +115,6 @@ const UsersPage = () => {
     );
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await getUsersService();
-      if (response.success === 200 && response.data) {
-        setUsers(response.data);
-      }
-    } catch (err: unknown) {
-      console.error('Error fetching users:', err);
-      showError('Failed to load users', 'Error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchRoles = async () => {
     try {
@@ -376,6 +387,24 @@ const UsersPage = () => {
                 </TableRow>
               ))}
             </TableBody>
+            <tfoot>
+              <tr>
+                {!searchTerm && paginationMeta && (
+                  <CustomTablePaginationComponent
+                    count={paginationMeta.totalCount}
+                    page={currentPage}
+                    rowsPerPage={pageSize}
+                    onPageChange={(_event, page) => setCurrentPage(page)}
+                    onRowsPerPageChange={(event) => {
+                      const newRowsPerPage = parseInt(event.target.value, 10);
+                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                      setPageSize(actualRowsPerPage);
+                      setCurrentPage(0);
+                    }}
+                  />
+                )}
+              </tr>
+            </tfoot>
           </Table>
         </TableContainer>
       )}

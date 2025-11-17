@@ -26,10 +26,13 @@ import {
   Straighten as StraightenIcon,
 } from '@mui/icons-material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
+
 import {
   getCustomersService,
   deleteCustomerService,
   type Customer,
+  type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 
@@ -42,15 +45,25 @@ const CustomersPage = () => {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0); // MUI TablePagination uses 0-based indexing
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
-  const fetchCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (page: number = 0) => {
     try {
       setLoading(true);
-      const response = await getCustomersService();
+      // Convert from 0-based (MUI) to 1-based (API)
+      const apiPage = page + 1;
+      const response = await getCustomersService(apiPage, pageSize);
       if (response.success === 200 && response.data) {
-        setCustomers(response.data);
+        const { customers: customersData, pagination } = response.data;
+        setCustomers(customersData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
       } else {
         showError(response.message || 'Failed to load customers', 'Error');
       }
@@ -65,11 +78,11 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, pageSize]);
 
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    fetchCustomers(currentPage);
+  }, [fetchCustomers, currentPage]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -143,6 +156,24 @@ const CustomersPage = () => {
     }
   };
 
+  const handlePageChange = useCallback(
+    (_event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+      setCurrentPage(newPage);
+    },
+    []
+  );
+
+  const handleChangeRowsPerPage = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const newRowsPerPage = parseInt(event.target.value, 10);
+      // Handle "All" option (-1) by setting a large number that covers all records
+      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+      setPageSize(actualRowsPerPage);
+      setCurrentPage(0); // Reset to first page when changing page size
+    },
+    []
+  );
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -192,107 +223,129 @@ const CustomersPage = () => {
         <Box sx={{ textAlign: 'center', py: 5 }}>
           <CircularProgress />
         </Box>
-      ) : filteredCustomers.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
-          <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
-          <Typography variant="body1">
-            {searchTerm
-              ? 'No customers found matching your search'
-              : 'No customers found. Add your first customer to get started!'}
-          </Typography>
-        </Box>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Mobile</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Address</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Reference</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredCustomers.map((customer) => (
-                <TableRow key={customer.customerId} hover>
-                  <TableCell>{customer.fullName}</TableCell>
-                  <TableCell>{customer.emailId}</TableCell>
-                  <TableCell>{customer.mobileNo}</TableCell>
-                  <TableCell>{customer.address}</TableCell>
-                  <TableCell>{customer.reference || '—'}</TableCell>
-                  <TableCell>{formatDate(customer.createdAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <MUICustomBtn
-                        onClick={() => handleManageMeasurements(customer)}
-                        tooltip="Manage Measurements"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#fff3e0',
-                          color: '#f57c00',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffe0b2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
-                          },
-                        }}
-                      >
-                        <StraightenIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleEditCustomer(customer)}
-                        tooltip="Edit Customer"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1976d2',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#bbdefb',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                          },
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleOpenDeleteModal(customer)}
-                        tooltip="Delete Customer"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#ffebee',
-                          color: '#d32f2f',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffcdd2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </MUICustomBtn>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <>
+          {filteredCustomers.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+              <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+              <Typography variant="body1">
+                {searchTerm
+                  ? 'No customers found matching your search'
+                  : 'No customers found. Add your first customer to get started!'}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <TableContainer component={Paper} variant="outlined">
+                <Table>
+                  <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Mobile</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Address</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Reference</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredCustomers.map((customer) => (
+                      <TableRow key={customer.customerId} hover>
+                        <TableCell>{customer.fullName}</TableCell>
+                        <TableCell>{customer.emailId}</TableCell>
+                        <TableCell>{customer.mobileNo}</TableCell>
+                        <TableCell>{customer.address}</TableCell>
+                        <TableCell>{customer.reference || '—'}</TableCell>
+                        <TableCell>{formatDate(customer.createdAt)}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <MUICustomBtn
+                              onClick={() => handleManageMeasurements(customer)}
+                              tooltip="Manage Measurements"
+                              variant="contained"
+                              sx={{
+                                bgcolor: '#fff3e0',
+                                color: '#f57c00',
+                                minWidth: 32,
+                                width: 32,
+                                height: 32,
+                                padding: 0,
+                                '&:hover': {
+                                  bgcolor: '#ffe0b2',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
+                                },
+                              }}
+                            >
+                              <StraightenIcon fontSize="small" />
+                            </MUICustomBtn>
+                            <MUICustomBtn
+                              onClick={() => handleEditCustomer(customer)}
+                              tooltip="Edit Customer"
+                              variant="contained"
+                              sx={{
+                                bgcolor: '#e3f2fd',
+                                color: '#1976d2',
+                                minWidth: 32,
+                                width: 32,
+                                height: 32,
+                                padding: 0,
+                                '&:hover': {
+                                  bgcolor: '#bbdefb',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+                                },
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </MUICustomBtn>
+                            <MUICustomBtn
+                              onClick={() => handleOpenDeleteModal(customer)}
+                              tooltip="Delete Customer"
+                              variant="contained"
+                              sx={{
+                                bgcolor: '#ffebee',
+                                color: '#d32f2f',
+                                minWidth: 32,
+                                width: 32,
+                                height: 32,
+                                padding: 0,
+                                '&:hover': {
+                                  bgcolor: '#ffcdd2',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+                                },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </MUICustomBtn>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <tfoot>
+                    <tr>
+                      {/* Pagination Controls - Only show when not searching */}
+                      {paginationMeta && (
+                        <CustomTablePaginationComponent
+                          count={paginationMeta.totalCount}
+                          page={currentPage}
+                          rowsPerPage={pageSize}
+                          onPageChange={handlePageChange}
+                          onRowsPerPageChange={handleChangeRowsPerPage}
+                        />
+                      )}
+                    </tr>
+                  </tfoot>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}

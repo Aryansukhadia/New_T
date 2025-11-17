@@ -7,8 +7,10 @@ import {
   type ProductItem,
   type CreateProductItemRequest,
   type UpdateProductItemRequest,
+  type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
+import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   Box,
   Card,
@@ -53,6 +55,11 @@ const ProductItemsPage = () => {
 
   const { showSuccess, showError } = useToast();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
   const [formData, setFormData] = useState<CreateProductItemRequest>({
     name: '',
     imageUrl: null,
@@ -61,12 +68,16 @@ const ProductItemsPage = () => {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const fetchProductItems = useCallback(async () => {
+  const fetchProductItems = useCallback(async (page: number = 0) => {
     try {
       setLoading(true);
-      const response = await getProductItemsService();
+      const apiPage = page + 1;
+      const response = await getProductItemsService(apiPage, pageSize);
       if (response.success === 200 && response.data) {
-        setProductItems(response.data);
+        const { productItems: productItemsData, pagination } = response.data;
+        setProductItems(productItemsData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
       } else {
         showError(response.message || 'Failed to load product items', 'Error');
       }
@@ -81,11 +92,11 @@ const ProductItemsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, pageSize]);
 
   useEffect(() => {
-    fetchProductItems();
-  }, [fetchProductItems]);
+    fetchProductItems(currentPage);
+  }, [fetchProductItems, currentPage]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -407,6 +418,24 @@ const ProductItemsPage = () => {
                 </TableRow>
               ))}
             </TableBody>
+            <tfoot>
+              <tr>
+                {!searchTerm && paginationMeta && (
+                  <CustomTablePaginationComponent
+                    count={paginationMeta.totalCount}
+                    page={currentPage}
+                    rowsPerPage={pageSize}
+                    onPageChange={(_event, page) => setCurrentPage(page)}
+                    onRowsPerPageChange={(event) => {
+                      const newRowsPerPage = parseInt(event.target.value, 10);
+                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                      setPageSize(actualRowsPerPage);
+                      setCurrentPage(0);
+                    }}
+                  />
+                )}
+              </tr>
+            </tfoot>
           </Table>
         </TableContainer>
       )}

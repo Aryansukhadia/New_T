@@ -313,15 +313,15 @@ const ProductVariantsPage = () => {
       ]);
 
       if (variantsResponse.success === 200 && variantsResponse.data) {
-        setProductVariants(variantsResponse.data);
+        setProductVariants(variantsResponse.data.productVariants);
       }
 
       if (productsResponse.success === 200 && productsResponse.data) {
-        setAllProducts(productsResponse.data);
+        setAllProducts(productsResponse.data.products);
       }
 
       if (itemsResponse.success === 200 && itemsResponse.data) {
-        setAllProductItems(itemsResponse.data);
+        setAllProductItems(itemsResponse.data.productItems);
       }
     } catch (err: unknown) {
       console.error('Error fetching data:', err);
