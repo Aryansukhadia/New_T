@@ -201,13 +201,6 @@ export const getWorkPieceById = async (req, res) => {
             workPiece.createdAt ||
             null;
 
-        console.log({
-            workPieceStage: latestStage,
-            orderDate: workPiece.orderItem?.productOrder?.orderDate ?? null,
-            productItem: workPiece.productItem,
-            lastUpdated
-        });
-
         return sendResponse(res, 200, "Work piece fetched successfully", {
             workPieceStage: latestStage,
             orderDate: workPiece.orderItem?.productOrder?.orderDate ?? null,

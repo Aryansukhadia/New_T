@@ -39,16 +39,55 @@ export const addProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
+        const {
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate pagination
+        if (pageNum < 1) {
+            return sendResponse(res, 400, "Page number must be at least 1");
+        }
+        if (limitNum < 1 || limitNum > 100) {
+            return sendResponse(res, 400, "Limit must be between 1 and 100");
+        }
+
+        // Get total count for pagination
+        const totalCount = await prisma.product.count();
+
+        // Fetch products with pagination
         const products = await prisma.product.findMany({
             include: {
                 variants: true
             },
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limitNum
         });
 
-        return sendResponse(res, 200, "Products fetched successfully", products);
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPreviousPage = pageNum > 1;
+
+        return sendResponse(res, 200, "Products fetched successfully", {
+            products,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                limit: limitNum,
+                hasNextPage,
+                hasPreviousPage,
+            }
+        });
     } catch (error) {
         console.error("getProducts error:", error);
         return sendResponse(res, 500, "Failed to fetch products", { error: error.message });

@@ -115,13 +115,34 @@ export const addProductVariant = async (req, res) => {
 
 export const getProductVariants = async (req, res) => {
     try {
-        const { productId } = req.query;
+        const { 
+            productId,
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate pagination
+        if (pageNum < 1) {
+            return sendResponse(res, 400, "Page number must be at least 1");
+        }
+        if (limitNum < 1 || limitNum > 100) {
+            return sendResponse(res, 400, "Limit must be between 1 and 100");
+        }
 
         const where = {};
         if (productId) {
             where.productId = productId;
         }
 
+        // Get total count for pagination
+        const totalCount = await prisma.productVariant.count({ where });
+
+        // Fetch product variants with pagination
         const productVariants = await prisma.productVariant.findMany({
             where,
             include: {
@@ -130,10 +151,27 @@ export const getProductVariants = async (req, res) => {
             },
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limitNum
         });
 
-        return sendResponse(res, 200, "Product variants fetched successfully", productVariants);
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPreviousPage = pageNum > 1;
+
+        return sendResponse(res, 200, "Product variants fetched successfully", {
+            productVariants,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                limit: limitNum,
+                hasNextPage,
+                hasPreviousPage,
+            }
+        });
     } catch (error) {
         console.error("getProductVariants error:", error);
         return sendResponse(res, 500, "Failed to fetch product variants", { error: error.message });
