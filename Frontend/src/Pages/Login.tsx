@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -9,7 +9,6 @@ import {
   IconButton,
   InputAdornment,
   CircularProgress,
-  Link,
   Container,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
@@ -170,24 +169,6 @@ const Login = () => {
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
               </MUICustomBtn>
             </Box>
-
-            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-              Don't have an account?{' '}
-              <Link
-                component={RouterLink}
-                to="/register"
-                sx={{
-                  color: '#667eea',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Sign up here
-              </Link>
-            </Typography>
           </CardContent>
         </Card>
       </Box>

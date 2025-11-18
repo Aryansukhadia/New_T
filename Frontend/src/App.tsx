@@ -4,7 +4,6 @@ import { store } from './store/store';
 import { ToastProvider } from './Utils/ToastContext';
 import ToastDisplay from './Components/Common/ToastProvider';
 import Login from './Pages/Login';
-import Register from './Pages/Register';
 import DashboardLayout from './Components/Layout/DashboardLayout';
 import { isAuthenticated } from './Services/ApiServices';
 import { getAllRoutes } from './Config/roleRoutes';
@@ -22,7 +21,6 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
 
             {/* Dashboard Routes */}
             <Route
