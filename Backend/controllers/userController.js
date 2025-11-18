@@ -223,7 +223,7 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-export const createUserByAdmin = async (req, res) => {
+export const createAdminBySuperAdmin = async (req, res) => {
     try {
         const { fullName, emailId, password, role } = req.body;
 
@@ -245,10 +245,8 @@ export const createUserByAdmin = async (req, res) => {
             return sendResponse(res, 400, "password is required");
         }
 
-        // Validate role enum
-        const validRoles = ['superAdmin', 'admin', 'subAdmin'];
-        if (!role || typeof role !== "string" || !validRoles.includes(role.trim())) {
-            return sendResponse(res, 400, "role is required and must be one of: superAdmin, admin, subAdmin");
+        if (role != 'admin') {
+            return sendResponse(res, 400, "role must be 'admin'");
         }
 
         // Check if emailId already exists
@@ -264,7 +262,7 @@ export const createUserByAdmin = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
 
-        // Create user with admin's userId as updatedBy
+        // Create admin/subAdmin user with superAdmin's userId as updatedBy
         const newUser = await prisma.user.create({
             data: {
                 userId: id,
@@ -272,7 +270,7 @@ export const createUserByAdmin = async (req, res) => {
                 emailId: emailId.trim().toLowerCase(),
                 password: hashedPassword,
                 role: role.trim(),
-                updatedBy: req.user.userId // Admin who created the user
+                updatedBy: req.user.userId // SuperAdmin who created the user
             },
             select: {
                 userId: true,
@@ -283,10 +281,10 @@ export const createUserByAdmin = async (req, res) => {
             }
         });
 
-        return sendResponse(res, 201, "User created successfully by admin", newUser);
+        return sendResponse(res, 201, `${role === 'admin' ? 'Admin' : 'SubAdmin'} created successfully by SuperAdmin`, newUser);
     } catch (error) {
-        console.error("createUserByAdmin error:", error);
-        return sendResponse(res, 500, "Failed to create user", { error: error.message });
+        console.error("createAdminBySuperAdmin error:", error);
+        return sendResponse(res, 500, "Failed to create admin user", { error: error.message });
     }
 };
 
