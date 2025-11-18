@@ -34,37 +34,29 @@ enum ItemStatusType {
   readyToDeliver
 }
 
-/////////////////////////////
-// ROLE & USER MANAGEMENT
-/////////////////////////////
-
-model Role {
-  roleId    String    @id
-  roleName  String
-  isDeleted Boolean   @default(false)
-  updatedBy String?
-  updatedAt DateTime? @updatedAt
-  createdAt DateTime  @default(now())
-
-  users   User[]
-  updater User?  @relation("RoleUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+enum Role {
+  superAdmin
+  admin
+  subAdmin
 }
+
+/////////////////////////////
+// USER MANAGEMENT
+/////////////////////////////
 
 model User {
   userId    String    @id
   fullName  String
   emailId   String    @unique
   password  String
-  roleId    String
+  role      Role
   isDeleted Boolean   @default(false)
   updatedBy String?
   updatedAt DateTime? @updatedAt
   createdAt DateTime  @default(now())
 
-  role               Role                @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Restrict)
   updater            User?               @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
   updatedUsers       User[]              @relation("UserUpdater")
-  updatedRoles       Role[]              @relation("RoleUpdater")
   createdCustomers   Customer[]          @relation("CustomerCreator")
   updatedCustomers   Customer[]          @relation("CustomerUpdater")
   topMeasurements    TopMeasurement[]
