@@ -6,37 +6,13 @@ import ToastDisplay from './Components/Common/ToastProvider';
 import Login from './Pages/Login';
 import Register from './Pages/Register';
 import DashboardLayout from './Components/Layout/DashboardLayout';
-import DashboardHome from './Pages/Dashboard/DashboardHome';
-import UsersPage from './Pages/Dashboard/UsersPage';
-import RolesPage from './Pages/Dashboard/RolesPage';
-import CustomersPage from './Pages/Dashboard/CustomersPage';
-import CreateCustomerPage from './Pages/Dashboard/CreateCustomerPage';
-import ManageMeasurementPage from './Pages/Dashboard/ManageMeasurementPage';
-import ReportsPage from './Pages/Dashboard/ReportsPage';
-import FinancialsPage from './Pages/Dashboard/FinancialsPage';
-import OrdersPage from './Pages/Dashboard/OrdersPage';
-import BookOrderPage from './Pages/Dashboard/BookOrderPage';
-import OrderDetailsPage from './Pages/Dashboard/OrderDetailsPage';
-import WorkPieceDetailsPage from './Pages/Dashboard/WorkPieceDetailsPage';
-import ProductItemsPage from './Pages/Dashboard/ProductItemsPage';
-import ProductsPage from './Pages/Dashboard/ProductsPage';
-import ProductVariantsPage from './Pages/Dashboard/ProductVariantsPage';
-import CreateProductVariantPage from './Pages/Dashboard/CreateProductVariantPage';
-import EditProductVariantPage from './Pages/Dashboard/EditProductVariantPage';
-import { isAuthenticated, isAdmin } from './Services/ApiServices';
-import UpdateCustomerPage from './Pages/Dashboard/UpdateCustomerPage';
+import { isAuthenticated } from './Services/ApiServices';
+import { getAllRoutes } from './Config/roleRoutes';
+import { RoleBasedRoute } from './Components/Common/RoleBasedRoute';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
-};
-
-// Admin Only Route Component
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-  return isAdmin() ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
 function App() {
@@ -57,24 +33,21 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DashboardHome />} />
-              <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-              <Route path="roles" element={<AdminRoute><RolesPage /></AdminRoute>} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="customers/create" element={<CreateCustomerPage />} />
-              <Route path="customers/edit/:customerId" element={<UpdateCustomerPage />} />
-              <Route path="measurements/manage/:customerId" element={<ManageMeasurementPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="financials" element={<FinancialsPage />} />
-              <Route path="orders" element={<OrdersPage />} />
-              <Route path="orders/book" element={<BookOrderPage />} />
-              <Route path="orders/:id" element={<OrderDetailsPage />} />
-              <Route path="workpiece/:workpieceId" element={<WorkPieceDetailsPage />} />
-              <Route path="product-items" element={<ProductItemsPage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="product-variants" element={<ProductVariantsPage />} />
-              <Route path="product-variants/create" element={<CreateProductVariantPage />} />
-              <Route path="product-variants/edit/:id" element={<EditProductVariantPage />} />
+              {/* Render all routes - access controlled by RoleBasedRoute */}
+              {getAllRoutes().map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={
+                    <RoleBasedRoute
+                      allowedRoles={route.allowedRoles}
+                      requireAuth={route.requireAuth}
+                    >
+                      {route.component()}
+                    </RoleBasedRoute>
+                  }
+                />
+              ))}
             </Route>
 
             {/* Redirect root to dashboard */}

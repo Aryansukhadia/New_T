@@ -10,12 +10,8 @@ export interface UserResponse {
   userId: string;
   fullName: string;
   emailId: string;
-  roleId: string;
+  role: string;
   createdAt: string;
-  role: {
-    roleId: string;
-    roleName: string;
-  };
 }
 
 export interface PaginationMeta {

@@ -16,7 +16,7 @@ import {
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
-import { createUserByAdminService, getRolesService, type Role } from '../Services/ApiServices';
+import { createUserByAdminService } from '../Services/ApiServices';
 import axios from 'axios';
 
 const PasswordInputWrapper = styled.div`
@@ -68,30 +68,10 @@ const AdminCreateUser = () => {
     fullName: '',
     emailId: '',
     password: '',
-    roleId: '',
+    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | '',
   });
-  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingRoles, setLoadingRoles] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await getRolesService();
-        if (response.success === 200 && response.data) {
-          setRoles(response.data);
-        }
-      } catch (err) {
-        console.error('Error fetching roles:', err);
-        showError('Failed to load roles. Please refresh the page.', 'Error');
-      } finally {
-        setLoadingRoles(false);
-      }
-    };
-
-    fetchRoles();
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -106,7 +86,12 @@ const AdminCreateUser = () => {
     setLoading(true);
 
     try {
-      const response = await createUserByAdminService(formData);
+      const response = await createUserByAdminService({
+        fullName: formData.fullName,
+        emailId: formData.emailId,
+        password: formData.password,
+        role: formData.role as 'superAdmin' | 'admin' | 'subAdmin',
+      });
 
       if (response.success === 201 && response.data) {
         showSuccess('User created successfully!', 'Success');
@@ -115,7 +100,7 @@ const AdminCreateUser = () => {
           fullName: '',
           emailId: '',
           password: '',
-          roleId: '',
+          role: '',
         });
       } else {
         showError(response.message || 'Failed to create user', 'Create Failed');
@@ -193,27 +178,25 @@ const AdminCreateUser = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="roleId">Role</Label>
+            <Label htmlFor="role">Role</Label>
             <Select
-              id="roleId"
-              name="roleId"
-              value={formData.roleId}
+              id="role"
+              name="role"
+              value={formData.role}
               onChange={handleChange}
               required
-              disabled={loading || loadingRoles}
+              disabled={loading}
             >
               <option value="">Select a role</option>
-              {roles.map((role) => (
-                <option key={role.roleId} value={role.roleId}>
-                  {role.roleName}
-                </option>
-              ))}
+              <option value="superAdmin">SuperAdmin</option>
+              <option value="admin">Admin</option>
+              <option value="subAdmin">SubAdmin</option>
             </Select>
           </FormGroup>
 
           <MUICustomBtn
             type="submit"
-            disabled={loading || loadingRoles}
+            disabled={loading}
             tooltip="Create new user account"
             fullWidth
           >

@@ -53,7 +53,15 @@ export const isAuthenticated = (): boolean => {
  */
 export const getCurrentUserRole = (): string | null => {
     const userInfo = getUserInfo();
-    return userInfo?.roleName || null;
+    return userInfo?.role || null;
+};
+
+/**
+ * Check if user is SuperAdmin
+ */
+export const isSuperAdmin = (): boolean => {
+    const role = getCurrentUserRole();
+    return role?.toLowerCase() === 'superadmin';
 };
 
 /**
@@ -62,6 +70,14 @@ export const getCurrentUserRole = (): string | null => {
 export const isAdmin = (): boolean => {
     const role = getCurrentUserRole();
     return role?.toLowerCase() === 'admin';
+};
+
+/**
+ * Check if user is SubAdmin
+ */
+export const isSubAdmin = (): boolean => {
+    const role = getCurrentUserRole();
+    return role?.toLowerCase() === 'subadmin';
 };
 
 /**

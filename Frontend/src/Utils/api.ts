@@ -41,6 +41,11 @@ export const API_CONFIG: ApiConfig = {
             method: 'POST',
             baseUrl: NODEJS_BASE_URL,
         },
+        createAdminBySuperAdmin: {
+            path: '/users/create-admin',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
 
         // ============================================
         // USER ENDPOINTS

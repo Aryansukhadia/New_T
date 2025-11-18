@@ -9,50 +9,21 @@ import {
   Typography,
   Box,
   Button,
+  Collapse,
 } from '@mui/material';
-import MUICustomBtn from '../Common/MUICustomBtn';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  Person as PersonIcon,
-  BarChart as BarChartIcon,
-  AttachMoney as AttachMoneyIcon,
-  ShoppingCart as ShoppingCartIcon,
+  ExpandLess,
+  ExpandMore,
   Logout as LogoutIcon,
-  Inventory as InventoryIcon,
-  ShoppingBag as ShoppingBagIcon,
-  Sell as SellIcon,
 } from '@mui/icons-material';
+import MUICustomBtn from '../Common/MUICustomBtn';
 import { removeAuthToken, getUserInfo, type LoginResponse } from '../../Services/ApiServices';
 import LanguageToggle from '../Common/LanguageToggle';
 import { useTranslation } from '../../hooks/useTranslation';
-
-// Define icon mapping for menu items
-const getMenuIcon = (iconName: string) => {
-  const iconMap: { [key: string]: React.ComponentType } = {
-    FaChartBar: DashboardIcon,
-    FaUsers: PeopleIcon,
-    FaUserLock: AdminPanelSettingsIcon,
-    FaUser: PersonIcon,
-    FaChartLine: BarChartIcon,
-    FaDollarSign: AttachMoneyIcon,
-    FaShoppingCart: ShoppingCartIcon,
-    FaBox: InventoryIcon,
-    FaShoppingBag: ShoppingBagIcon,
-    FaTags: SellIcon,
-  };
-  return iconMap[iconName] || DashboardIcon;
-};
-
-interface MenuItem {
-  path: string;
-  label: string;
-  iconName: string;
-  roles: string[];
-}
+import { sidebarItems, type MenuItem } from '../Common/Sidebar/SidebarItems';
+import { useState } from 'react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -64,33 +35,34 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const userInfo: LoginResponse | null = getUserInfo();
-  const userRole = userInfo?.roleName?.toLowerCase() || '';
+  const userRole = userInfo?.role?.toLowerCase() || '';
+  const [openSubmenus, setOpenSubmenus] = useState<{ [key: string]: boolean }>({});
 
-  // Menu items based on roles
-  const menuItems: MenuItem[] = [
-    { path: '/dashboard', label: t('dashboard.title'), iconName: 'FaChartBar', roles: ['admin', 'staff', 'accountant'] },
-    { path: '/dashboard/users', label: t('dashboard.users'), iconName: 'FaUsers', roles: ['admin'] },
-    { path: '/dashboard/roles', label: t('dashboard.roles'), iconName: 'FaUserLock', roles: ['admin'] },
-    { path: '/dashboard/customers', label: t('dashboard.customers'), iconName: 'FaUser', roles: ['admin', 'staff'] },
-    { path: '/dashboard/product-items', label: t('dashboard.productItems'), iconName: 'FaBox', roles: ['admin', 'staff'] },
-    { path: '/dashboard/products', label: t('dashboard.products'), iconName: 'FaShoppingBag', roles: ['admin', 'staff'] },
-    { path: '/dashboard/product-variants', label: t('dashboard.productVariants'), iconName: 'FaTags', roles: ['admin', 'staff'] },
-    { path: '/dashboard/orders', label: t('dashboard.orders'), iconName: 'FaShoppingCart', roles: ['admin', 'staff'] },
-    { path: '/dashboard/reports', label: t('dashboard.reports'), iconName: 'FaChartLine', roles: ['admin', 'accountant'] },
-    { path: '/dashboard/financials', label: t('dashboard.financials'), iconName: 'FaDollarSign', roles: ['admin', 'accountant'] },
-  ];
+  // Get menu items based on user role - exact match only
+  const getMenuItemsForRole = (): MenuItem[] => {
+    if (userRole === 'superadmin') {
+      return sidebarItems.superAdmin;
+    } else if (userRole === 'admin') {
+      return sidebarItems.admin;
+    } else if (userRole === 'subadmin') {
+      return sidebarItems.subAdmin;
+    }
+    return [];
+  };
 
-  // Filter menu items based on user role
-  const allowedMenuItems = menuItems.filter(item =>
-    item.roles.some(role => {
-      const roleLower = role.toLowerCase();
-      const userRoleLower = userRole.toLowerCase();
-      // Match exact or check if userRole contains the role name (for "staff members" matching "staff")
-      return roleLower === userRoleLower ||
-        userRoleLower.includes(roleLower) ||
-        roleLower.includes(userRoleLower);
-    })
-  );
+  const menuItems = getMenuItemsForRole();
+
+  const handleSubmenuToggle = (label: string) => {
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+  };
+
+  const isPathActive = (path?: string): boolean => {
+    if (!path) return false;
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   const handleLogout = () => {
     removeAuthToken();
@@ -181,62 +153,129 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
               fontSize: '12px',
             }}
           >
-            {userInfo.roleName}
+            {userInfo.role}
           </Typography>
         </Box>
       )}
 
       {/* Navigation Menu */}
       <List sx={{ padding: '20px 0', flexGrow: 1 }}>
-        {allowedMenuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          const IconComponent = getMenuIcon(item.iconName);
+        {menuItems.map((item, index) => {
+          const hasChildren = item.children && item.children.length > 0;
+          const isActive = item.path ? isPathActive(item.path) : false;
+          const IconComponent = item.icon;
+
+          // For items with children, check if any child is active
+          const hasActiveChild = hasChildren
+            ? item.children?.some((child) => child.path && isPathActive(child.path))
+            : false;
+
+          const isSubmenuOpen = openSubmenus[item.label] || false;
+
           return (
-            <ListItem key={item.path} disablePadding sx={{ margin: '4px 12px' }}>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                selected={isActive}
-                sx={{
-                  borderRadius: 2,
-                  padding: '12px 16px',
-                  gap: 1.5,
-                  '&.Mui-selected': {
-                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: 'rgba(102, 126, 234, 0.3)',
-                    },
-                  },
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
-                  },
-                }}
-              >
-                <ListItemIcon
+            <Box key={`${item.label}-${index}`}>
+              <ListItem disablePadding sx={{ margin: '4px 12px' }}>
+                <ListItemButton
+                  component={hasChildren ? 'div' : Link}
+                  to={hasChildren ? undefined : item.path}
+                  selected={isActive || hasActiveChild}
+                  onClick={hasChildren ? () => handleSubmenuToggle(item.label) : undefined}
                   sx={{
-                    color: isActive ? 'white' : 'rgba(255, 255, 255, 0.7)',
-                    minWidth: '24px',
-                    justifyContent: 'center',
+                    borderRadius: 2,
+                    padding: '12px 16px',
+                    gap: 1.5,
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                      },
+                    },
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: 'white',
+                    },
                   }}
                 >
-                  <IconComponent />
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  sx={{
-                    '& .MuiListItemText-primary': {
-                      fontSize: '14px',
-                      fontWeight: isActive ? 600 : 400,
-                      whiteSpace: 'nowrap',
-                      opacity: isOpen ? 1 : 0,
-                      transition: 'opacity 0.3s ease',
-                    },
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
+                  {IconComponent && (
+                    <ListItemIcon
+                      sx={{
+                        color: isActive || hasActiveChild ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                        minWidth: '24px',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconComponent />
+                    </ListItemIcon>
+                  )}
+                  <ListItemText
+                    primary={item.label}
+                    sx={{
+                      '& .MuiListItemText-primary': {
+                        fontSize: '14px',
+                        fontWeight: isActive || hasActiveChild ? 600 : 400,
+                        whiteSpace: 'nowrap',
+                        opacity: isOpen ? 1 : 0,
+                        transition: 'opacity 0.3s ease',
+                      },
+                    }}
+                  />
+                  {hasChildren && isOpen && (
+                    <Box sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+                      {isSubmenuOpen ? <ExpandLess /> : <ExpandMore />}
+                    </Box>
+                  )}
+                </ListItemButton>
+              </ListItem>
+
+              {/* Render children if they exist */}
+              {hasChildren && (
+                <Collapse in={isSubmenuOpen && isOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {item.children?.map((child, childIndex) => {
+                      const isChildActive = child.path ? isPathActive(child.path) : false;
+                      return (
+                        <ListItem key={`${child.label}-${childIndex}`} disablePadding sx={{ margin: '4px 12px 4px 36px' }}>
+                          <ListItemButton
+                            component={Link}
+                            to={child.path || '#'}
+                            selected={isChildActive}
+                            sx={{
+                              borderRadius: 2,
+                              padding: '10px 16px',
+                              '&.Mui-selected': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                color: 'white',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                                },
+                              },
+                              '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                color: 'white',
+                              },
+                            }}
+                          >
+                            <ListItemText
+                              primary={child.label}
+                              sx={{
+                                '& .MuiListItemText-primary': {
+                                  fontSize: '13px',
+                                  fontWeight: isChildActive ? 600 : 400,
+                                  whiteSpace: 'nowrap',
+                                  opacity: isOpen ? 1 : 0,
+                                  transition: 'opacity 0.3s ease',
+                                },
+                              }}
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                </Collapse>
+              )}
+            </Box>
           );
         })}
       </List>

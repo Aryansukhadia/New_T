@@ -16,7 +16,7 @@ export interface LoginResponse {
   userId: string;
   fullName: string;
   emailId: string;
-  roleName: string;
+  role: string;
   token: string;
 }
 
@@ -67,18 +67,37 @@ export const registerService = async (
 
 /**
  * Create User by Admin Service
- * POST /api/users/admin/create
+ * POST /api/users
  * 
  * Note: Requires admin authentication token in headers
  * 
- * @param userData - User data to be created
+ * @param userData - User data to be created (can be admin, subAdmin, or superAdmin)
  * @returns Promise with created user data
  */
 export const createUserByAdminService = async (
-  userData: RegisterRequest
+  userData: { fullName: string; emailId: string; password: string; role: 'superAdmin' | 'admin' | 'subAdmin' }
 ): Promise<ApiResponse<UserResponse>> => {
   const response = await apiInstance.post<ApiResponse<UserResponse>>(
-    getApiUrl('createUserByAdmin'),
+    getApiUrl('register'),
+    userData
+  );
+  return response.data;
+};
+
+/**
+ * Create Admin by SuperAdmin Service
+ * POST /api/users/create-admin
+ * 
+ * Note: Requires superAdmin authentication token in headers
+ * 
+ * @param userData - Admin/SubAdmin user data to be created
+ * @returns Promise with created user data
+ */
+export const createAdminBySuperAdminService = async (
+  userData: { fullName: string; emailId: string; password: string; role: 'admin' | 'subAdmin' }
+): Promise<ApiResponse<UserResponse>> => {
+  const response = await apiInstance.post<ApiResponse<UserResponse>>(
+    getApiUrl('createAdminBySuperAdmin'),
     userData
   );
   return response.data;

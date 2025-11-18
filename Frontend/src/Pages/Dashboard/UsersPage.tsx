@@ -39,10 +39,8 @@ import {
   updateUserService,
   deleteUserService,
   createUserByAdminService,
-  getRolesService,
   getUserInfo,
   type UserResponse,
-  type Role,
   type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
@@ -50,7 +48,6 @@ import { useToast } from '../../Utils/ToastContext';
 const UsersPage = () => {
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserResponse[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,7 +68,7 @@ const UsersPage = () => {
     fullName: '',
     emailId: '',
     password: '',
-    roleId: '',
+    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | '',
   });
 
   const currentUser = getUserInfo();
@@ -97,7 +94,6 @@ const UsersPage = () => {
 
   useEffect(() => {
     fetchUsers(currentPage);
-    fetchRoles();
   }, [currentPage, pageSize]);
 
   useEffect(() => {
@@ -111,21 +107,11 @@ const UsersPage = () => {
       (user) =>
         user.fullName.toLowerCase().includes(term) ||
         user.emailId.toLowerCase().includes(term) ||
-        user.role.roleName.toLowerCase().includes(term)
+        user.role.toLowerCase().includes(term)
     );
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
-  const fetchRoles = async () => {
-    try {
-      const response = await getRolesService();
-      if (response.success === 200 && response.data) {
-        setRoles(response.data);
-      }
-    } catch (err) {
-      console.error('Error fetching roles:', err);
-    }
-  };
 
 
   const handleOpenCreateModal = () => {
@@ -135,7 +121,7 @@ const UsersPage = () => {
       fullName: '',
       emailId: '',
       password: '',
-      roleId: '',
+      role: '',
     });
     setIsModalOpen(true);
   };
@@ -147,7 +133,7 @@ const UsersPage = () => {
       fullName: user.fullName,
       emailId: user.emailId,
       password: '', // Don't populate password for edit
-      roleId: user.roleId,
+      role: user.role as 'superAdmin' | 'admin' | 'subAdmin',
     });
     setIsModalOpen(true);
   };
@@ -210,7 +196,7 @@ const UsersPage = () => {
           fullName: formData.fullName,
           emailId: formData.emailId,
           password: formData.password,
-          roleId: formData.roleId,
+          role: formData.role as 'superAdmin' | 'admin' | 'subAdmin',
         });
 
         if (response.success === 201) {
@@ -336,7 +322,7 @@ const UsersPage = () => {
                 <TableRow key={user.userId} hover>
                   <TableCell>{user.fullName}</TableCell>
                   <TableCell>{user.emailId}</TableCell>
-                  <TableCell>{user.role.roleName}</TableCell>
+                  <TableCell>{user.role}</TableCell>
                   <TableCell>{formatDate(user.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
@@ -479,18 +465,17 @@ const UsersPage = () => {
               fullWidth
               select
               label="Role"
-              name="roleId"
-              value={formData.roleId}
+              name="role"
+              value={formData.role}
               onChange={(event) => handleSelectChange(event as SelectChangeEvent<string>)}
               required
-              disabled={formLoading}
+              disabled={formLoading || isEditMode}
+              helperText={isEditMode ? 'Role cannot be modified after account creation' : ''}
             >
               <MenuItem value="">-- Select a role --</MenuItem>
-              {roles.map((role) => (
-                <MenuItem key={role.roleId} value={role.roleId}>
-                  {role.roleName}
-                </MenuItem>
-              ))}
+              <MenuItem value="superAdmin">SuperAdmin</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="subAdmin">SubAdmin</MenuItem>
             </TextField>
           </Box>
         </DialogContent>
