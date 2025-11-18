@@ -6,7 +6,7 @@ import { generateToken } from "../utils/jwt.js";
 
 export const addUser = async (req, res) => {
     try {
-        const { fullName, emailId, password, roleId } = req.body;
+        const { fullName, emailId, password, role } = req.body;
 
         if (!fullName || typeof fullName !== "string" || fullName.trim() === "") {
             return sendResponse(res, 400, "fullName is required");
@@ -26,8 +26,10 @@ export const addUser = async (req, res) => {
             return sendResponse(res, 400, "password is required");
         }
 
-        if (!roleId || typeof roleId !== "string" || roleId.trim() === "") {
-            return sendResponse(res, 400, "roleId is required");
+        // Validate role enum
+        const validRoles = ['superAdmin', 'admin', 'subAdmin'];
+        if (!role || typeof role !== "string" || !validRoles.includes(role.trim())) {
+            return sendResponse(res, 400, "role is required and must be one of: superAdmin, admin, subAdmin");
         }
 
         // Check if emailId already exists
@@ -37,15 +39,6 @@ export const addUser = async (req, res) => {
 
         if (existingUser) {
             return sendResponse(res, 409, "Email already exists");
-        }
-
-        // Check if role exists
-        const roleExists = await prisma.role.findUnique({
-            where: { roleId: roleId.trim() }
-        });
-
-        if (!roleExists) {
-            return sendResponse(res, 404, "Role not found");
         }
 
         const id = randomUUID();
@@ -58,20 +51,14 @@ export const addUser = async (req, res) => {
                 fullName: fullName.trim(),
                 emailId: emailId.trim().toLowerCase(),
                 password: hashedPassword,
-                roleId: roleId.trim()
+                role: role.trim()
             },
             select: {
                 userId: true,
                 fullName: true,
                 emailId: true,
-                roleId: true,
-                createdAt: true,
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
+                role: true,
+                createdAt: true
             }
         });
 
@@ -111,14 +98,8 @@ export const getUsers = async (req, res) => {
                 userId: true,
                 fullName: true,
                 emailId: true,
-                roleId: true,
-                createdAt: true,
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
+                role: true,
+                createdAt: true
             },
             orderBy: {
                 createdAt: 'desc'
@@ -161,14 +142,8 @@ export const getUserById = async (req, res) => {
                 userId: true,
                 fullName: true,
                 emailId: true,
-                roleId: true,
-                createdAt: true,
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
+                role: true,
+                createdAt: true
             }
         });
 
@@ -211,14 +186,8 @@ export const updateUser = async (req, res) => {
                 userId: true,
                 fullName: true,
                 emailId: true,
-                roleId: true,
-                createdAt: true,
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
+                role: true,
+                createdAt: true
             }
         });
 
@@ -256,7 +225,7 @@ export const deleteUser = async (req, res) => {
 
 export const createUserByAdmin = async (req, res) => {
     try {
-        const { fullName, emailId, password, roleId } = req.body;
+        const { fullName, emailId, password, role } = req.body;
 
         if (!fullName || typeof fullName !== "string" || fullName.trim() === "") {
             return sendResponse(res, 400, "fullName is required");
@@ -276,8 +245,10 @@ export const createUserByAdmin = async (req, res) => {
             return sendResponse(res, 400, "password is required");
         }
 
-        if (!roleId || typeof roleId !== "string" || roleId.trim() === "") {
-            return sendResponse(res, 400, "roleId is required");
+        // Validate role enum
+        const validRoles = ['superAdmin', 'admin', 'subAdmin'];
+        if (!role || typeof role !== "string" || !validRoles.includes(role.trim())) {
+            return sendResponse(res, 400, "role is required and must be one of: superAdmin, admin, subAdmin");
         }
 
         // Check if emailId already exists
@@ -287,15 +258,6 @@ export const createUserByAdmin = async (req, res) => {
 
         if (existingUser) {
             return sendResponse(res, 409, "Email already exists");
-        }
-
-        // Check if role exists
-        const roleExists = await prisma.role.findUnique({
-            where: { roleId: roleId.trim() }
-        });
-
-        if (!roleExists) {
-            return sendResponse(res, 404, "Role not found");
         }
 
         const id = randomUUID();
@@ -309,21 +271,15 @@ export const createUserByAdmin = async (req, res) => {
                 fullName: fullName.trim(),
                 emailId: emailId.trim().toLowerCase(),
                 password: hashedPassword,
-                roleId: roleId.trim(),
+                role: role.trim(),
                 updatedBy: req.user.userId // Admin who created the user
             },
             select: {
                 userId: true,
                 fullName: true,
                 emailId: true,
-                roleId: true,
-                createdAt: true,
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
+                role: true,
+                createdAt: true
             }
         });
 
@@ -350,14 +306,6 @@ export const login = async (req, res) => {
         const user = await prisma.user.findUnique({
             where: {
                 emailId: emailId.trim().toLowerCase()
-            },
-            include: {
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
             }
         });
 
@@ -377,10 +325,10 @@ export const login = async (req, res) => {
             return sendResponse(res, 401, "Invalid email or password");
         }
 
-        // Generate JWT token with userId and roleId
+        // Generate JWT token with userId and role
         const token = generateToken({
             userId: user.userId,
-            roleId: user.roleId
+            role: user.role
         });
 
         // Return user info and token
@@ -388,7 +336,7 @@ export const login = async (req, res) => {
             userId: user.userId,
             fullName: user.fullName,
             emailId: user.emailId,
-            roleName: user.role.roleName,
+            role: user.role,
             token: token
         };
 

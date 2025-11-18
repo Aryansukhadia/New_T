@@ -25,15 +25,7 @@ export const authenticate = async (req, res, next) => {
 
         // Get user from database to ensure user still exists and is active
         const user = await prisma.user.findUnique({
-            where: { userId: decoded.userId },
-            include: {
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
-            }
+            where: { userId: decoded.userId }
         });
 
         if (!user) {
@@ -47,8 +39,7 @@ export const authenticate = async (req, res, next) => {
         // Attach user info to request object
         req.user = {
             userId: user.userId,
-            roleId: user.roleId,
-            roleName: user.role.roleName
+            role: user.role
         };
 
         next();
@@ -82,15 +73,7 @@ export const isAdmin = async (req, res, next) => {
 
         // Get user from database to check role
         const user = await prisma.user.findUnique({
-            where: { userId: decoded.userId },
-            include: {
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
-            }
+            where: { userId: decoded.userId }
         });
 
         if (!user) {
@@ -101,16 +84,15 @@ export const isAdmin = async (req, res, next) => {
             return sendResponse(res, 401, "User account is deactivated");
         }
 
-        // Check if user is Admin
-        if (user.role.roleName !== "admin") {
+        // Check if user is Admin or SuperAdmin
+        if (user.role !== "admin" && user.role !== "superAdmin") {
             return sendResponse(res, 403, "Access denied. Admin privileges required");
         }
 
         // Attach user info to request object
         req.user = {
             userId: user.userId,
-            roleId: user.roleId,
-            roleName: user.role.roleName
+            role: user.role
         };
 
         next();
