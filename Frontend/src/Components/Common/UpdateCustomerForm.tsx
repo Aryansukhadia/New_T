@@ -64,7 +64,7 @@ const UpdateCustomerPage = () => {
         };
 
         fetchCustomer();
-    }, [customerId, navigate, showError, t]);
+    }, [customerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
