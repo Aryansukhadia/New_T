@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import styled from 'styled-components';
@@ -12,12 +12,12 @@ import {
   Label,
   Input,
   Select,
-  MUICustomBtn,
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
 import { createUserByAdminService } from '../Services/ApiServices';
 import axios from 'axios';
+import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const PasswordInputWrapper = styled.div`
   position: relative;

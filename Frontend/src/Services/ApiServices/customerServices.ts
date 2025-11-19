@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // CUSTOMER TYPES
@@ -36,15 +37,6 @@ export interface UpdateCustomerRequest {
   mobileNo?: string;
   address?: string;
   reference?: string | null;
-}
-
-export interface PaginationMeta {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
 export interface CustomersPaginatedResponse {

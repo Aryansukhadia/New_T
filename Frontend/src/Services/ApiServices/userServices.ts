@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // USER TYPES
@@ -12,15 +13,6 @@ export interface UserResponse {
   emailId: string;
   role: string;
   createdAt: string;
-}
-
-export interface PaginationMeta {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
 export interface UsersPaginatedResponse {

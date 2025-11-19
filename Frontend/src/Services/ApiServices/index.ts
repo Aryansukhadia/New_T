@@ -2,8 +2,8 @@
 // API DETAILS - CENTRALIZED EXPORTS
 // ============================================
 
-// Types
-export * from '.';
+// Common Types
+export * from './commonTypes';
 
 // Services
 export * from './authServices';

@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // PRODUCT TYPES
@@ -67,15 +68,6 @@ export interface CreateProductItemRequest {
 export interface UpdateProductItemRequest {
   name?: string;
   imageUrl?: string | null;
-}
-
-export interface PaginationMeta {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
 }
 
 export interface ProductsPaginatedResponse {

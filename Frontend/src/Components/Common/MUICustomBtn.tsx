@@ -5,6 +5,7 @@ interface MUICustomBtnProps {
     children: React.ReactNode;
     variant?: 'contained' | 'outlined' | 'text';
     color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+    size?: "small" | "medium" | "large";
     onClick?: () => void;
     disabled?: boolean;
     startIcon?: React.ReactNode;
@@ -21,6 +22,7 @@ const MUICustomBtn = ({
     children,
     variant = 'contained',
     color = 'primary',
+    size = 'medium',
     onClick,
     disabled = false,
     startIcon,
@@ -34,6 +36,7 @@ const MUICustomBtn = ({
 }: MUICustomBtnProps) => {
     const buttonElement = (
         <Button
+            size={size}
             variant={variant}
             color={color}
             onClick={onClick}
