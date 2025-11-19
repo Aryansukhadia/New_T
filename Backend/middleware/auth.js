@@ -36,11 +36,9 @@ export const authenticate = async (req, res, next) => {
             return sendResponse(res, 401, "User account is deactivated");
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            role: user.role
-        };
+        // Attach all user details to request object (excluding password)
+        const { password, ...userDetails } = user;
+        req.user = userDetails;
 
         next();
     } catch (error) {
@@ -84,16 +82,14 @@ export const isAdmin = async (req, res, next) => {
             return sendResponse(res, 401, "User account is deactivated");
         }
 
-        // Check if user is Admin or SuperAdmin
-        if (user.role !== "admin" && user.role !== "superAdmin") {
+        // Check if user is Admin
+        if (user.role !== "admin") {
             return sendResponse(res, 403, "Access denied. Admin privileges required");
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            role: user.role
-        };
+        // Attach all user details to request object (excluding password)
+        const { password, ...userDetails } = user;
+        req.user = userDetails;
 
         next();
     } catch (error) {
@@ -142,11 +138,9 @@ export const isSuperAdmin = async (req, res, next) => {
             return sendResponse(res, 403, "Access denied. SuperAdmin privileges required");
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            role: user.role
-        };
+        // Attach all user details to request object (excluding password)
+        const { password, ...userDetails } = user;
+        req.user = userDetails;
 
         next();
     } catch (error) {
@@ -195,11 +189,9 @@ export const isSubAdmin = async (req, res, next) => {
             return sendResponse(res, 403, "Access denied. SubAdmin privileges required");
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            role: user.role
-        };
+        // Attach all user details to request object (excluding password)
+        const { password, ...userDetails } = user;
+        req.user = userDetails;
 
         next();
     } catch (error) {
@@ -248,11 +240,9 @@ export const isAdminOrSubAdmin = async (req, res, next) => {
             return sendResponse(res, 403, "Access denied. Admin or SubAdmin privileges required");
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            role: user.role
-        };
+        // Attach all user details to request object (excluding password)
+        const { password, ...userDetails } = user;
+        req.user = userDetails;
 
         next();
     } catch (error) {
