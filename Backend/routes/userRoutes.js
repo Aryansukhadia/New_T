@@ -1,16 +1,16 @@
 import { Router } from "express";
-import { addUser, getUsers, getUserById, updateUser, deleteUser, login, createAdminBySuperAdmin } from "../controllers/userController.js";
-import { isAdmin, isSuperAdmin } from "../middleware/auth.js";
+import { addUser, getUsers, getUserById, updateUser, deleteUser, login, getUserRoles } from "../controllers/userController.js";
+import { authenticate, isAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
 router.post("/login", login); // api/users/login
-router.get("/", isAdmin, getUsers); // api/users
-router.get("/:id", isAdmin, getUserById); // api/users/:id
-router.post("/", isAdmin, addUser); // api/users
-router.post("/create-admin", isSuperAdmin, createAdminBySuperAdmin); // api/users/superadmin/create-admin (SuperAdmin only)
-router.put("/:id", isAdmin, updateUser); // api/users/:id
-router.delete("/:id", isAdmin, deleteUser); // api/users/:id
+router.get("/roles", authenticate, getUserRoles); // api/users/roles (must be before /:id)
+router.get("/", authenticate, getUsers); // api/users
+router.get("/:id", authenticate, getUserById); // api/users/:id
+router.post("/", authenticate, addUser); // api/users
+router.put("/:id", authenticate, updateUser); // api/users/:id
+router.delete("/:id", authenticate, deleteUser); // api/users/:id
 
 export default router;
 

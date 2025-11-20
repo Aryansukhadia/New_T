@@ -3,6 +3,7 @@ import sendResponse from "../utils/response.js";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
+import { getAvailableRoles } from "../utils/roles.js";
 
 export const addUser = async (req, res) => {
     try {
@@ -26,10 +27,14 @@ export const addUser = async (req, res) => {
             return sendResponse(res, 400, "password is required");
         }
 
-        // Validate role enum
-        const validRoles = ['superAdmin', 'admin', 'subAdmin'];
-        if (!role || typeof role !== "string" || !validRoles.includes(role.trim())) {
-            return sendResponse(res, 400, "role is required and must be one of: superAdmin, admin, subAdmin");
+        if (!role || typeof role !== "string" || role.trim() === "") {
+            return sendResponse(res, 400, "role is required");
+        }
+
+        // Validate role is one of the allowed values
+        const allowedRoles = ['superAdmin', 'admin', 'subAdmin'];
+        if (!allowedRoles.includes(role.trim())) {
+            return sendResponse(res, 400, "Invalid role. Must be one of: superAdmin, admin, subAdmin");
         }
 
         // Check if emailId already exists
@@ -39,6 +44,24 @@ export const addUser = async (req, res) => {
 
         if (existingUser) {
             return sendResponse(res, 409, "Email already exists");
+        }
+
+        // Role validation based on the authenticated user's role
+        // SuperAdmin can create: admin, subAdmin
+        // Admin can create: subAdmin
+        // SubAdmin cannot create anyone
+        const userRole = req.user.role;
+
+        if (userRole === 'subAdmin') {
+            return sendResponse(res, 403, "You are not authorized to create users");
+        }
+
+        if (userRole === 'admin' && role !== 'subAdmin') {
+            return sendResponse(res, 403, "Admins can only create SubAdmin users");
+        }
+
+        if (userRole === 'superAdmin' && !['admin', 'subAdmin'].includes(role)) {
+            return sendResponse(res, 400, "SuperAdmin can only create Admin or SubAdmin users");
         }
 
         const id = randomUUID();
@@ -85,15 +108,25 @@ export const getUsers = async (req, res) => {
         if (pageNum < 1) {
             return sendResponse(res, 400, "Page number must be at least 1");
         }
-        if (limitNum < 1 || limitNum > 100) {
-            return sendResponse(res, 400, "Limit must be between 1 and 100");
-        }
+
+        const userRole = getAvailableRoles(req.user.role);
 
         // Get total count for pagination
-        const totalCount = await prisma.user.count();
+        const totalCount = await prisma.user.count({
+            where: {
+                role: {
+                    in: userRole
+                }
+            }
+        });
 
         // Fetch users with pagination
         const users = await prisma.user.findMany({
+            where: {
+                role: {
+                    in: userRole
+                }
+            },
             select: {
                 userId: true,
                 fullName: true,
@@ -134,9 +167,15 @@ export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Get user role based on the user's role
+        const userRole = getAvailableRoles(req.user.role);
+
         const user = await prisma.user.findUnique({
             where: {
-                userId: id
+                userId: id,
+                role: {
+                    in: userRole
+                }
             },
             select: {
                 userId: true,
@@ -163,9 +202,11 @@ export const updateUser = async (req, res) => {
         const { id } = req.params;
         const { fullName } = req.body || {};
 
+        const userRole = getAvailableRoles(req.user.role);
+
         // Check if user exists
         const existing = await prisma.user.findUnique({
-            where: { userId: id }
+            where: { userId: id, role: { in: userRole } }
         });
 
         if (!existing) {
@@ -178,7 +219,7 @@ export const updateUser = async (req, res) => {
         }
 
         const updatedUser = await prisma.user.update({
-            where: { userId: id },
+            where: { userId: id, role: { in: userRole } },
             data: {
                 fullName: fullName.trim()
             },
@@ -202,9 +243,11 @@ export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const userRole = getAvailableRoles(req.user.role);
+
         try {
             const deletedUser = await prisma.user.delete({
-                where: { userId: id }
+                where: { userId: id, role: { in: userRole } }
             });
 
             return sendResponse(res, 200, "User deleted successfully");
@@ -220,71 +263,6 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
         console.error("deleteUser error:", error);
         return sendResponse(res, 500, "Failed to delete user", { error: error.message });
-    }
-};
-
-export const createAdminBySuperAdmin = async (req, res) => {
-    try {
-        const { fullName, emailId, password, role } = req.body;
-
-        if (!fullName || typeof fullName !== "string" || fullName.trim() === "") {
-            return sendResponse(res, 400, "fullName is required");
-        }
-
-        if (!emailId || typeof emailId !== "string" || emailId.trim() === "") {
-            return sendResponse(res, 400, "emailId is required");
-        }
-
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailId.trim())) {
-            return sendResponse(res, 400, "Invalid email format");
-        }
-
-        if (!password || typeof password !== "string" || password.trim() === "") {
-            return sendResponse(res, 400, "password is required");
-        }
-
-        if (role != 'admin') {
-            return sendResponse(res, 400, "role must be 'admin'");
-        }
-
-        // Check if emailId already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { emailId: emailId.trim().toLowerCase() }
-        });
-
-        if (existingUser) {
-            return sendResponse(res, 409, "Email already exists");
-        }
-
-        const id = randomUUID();
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
-
-        // Create admin/subAdmin user with superAdmin's userId as updatedBy
-        const newUser = await prisma.user.create({
-            data: {
-                userId: id,
-                fullName: fullName.trim(),
-                emailId: emailId.trim().toLowerCase(),
-                password: hashedPassword,
-                role: role.trim(),
-                updatedBy: req.user.userId // SuperAdmin who created the user
-            },
-            select: {
-                userId: true,
-                fullName: true,
-                emailId: true,
-                role: true,
-                createdAt: true
-            }
-        });
-
-        return sendResponse(res, 201, `${role === 'admin' ? 'Admin' : 'SubAdmin'} created successfully by SuperAdmin`, newUser);
-    } catch (error) {
-        console.error("createAdminBySuperAdmin error:", error);
-        return sendResponse(res, 500, "Failed to create admin user", { error: error.message });
     }
 };
 
@@ -342,5 +320,15 @@ export const login = async (req, res) => {
     } catch (error) {
         console.error("login error:", error);
         return sendResponse(res, 500, "Failed to login", { error: error.message });
+    }
+};
+
+export const getUserRoles = async (req, res) => {
+    try {
+        const roles = getAvailableRoles(req.user.role);
+        return sendResponse(res, 200, "User roles fetched successfully", roles);
+    } catch (error) {
+        console.error("getUserRoles error:", error);
+        return sendResponse(res, 500, "Failed to fetch user roles", { error: error.message || "Internal server error" });
     }
 };
