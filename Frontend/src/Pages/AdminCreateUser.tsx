@@ -1,65 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import styled from 'styled-components';
+import { IconButton, InputAdornment, TextField, MenuItem } from '@mui/material';
 import {
   FormContainer,
   FormCard,
   FormTitle,
   FormSubtitle,
   Form,
-  FormGroup,
-  Label,
-  Input,
-  Select,
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
 import { createUserByAdminService } from '../Services/ApiServices';
 import axios from 'axios';
 import MUICustomBtn from '../Components/Common/MUICustomBtn';
-
-const PasswordInputWrapper = styled.div`
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-`;
-
-const PasswordToggleButton = styled.button`
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: color 0.2s ease;
-  z-index: 1;
-  
-  &:hover {
-    color: #667eea;
-  }
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const PasswordInput = styled(Input)`
-  padding-right: 45px;
-  box-sizing: border-box;
-  width: 100%;
-`;
 
 const AdminCreateUser = () => {
   const navigate = useNavigate();
@@ -73,7 +27,7 @@ const AdminCreateUser = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -124,75 +78,170 @@ const AdminCreateUser = () => {
         <FormSubtitle>Admin - Create a new user account</FormSubtitle>
 
         <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Enter full name"
-              required
-              disabled={loading}
-            />
-          </FormGroup>
+          <TextField
+            type="text"
+            id="fullName"
+            name="fullName"
+            label="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            placeholder="Enter full name"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="emailId">Email Address</Label>
-            <Input
-              type="email"
-              id="emailId"
-              name="emailId"
-              value={formData.emailId}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              required
-              disabled={loading}
-            />
-          </FormGroup>
+          <TextField
+            type="email"
+            id="emailId"
+            name="emailId"
+            label="Email Address"
+            value={formData.emailId}
+            onChange={handleChange}
+            placeholder="Enter email address"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <PasswordInputWrapper>
-              <PasswordInput
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a password"
-                required
-                disabled={loading}
-                minLength={6}
-              />
-              <PasswordToggleButton
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </PasswordToggleButton>
-            </PasswordInputWrapper>
-          </FormGroup>
+          <TextField
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            name="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Create a password"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            inputProps={{
+              minLength: 6,
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                    edge="end"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="role">Role</Label>
-            <Select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              disabled={loading}
-            >
-              <option value="">Select a role</option>
-              <option value="superAdmin">SuperAdmin</option>
-              <option value="admin">Admin</option>
-              <option value="subAdmin">SubAdmin</option>
-            </Select>
-          </FormGroup>
+          <TextField
+            select
+            id="role"
+            name="role"
+            label="Role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          >
+            <MenuItem value="">Select a role</MenuItem>
+            <MenuItem value="superAdmin">SuperAdmin</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="subAdmin">SubAdmin</MenuItem>
+          </TextField>
 
           <MUICustomBtn
             type="submit"

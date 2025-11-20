@@ -3,7 +3,7 @@ import { getUserInfo, type LoginResponse } from '../../Services/ApiServices';
 
 const DashboardHome = () => {
   const userInfo: LoginResponse | null = getUserInfo();
-  const role = userInfo?.roleName;
+  const role = userInfo?.role;
 
   return (
     <Box sx={{ maxWidth: '100%' }}>
