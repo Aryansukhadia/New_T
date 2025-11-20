@@ -67,7 +67,7 @@ const BookOrderPage = () => {
     try {
       const response = await getCustomersService();
       if (response.success === 200 && response.data) {
-        setCustomers(response.data);
+        setCustomers(response.data.customers);
       }
     } catch (err) {
       console.error('Error fetching customers:', err);
@@ -81,7 +81,7 @@ const BookOrderPage = () => {
     try {
       const response = await getProductsService();
       if (response.success === 200 && response.data) {
-        setProducts(response.data);
+        setProducts(response.data.products);
       }
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -144,7 +144,7 @@ const BookOrderPage = () => {
     try {
       const response = await getProductVariantsService(productId);
       if (response.success === 200 && response.data) {
-        setProductVariants(response.data);
+        setProductVariants(response.data.productVariants);
       }
     } catch (err) {
       console.error('Error fetching product variants:', err);

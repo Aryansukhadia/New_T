@@ -34,7 +34,14 @@ export const sidebarItems: SidebarItems = {
 
   admin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
-    { label: "Users", icon: FaUsers, path: "/dashboard/users" },
+    {
+      label: "Users",
+      icon: FaUsers,
+      children: [
+        { label: "All Users", path: "/dashboard/users" },
+        { label: "Add User", path: "/dashboard/users/add" },
+      ],
+    },
     { label: "Customers", icon: FaUser, path: "/dashboard/customers" },
     {
       label: "Products",
@@ -59,6 +66,14 @@ export const sidebarItems: SidebarItems = {
 
   subAdmin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    {
+      label: "Users",
+      icon: FaUsers,
+      children: [
+        { label: "All Users", path: "/dashboard/users" },
+        { label: "Add User", path: "/dashboard/users/add" },
+      ],
+    },
     { label: "Customers", icon: FaUser, path: "/dashboard/customers" },
     {
       label: "Products",

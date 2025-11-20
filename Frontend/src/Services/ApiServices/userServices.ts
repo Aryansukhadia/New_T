@@ -25,6 +25,24 @@ export interface UsersPaginatedResponse {
 // ============================================
 
 /**
+ * Get User Roles Service
+ * GET /api/users/roles
+ * 
+ * Returns available roles based on the authenticated user's role
+ * - SuperAdmin can create: admin
+ * - Admin can create: subAdmin
+ * - SubAdmin: no roles available
+ * 
+ * @returns Promise with array of available roles
+ */
+export const getUserRolesService = async (): Promise<ApiResponse<string[]>> => {
+  const response = await apiInstance.get<ApiResponse<string[]>>(
+    getApiUrl('getUserRoles')
+  );
+  return response.data;
+};
+
+/**
  * Get All Users Service with Pagination
  * GET /api/users?page=1&limit=10
  *

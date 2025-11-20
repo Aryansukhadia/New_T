@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import DashboardHome from '../Pages/Dashboard/DashboardHome';
 import CreateAdminPage from '../Pages/Dashboard/CreateAdminPage';
+import AddUserPage from '../Pages/Dashboard/AddUserPage';
 import UsersPage from '../Pages/Dashboard/UsersPage';
 import RolesPage from '../Pages/Dashboard/RolesPage';
 import CustomersPage from '../Pages/Dashboard/CustomersPage';
@@ -60,6 +61,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'users',
             component: () => <UsersPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'users/add',
+            component: () => <AddUserPage />,
             requireAuth: true,
             allowedRoles: ['admin'],
         },
@@ -169,6 +176,18 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['subAdmin'],
         },
         {
+            path: 'users',
+            component: () => <UsersPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'users/add',
+            component: () => <AddUserPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
             path: 'customers',
             component: () => <CustomersPage />,
             requireAuth: true,
@@ -250,9 +269,9 @@ export const roleRoutes: RoleRoutes = {
 };
 
 // Helper function to get all unique routes from all roles
+// Merges allowedRoles for duplicate paths
 export const getAllRoutes = (): RouteConfig[] => {
-    const allRoutes: RouteConfig[] = [];
-    const pathSet = new Set<string>();
+    const routeMap = new Map<string, RouteConfig>();
 
     // Combine all routes from all roles
     const allRoleRoutes = [
@@ -261,14 +280,26 @@ export const getAllRoutes = (): RouteConfig[] => {
         ...roleRoutes.subAdmin,
     ];
 
-    // Filter out duplicates based on path
+    // Merge routes with same path by combining allowedRoles
     allRoleRoutes.forEach((route) => {
-        if (!pathSet.has(route.path)) {
-            pathSet.add(route.path);
-            allRoutes.push(route);
+        if (routeMap.has(route.path)) {
+            // Merge allowedRoles if path already exists
+            const existingRoute = routeMap.get(route.path)!;
+            const mergedRoles = [
+                ...(existingRoute.allowedRoles || []),
+                ...(route.allowedRoles || [])
+            ];
+            // Remove duplicates
+            existingRoute.allowedRoles = Array.from(new Set(mergedRoles));
+        } else {
+            // Add new route with a copy of allowedRoles
+            routeMap.set(route.path, {
+                ...route,
+                allowedRoles: route.allowedRoles ? [...route.allowedRoles] : undefined
+            });
         }
     });
 
-    return allRoutes;
+    return Array.from(routeMap.values());
 };
 

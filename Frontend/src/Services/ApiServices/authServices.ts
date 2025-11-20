@@ -86,9 +86,10 @@ export const createUserByAdminService = async (
 
 /**
  * Create Admin by SuperAdmin Service
- * POST /api/users/create-admin
+ * POST /api/users
  * 
- * Note: Requires superAdmin authentication token in headers
+ * Note: Requires admin/superAdmin authentication token in headers
+ * Uses the addUser endpoint with role validation on the backend
  * 
  * @param userData - Admin/SubAdmin user data to be created
  * @returns Promise with created user data
@@ -97,7 +98,7 @@ export const createAdminBySuperAdminService = async (
   userData: { fullName: string; emailId: string; password: string; role: 'admin' | 'subAdmin' }
 ): Promise<ApiResponse<UserResponse>> => {
   const response = await apiInstance.post<ApiResponse<UserResponse>>(
-    getApiUrl('createAdminBySuperAdmin'),
+    getApiUrl('register'),
     userData
   );
   return response.data;
