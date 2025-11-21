@@ -54,6 +54,7 @@ model User {
   updatedBy String?
   updatedAt DateTime? @updatedAt
   createdAt DateTime  @default(now())
+  needToResetPassword Boolean @default(true)
 
   updater            User?               @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
   updatedUsers       User[]              @relation("UserUpdater")
