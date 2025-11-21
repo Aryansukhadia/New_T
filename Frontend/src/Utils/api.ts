@@ -45,6 +45,16 @@ export const API_CONFIG: ApiConfig = {
         // ============================================
         // USER ENDPOINTS
         // ============================================
+        getMe: {
+            path: '/users/me',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        changePassword: {
+            path: '/users/change-password',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
         getUserRoles: {
             path: '/users/roles',
             method: 'GET',

@@ -406,20 +406,22 @@ export const getProductItemByIdService = async (
  * POST /api/productItems
  * 
  * @param productItemData - Product item data to be created
- * @param imageFile - Optional image file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with created product item data
  */
 export const createProductItemService = async (
   productItemData: CreateProductItemRequest,
-  imageFile?: File | null
+  imageFiles?: File[] | null
 ): Promise<ApiResponse<ProductItem>> => {
   const formData = new FormData();
   formData.append('name', productItemData.name);
   if (productItemData.imageUrl) {
     formData.append('imageUrl', productItemData.imageUrl);
   }
-  if (imageFile) {
-    formData.append('image', imageFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
   }
 
   const response = await apiInstance.post<ApiResponse<ProductItem>>(
@@ -440,13 +442,13 @@ export const createProductItemService = async (
  * 
  * @param productItemId - Product Item ID
  * @param productItemData - Product item data to update
- * @param imageFile - Optional image file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with updated product item data
  */
 export const updateProductItemService = async (
   productItemId: string,
   productItemData: UpdateProductItemRequest,
-  imageFile?: File | null
+  imageFiles?: File[] | null
 ): Promise<ApiResponse<ProductItem>> => {
   const formData = new FormData();
   if (productItemData.name !== undefined) {
@@ -455,8 +457,10 @@ export const updateProductItemService = async (
   if (productItemData.imageUrl !== undefined) {
     formData.append('imageUrl', productItemData.imageUrl || '');
   }
-  if (imageFile) {
-    formData.append('image', imageFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
   }
 
   const response = await apiInstance.put<ApiResponse<ProductItem>>(

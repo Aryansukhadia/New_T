@@ -9,7 +9,8 @@ import {
   FaShoppingBag,
   FaShoppingCart,
   FaChartLine,
-  FaDollarSign
+  FaDollarSign,
+  FaUserCircle
 } from "react-icons/fa";
 import type { ComponentType } from "react";
 
@@ -29,11 +30,13 @@ interface SidebarItems {
 export const sidebarItems: SidebarItems = {
   superAdmin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     { label: "Create Admin", icon: FaUserLock, path: "/dashboard/create-admin" },
   ],
 
   admin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     {
       label: "Users",
       icon: FaUsers,
@@ -66,6 +69,7 @@ export const sidebarItems: SidebarItems = {
 
   subAdmin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     {
       label: "Users",
       icon: FaUsers,

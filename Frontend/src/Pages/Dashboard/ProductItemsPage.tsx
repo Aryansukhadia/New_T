@@ -65,8 +65,8 @@ const ProductItemsPage = () => {
     imageUrl: null,
   });
 
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const fetchProductItems = useCallback(async (page: number = 0) => {
     try {
@@ -119,8 +119,8 @@ const ProductItemsPage = () => {
       name: '',
       imageUrl: null,
     });
-    setSelectedImageFile(null);
-    setImagePreview(null);
+    setSelectedImageFiles([]);
+    setImagePreviews([]);
     setIsModalOpen(true);
   };
 
@@ -131,8 +131,21 @@ const ProductItemsPage = () => {
       name: productItem.name,
       imageUrl: productItem.imageUrl || null,
     });
-    setSelectedImageFile(null);
-    setImagePreview(productItem.imageUrl ? productItem.imageUrl : null);
+    setSelectedImageFiles([]);
+
+    // Parse existing images from JSON string
+    let existingImages: string[] = [];
+    if (productItem.imageUrl) {
+      try {
+        existingImages = JSON.parse(productItem.imageUrl);
+        if (!Array.isArray(existingImages)) {
+          existingImages = [productItem.imageUrl];
+        }
+      } catch {
+        existingImages = [productItem.imageUrl];
+      }
+    }
+    setImagePreviews(existingImages);
     setIsModalOpen(true);
   };
 
@@ -160,21 +173,37 @@ const ProductItemsPage = () => {
   };
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImageFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files).slice(0, 5); // Limit to 5 files
+      setSelectedImageFiles(fileArray);
+
+      // Create previews for all files
+      const previews: string[] = [];
+      let loadedCount = 0;
+
+      fileArray.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          previews.push(reader.result as string);
+          loadedCount++;
+          if (loadedCount === fileArray.length) {
+            setImagePreviews(previews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
-  const handleRemoveImage = () => {
-    setSelectedImageFile(null);
-    setImagePreview(null);
+  const handleRemoveImage = (index: number) => {
+    setSelectedImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveAllImages = () => {
+    setSelectedImageFiles([]);
+    setImagePreviews([]);
     setFormData((prev) => ({ ...prev, imageUrl: null }));
   };
 
@@ -192,7 +221,7 @@ const ProductItemsPage = () => {
         const response = await updateProductItemService(
           selectedProductItem.id,
           updateData,
-          selectedImageFile
+          selectedImageFiles.length > 0 ? selectedImageFiles : null
         );
 
         if (response.success === 200) {
@@ -211,7 +240,7 @@ const ProductItemsPage = () => {
           imageUrl: formData.imageUrl || null,
         };
 
-        const response = await createProductItemService(createData, selectedImageFile);
+        const response = await createProductItemService(createData, selectedImageFiles.length > 0 ? selectedImageFiles : null);
 
         if (response.success === 201) {
           showSuccess(response.message || 'Product item created successfully!', 'Success');
@@ -344,29 +373,79 @@ const ProductItemsPage = () => {
                 <TableRow key={item.id} sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}>
                   <TableCell>{item.name}</TableCell>
                   <TableCell sx={{ textAlign: 'center' }}>
-                    {item.imageUrl ? (
-                      <Box
-                        component="img"
-                        src={item?.imageUrl || ''}
-                        alt={item.name}
-                        sx={{
-                          width: 60,
-                          height: 60,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          border: '2px solid #e0e0e0',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            transform: 'scale(1.1)',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                          },
-                        }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
+                    {item.imageUrl ? (() => {
+                      try {
+                        const images = JSON.parse(item.imageUrl);
+                        const imageArray = Array.isArray(images) ? images : [item.imageUrl];
+                        return (
+                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            {imageArray.slice(0, 3).map((imgUrl: string, idx: number) => (
+                              <Box
+                                key={idx}
+                                component="img"
+                                src={imgUrl}
+                                alt={`${item.name} ${idx + 1}`}
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  objectFit: 'cover',
+                                  borderRadius: 1,
+                                  border: '2px solid #e0e0e0',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    transform: 'scale(1.1)',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                                  },
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ))}
+                            {imageArray.length > 3 && (
+                              <Box sx={{
+                                width: 40,
+                                height: 40,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: '#f0f0f0',
+                                borderRadius: 1,
+                                fontSize: 12,
+                                color: '#666'
+                              }}>
+                                +{imageArray.length - 3}
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      } catch {
+                        return (
+                          <Box
+                            component="img"
+                            src={item.imageUrl}
+                            alt={item.name}
+                            sx={{
+                              width: 60,
+                              height: 60,
+                              objectFit: 'cover',
+                              borderRadius: 1,
+                              border: '2px solid #e0e0e0',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'scale(1.1)',
+                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                              },
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        );
+                      }
+                    })() : (
                       <span style={{ color: '#999' }}>—</span>
                     )}
                   </TableCell>
@@ -468,14 +547,14 @@ const ProductItemsPage = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <ImageIcon sx={{ fontSize: 20 }} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  Upload Image (Optional)
+                  Upload Images (Optional - Max 5)
                 </Typography>
               </Box>
               <Button
                 component="label"
                 variant="contained"
                 startIcon={<UploadIcon />}
-                disabled={formLoading}
+                disabled={formLoading || imagePreviews.length >= 5}
                 sx={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   '&:hover': {
@@ -487,57 +566,80 @@ const ProductItemsPage = () => {
                   fontWeight: 600,
                 }}
               >
-                Choose Image File
+                Choose Image Files
                 <input
                   type="file"
                   hidden
-                  id="imageFile"
+                  multiple
+                  id="imageFiles"
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleImageFileChange}
-                  disabled={formLoading}
+                  disabled={formLoading || imagePreviews.length >= 5}
                 />
               </Button>
-              {selectedImageFile && (
+              {selectedImageFiles.length > 0 && (
                 <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                  Selected: {selectedImageFile.name}
+                  Selected: {selectedImageFiles.length} file(s)
                 </Typography>
               )}
-              {imagePreview && (
-                <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-                  <Box
-                    component="img"
-                    src={imagePreview}
-                    alt="Preview"
-                    sx={{
-                      maxWidth: 300,
-                      maxHeight: 200,
-                      borderRadius: 1,
-                      border: '2px solid #e0e0e0',
-                      objectFit: 'cover',
-                    }}
-                  />
-                  <MUICustomBtn
-                    onClick={handleRemoveImage}
-                    tooltip="Remove image"
-                    variant="contained"
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      bgcolor: '#dc3545',
-                      color: 'white',
-                      width: 32,
-                      height: 32,
-                      minWidth: 32,
-                      padding: 0,
-                      '&:hover': {
-                        bgcolor: '#c82333',
-                        transform: 'scale(1.1)',
-                      },
-                    }}
-                  >
-                    <CloseIcon sx={{ fontSize: 16 }} />
-                  </MUICustomBtn>
+              {imagePreviews.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Image Previews ({imagePreviews.length}/5)
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={handleRemoveAllImages}
+                      sx={{
+                        textTransform: 'none',
+                        color: '#dc3545',
+                        '&:hover': { bgcolor: '#ffebee' }
+                      }}
+                    >
+                      Remove All
+                    </Button>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                    {imagePreviews.map((preview, index) => (
+                      <Box key={index} sx={{ position: 'relative', display: 'inline-block' }}>
+                        <Box
+                          component="img"
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            borderRadius: 1,
+                            border: '2px solid #e0e0e0',
+                            objectFit: 'cover',
+                          }}
+                        />
+                        <MUICustomBtn
+                          onClick={() => handleRemoveImage(index)}
+                          tooltip="Remove image"
+                          variant="contained"
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: '#dc3545',
+                            color: 'white',
+                            width: 24,
+                            height: 24,
+                            minWidth: 24,
+                            padding: 0,
+                            '&:hover': {
+                              bgcolor: '#c82333',
+                              transform: 'scale(1.1)',
+                            },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </MUICustomBtn>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               )}
             </Box>

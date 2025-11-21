@@ -20,9 +20,47 @@ export interface UsersPaginatedResponse {
   pagination: PaginationMeta;
 }
 
+export interface ChangePasswordRequest {
+  password: string;
+}
+
 // ============================================
 // USER SERVICES
 // ============================================
+
+/**
+ * Get Current User (Me) Service
+ * GET /api/users/me
+ * 
+ * Returns the authenticated user's details
+ * 
+ * @returns Promise with current user data
+ */
+export const getMeService = async (): Promise<ApiResponse<UserResponse>> => {
+  const response = await apiInstance.get<ApiResponse<UserResponse>>(
+    getApiUrl('getMe')
+  );
+  return response.data;
+};
+
+/**
+ * Change Password Service
+ * POST /api/users/change-password
+ * 
+ * Changes the authenticated user's password (requires authentication)
+ * 
+ * @param passwordData - Object containing the new password
+ * @returns Promise with success message
+ */
+export const changePasswordService = async (
+  passwordData: ChangePasswordRequest
+): Promise<ApiResponse<null>> => {
+  const response = await apiInstance.post<ApiResponse<null>>(
+    getApiUrl('changePassword'),
+    passwordData
+  );
+  return response.data;
+};
 
 /**
  * Get User Roles Service

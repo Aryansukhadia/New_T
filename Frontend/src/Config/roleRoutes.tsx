@@ -21,6 +21,7 @@ import ProductsPage from '../Pages/Dashboard/ProductsPage';
 import ProductVariantsPage from '../Pages/Dashboard/ProductVariantsPage';
 import CreateProductVariantPage from '../Pages/Dashboard/CreateProductVariantPage';
 import EditProductVariantPage from '../Pages/Dashboard/EditProductVariantPage';
+import ProfilePage from '../Pages/Dashboard/ProfilePage';
 
 export interface RouteConfig {
     path: string;
@@ -44,6 +45,12 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['superAdmin'],
         },
         {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['superAdmin'],
+        },
+        {
             path: 'create-admin',
             component: () => <CreateAdminPage />,
             requireAuth: true,
@@ -55,6 +62,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: '',
             component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['admin'],
         },
@@ -172,6 +185,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: '',
             component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },
