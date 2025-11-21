@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
 import { getAvailableRoles } from "../utils/roles.js";
+import { validatePassword } from "../utils/passwordValidation.js";
 
 export const addUser = async (req, res) => {
     try {
@@ -23,8 +24,10 @@ export const addUser = async (req, res) => {
             return sendResponse(res, 400, "Invalid email format");
         }
 
-        if (!password || typeof password !== "string" || password.trim() === "") {
-            return sendResponse(res, 400, "password is required");
+        // Validate password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+            return sendResponse(res, 400, passwordValidation.message);
         }
 
         if (!role || typeof role !== "string" || role.trim() === "") {
@@ -330,5 +333,52 @@ export const getUserRoles = async (req, res) => {
     } catch (error) {
         console.error("getUserRoles error:", error);
         return sendResponse(res, 500, "Failed to fetch user roles", { error: error.message || "Internal server error" });
+    }
+};
+
+export const getMe = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const user = {
+            userId: userId,
+            fullName: req.user.fullName,
+            emailId: req.user.emailId,
+            role: req.user.role,
+            createdAt: req.user.createdAt
+        }
+
+        return sendResponse(res, 200, "User details fetched successfully", user);
+    } catch (error) {
+        console.error("getMe error:", error);
+        return sendResponse(res, 500, "Failed to fetch user details", { error: error.message });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { password } = req.body;
+
+        // Validate password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.isValid) {
+            return sendResponse(res, 400, passwordValidation.message);
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
+
+        // Update password
+        await prisma.user.update({
+            where: { userId },
+            data: { password: hashedPassword }
+        });
+
+        return sendResponse(res, 200, "Password changed successfully");
+    } catch (error) {
+        console.error("changePassword error:", error);
+        return sendResponse(res, 500, "Failed to change password", { error: error.message });
     }
 };
