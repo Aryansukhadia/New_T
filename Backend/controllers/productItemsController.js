@@ -1,11 +1,14 @@
 import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
+import { deleteUploadedFiles, handleImageUpload } from "../utils/fileUtils.js";
 
 export const addProductItem = async (req, res) => {
     try {
         const { name, imageUrl } = req.body;
 
         if (!name || typeof name !== "string" || name.trim() === "") {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "name is required");
         }
 
@@ -17,16 +20,13 @@ export const addProductItem = async (req, res) => {
         });
 
         if (existingItem) {
+            // Delete uploaded files if duplicate name
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 409, "Product item with this name already exists");
         }
 
-        // Handle image: prioritize uploaded file, then provided URL
-        let finalImageUrl = null;
-        if (req.file) {
-            finalImageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        } else if (imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "") {
-            finalImageUrl = imageUrl.trim();
-        }
+        // Handle images using generalized utility function
+        const finalImageUrl = handleImageUpload(req.files, imageUrl);
 
         const newProductItem = await prisma.productItem.create({
             data: {
@@ -42,6 +42,8 @@ export const addProductItem = async (req, res) => {
         return sendResponse(res, 201, "Product item created successfully", newProductItem);
     } catch (error) {
         console.error("addProductItem error:", error);
+        // Delete uploaded files if database operation fails
+        deleteUploadedFiles(req.files);
         return sendResponse(res, 500, "Failed to create product item", { error: error.message });
     }
 };
@@ -139,6 +141,8 @@ export const updateProductItem = async (req, res) => {
         const { name, imageUrl } = req.body;
 
         if (!name || typeof name !== "string" || name.trim() === "") {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "name is required");
         }
 
@@ -148,6 +152,8 @@ export const updateProductItem = async (req, res) => {
         });
 
         if (!existingItem) {
+            // Delete uploaded files if item not found
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 404, "Product item not found");
         }
 
@@ -160,16 +166,13 @@ export const updateProductItem = async (req, res) => {
         });
 
         if (duplicateItem) {
+            // Delete uploaded files if duplicate name
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 409, "Product item with this name already exists");
         }
 
-        // Handle image: prioritize uploaded file, then provided URL
-        let finalImageUrl = existingItem.imageUrl; // Keep existing if nothing provided
-        if (req.file) {
-            finalImageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        } else if (imageUrl !== undefined) {
-            finalImageUrl = imageUrl && typeof imageUrl === "string" && imageUrl.trim() !== "" ? imageUrl.trim() : null;
-        }
+        // Handle images using generalized utility function
+        const finalImageUrl = handleImageUpload(req.files, imageUrl, existingItem.imageUrl);
 
         const updatedProductItem = await prisma.productItem.update({
             where: { id },
@@ -186,6 +189,8 @@ export const updateProductItem = async (req, res) => {
         return sendResponse(res, 200, "Product item updated successfully", updatedProductItem);
     } catch (error) {
         console.error("updateProductItem error:", error);
+        // Delete uploaded files if database operation fails
+        deleteUploadedFiles(req.files);
         return sendResponse(res, 500, "Failed to update product item", { error: error.message });
     }
 };
