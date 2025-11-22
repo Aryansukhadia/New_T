@@ -67,6 +67,53 @@ export const verifyAndGetUser = async (req, res) => {
     }
 }
 
+export const loggedIn = async (req, res, next) => {
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        sendResponse(res, 401, "Authorization token is required");
+        return null;
+    }
+
+    // Extract token
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
+
+    if (!token) {
+        sendResponse(res, 401, "Authorization token is required");
+        return null;
+    }
+
+    // Verify token
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+        sendResponse(res, 401, "Invalid or expired token");
+        return null;
+    }
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+        where: { userId: decoded.userId }
+    });
+
+    if (!user) {
+        sendResponse(res, 401, "User not found");
+        return null;
+    }
+
+    // Check if user is deleted
+    if (user.isDeleted) {
+        sendResponse(res, 401, "User account is deactivated");
+        return null;
+    }
+
+    // Return user without password
+    const { password, ...userDetails } = user;
+    req.user = userDetails;
+    next();
+};
+
 export const authenticate = async (req, res, next) => {
     const user = await verifyAndGetUser(req, res);
 

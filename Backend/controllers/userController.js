@@ -370,12 +370,63 @@ export const changePassword = async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password.trim(), saltRounds);
 
-        // Update password
+        // Update password and set needToResetPassword to false
         await prisma.user.update({
             where: { userId },
-            data: { password: hashedPassword },
-            needToResetPassword: false
+            data: {
+                password: hashedPassword,
+                needToResetPassword: false
+            }
         });
+
+        return sendResponse(res, 200, "Password changed successfully");
+    } catch (error) {
+        console.error("changePassword error:", error);
+        return sendResponse(res, 500, "Failed to change password", { error: error.message });
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const { newPassword } = req.body;
+
+        // Validate password
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.isValid) {
+            return sendResponse(res, 400, passwordValidation.message);
+        }
+
+        // Hash new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword.trim(), saltRounds);
+
+        const roles = getAvailableRoles(req.user.role);
+
+        // Single DB operation: Update only if user exists and role is authorized
+        const updateResult = await prisma.user.updateMany({
+            where: {
+                userId,
+                role: { in: roles }
+            },
+            data: {
+                password: hashedPassword,
+                needToResetPassword: true
+            }
+        });
+
+        // If no rows were updated, check if user exists to provide appropriate error
+        if (updateResult.count === 0) {
+            const userExists = await prisma.user.findUnique({
+                where: { userId },
+                select: { userId: true }
+            });
+
+            if (!userExists) {
+                return sendResponse(res, 404, "User not found");
+            }
+            return sendResponse(res, 403, "You are not authorized to change the password for this customer");
+        }
 
         return sendResponse(res, 200, "Password changed successfully");
     } catch (error) {
