@@ -1,6 +1,6 @@
 import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
-import { deleteUploadedFiles, handleImageUpload } from "../utils/fileUtils.js";
+import { deleteUploadedFiles, handleImageUpload, deleteFilesByUrls, processUploadedImages, processImageUrlInput } from "../utils/fileUtils.js";
 
 export const addProductItem = async (req, res) => {
     try {
@@ -32,6 +32,7 @@ export const addProductItem = async (req, res) => {
             data: {
                 name: name.trim(),
                 imageUrl: finalImageUrl,
+                createdBy: req.user.userId,
             },
             include: {
                 variants: true,
@@ -73,6 +74,9 @@ export const getProductItems = async (req, res) => {
 
         // Fetch product items with pagination
         const productItems = await prisma.productItem.findMany({
+            where: {
+                isDeleted: false
+            },
             include: {
                 variants: true,
                 itemStatuses: true
@@ -117,8 +121,7 @@ export const getProductItemById = async (req, res) => {
                 itemStatuses: {
                     include: {
                         orderItem: true,
-                        updatedBy: true,
-                        photos: true
+                        updatedBy: true
                     }
                 }
             }
@@ -138,7 +141,7 @@ export const getProductItemById = async (req, res) => {
 export const updateProductItem = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, imageUrl } = req.body;
+        const { name, imageUrl, deletedImageUrls } = req.body;
 
         if (!name || typeof name !== "string" || name.trim() === "") {
             // Delete uploaded files if validation fails
@@ -156,23 +159,75 @@ export const updateProductItem = async (req, res) => {
             deleteUploadedFiles(req.files);
             return sendResponse(res, 404, "Product item not found");
         }
-
-        // Check if another item with same name exists
-        const duplicateItem = await prisma.productItem.findFirst({
-            where: {
-                name: name.trim(),
-                id: { not: id }
-            }
-        });
-
-        if (duplicateItem) {
-            // Delete uploaded files if duplicate name
-            deleteUploadedFiles(req.files);
-            return sendResponse(res, 409, "Product item with this name already exists");
+        else if (existingItem.isDeleted) {
+            return sendResponse(res, 400, "Product item is deleted");
         }
 
-        // Handle images using generalized utility function
-        const finalImageUrl = handleImageUpload(req.files, imageUrl, existingItem.imageUrl);
+        // Handle deleted image URLs - delete files from server
+        let remainingOriginalImages = [];
+        if (deletedImageUrls) {
+            try {
+                const deletedUrls = JSON.parse(deletedImageUrls);
+                if (Array.isArray(deletedUrls)) {
+                    // Parse existing images
+                    let existingImages = [];
+                    if (existingItem.imageUrl) {
+                        try {
+                            existingImages = JSON.parse(existingItem.imageUrl);
+                            if (!Array.isArray(existingImages)) {
+                                existingImages = [existingItem.imageUrl];
+                            }
+                        } catch {
+                            existingImages = [existingItem.imageUrl];
+                        }
+                    }
+
+                    // Get remaining original images (not deleted)
+                    remainingOriginalImages = existingImages.filter(img => !deletedUrls.includes(img));
+
+                    // Delete files from server using utility function
+                    deleteFilesByUrls(deletedUrls);
+                }
+            } catch (err) {
+                console.error("Error parsing deletedImageUrls:", err);
+            }
+        } else {
+            // No deletions, keep all original images
+            if (existingItem.imageUrl) {
+                try {
+                    remainingOriginalImages = JSON.parse(existingItem.imageUrl);
+                    if (!Array.isArray(remainingOriginalImages)) {
+                        remainingOriginalImages = [existingItem.imageUrl];
+                    }
+                } catch {
+                    remainingOriginalImages = [existingItem.imageUrl];
+                }
+            }
+        }
+
+        // Handle images - combine new uploads with remaining original images
+        let finalImageUrl = null;
+        if (req.files && req.files.length > 0) {
+            // New files uploaded - combine with remaining original images
+            const newImageUrlsJson = processUploadedImages(req.files);
+            if (newImageUrlsJson) {
+                const newImageUrls = JSON.parse(newImageUrlsJson);
+                const allImages = [...remainingOriginalImages, ...newImageUrls];
+                finalImageUrl = allImages.length === 1 ? allImages[0] : JSON.stringify(allImages);
+            } else {
+                // No new images processed, use remaining original images
+                finalImageUrl = remainingOriginalImages.length === 1
+                    ? remainingOriginalImages[0]
+                    : JSON.stringify(remainingOriginalImages);
+            }
+        } else if (imageUrl !== undefined) {
+            finalImageUrl = processImageUrlInput(imageUrl);
+        } else if (remainingOriginalImages.length > 0) {
+            // No new uploads, no imageUrl provided, but we have remaining original images
+            finalImageUrl = remainingOriginalImages.length === 1
+                ? remainingOriginalImages[0]
+                : JSON.stringify(remainingOriginalImages);
+        }
 
         const updatedProductItem = await prisma.productItem.update({
             where: { id },
@@ -206,6 +261,9 @@ export const deleteProductItem = async (req, res) => {
         if (!productItem) {
             return sendResponse(res, 404, "Product item not found");
         }
+        else if (productItem.isDeleted) {
+            return sendResponse(res, 400, "Product item is deleted");
+        }
 
         // Check if item is used in any item statuses
         const itemStatusesCount = await prisma.itemStatus.count({
@@ -216,8 +274,15 @@ export const deleteProductItem = async (req, res) => {
             return sendResponse(res, 400, "Cannot delete product item that is used in order statuses.");
         }
 
-        await prisma.productItem.delete({
-            where: { id }
+        await prisma.productItem.update({
+            where: { id },
+            data: {
+                isDeleted: true
+            },
+            include: {
+                variants: true,
+                itemStatuses: true
+            }
         });
 
         return sendResponse(res, 200, "Product item deleted successfully");

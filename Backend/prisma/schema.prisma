@@ -67,6 +67,11 @@ model User {
   updatedStages       WorkStage[]      @relation("UserStageUpdates")
   assignedWorkPieces  OrderWorkPiece[]
   updatedItemStatuses ItemStatus[]     @relation("UserItemStatusUpdates")
+
+  // Product management relations
+  createdProductItems   ProductItem[]     @relation("ProductItemCreator")
+  createdProducts        Product[]        @relation("ProductCreator")
+  createdProductVariants ProductVariant[]  @relation("ProductVariantCreator")
 }
 
 /////////////////////////////
@@ -144,8 +149,11 @@ model ProductItem {
   id        String   @id @default(uuid())
   name      String
   imageUrl  String?
+  createdBy String
   createdAt DateTime @default(now())
+  isDeleted Boolean @default(false)
 
+  creator       User            @relation("ProductItemCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
   itemStatuses ItemStatus[]
   workPieces   OrderWorkPiece[]
   variants     ProductVariant[]
@@ -156,8 +164,11 @@ model Product {
   id          String   @id @default(uuid())
   name        String
   description String?
+  createdBy   String
   createdAt   DateTime @default(now())
+  isDeleted   Boolean @default(false)
 
+  creator  User            @relation("ProductCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
   variants ProductVariant[]
 }
 
@@ -168,9 +179,12 @@ model ProductVariant {
   name        String
   description String?
   photoUrl    String?
+  createdBy   String
   createdAt   DateTime @default(now())
+  isDeleted   Boolean @default(false)
 
   product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  creator      User          @relation("ProductVariantCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
   productItems ProductItem[]
   orderItems   OrderItem[]
 }

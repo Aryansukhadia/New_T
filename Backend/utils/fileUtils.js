@@ -19,6 +19,28 @@ export const deleteUploadedFiles = (files) => {
 };
 
 /**
+ * Deletes files from the server by their URLs
+ * @param {Array} imageUrls - Array of image URLs (e.g., ["http://localhost:3000/uploads/filename.jpg"])
+ */
+export const deleteFilesByUrls = (imageUrls) => {
+    if (imageUrls && imageUrls.length > 0) {
+        imageUrls.forEach((url) => {
+            // Extract filename from URL (e.g., "http://localhost:3000/uploads/filename.jpg" -> "filename.jpg")
+            const urlParts = url.split('/');
+            const filename = urlParts[urlParts.length - 1];
+            if (filename) {
+                const filePath = path.join(process.cwd(), 'uploads', filename);
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error(`Failed to delete file ${filename}:`, err);
+                    }
+                });
+            }
+        });
+    }
+};
+
+/**
  * Processes uploaded images and returns a JSON string of image URLs
  * @param {Array} files - Array of uploaded files from multer (req.files)
  * @param {string} baseUrl - Base URL for the server (e.g., "http://localhost:3000")
