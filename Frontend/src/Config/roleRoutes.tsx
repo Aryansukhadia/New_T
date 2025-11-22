@@ -17,6 +17,7 @@ import BookOrderPage from '../Pages/Dashboard/BookOrderPage';
 import OrderDetailsPage from '../Pages/Dashboard/OrderDetailsPage';
 import WorkPieceDetailsPage from '../Pages/Dashboard/WorkPieceDetailsPage';
 import ProductItemsPage from '../Pages/Dashboard/ProductItemsPage';
+import ProductItemDetailsPage from '../Pages/Dashboard/ProductItemDetailsPage';
 import ProductsPage from '../Pages/Dashboard/ProductsPage';
 import ProductVariantsPage from '../Pages/Dashboard/ProductVariantsPage';
 import CreateProductVariantPage from '../Pages/Dashboard/CreateProductVariantPage';
@@ -122,6 +123,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'product-items',
             component: () => <ProductItemsPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'product-items/:id',
+            component: () => <ProductItemDetailsPage />,
             requireAuth: true,
             allowedRoles: ['admin'],
         },
@@ -245,6 +252,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'product-items',
             component: () => <ProductItemsPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'product-items/:id',
+            component: () => <ProductItemDetailsPage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

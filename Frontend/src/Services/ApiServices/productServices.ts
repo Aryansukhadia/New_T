@@ -448,7 +448,8 @@ export const createProductItemService = async (
 export const updateProductItemService = async (
   productItemId: string,
   productItemData: UpdateProductItemRequest,
-  imageFiles?: File[] | null
+  imageFiles?: File[] | null,
+  deletedImageUrls?: string[] | null
 ): Promise<ApiResponse<ProductItem>> => {
   const formData = new FormData();
   if (productItemData.name !== undefined) {
@@ -461,6 +462,9 @@ export const updateProductItemService = async (
     imageFiles.forEach(file => {
       formData.append('images', file);
     });
+  }
+  if (deletedImageUrls && deletedImageUrls.length > 0) {
+    formData.append('deletedImageUrls', JSON.stringify(deletedImageUrls));
   }
 
   const response = await apiInstance.put<ApiResponse<ProductItem>>(

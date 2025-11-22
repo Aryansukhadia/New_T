@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   getProductItemsService,
   createProductItemService,
@@ -39,9 +40,11 @@ import {
   Image as ImageIcon,
   Close as CloseIcon,
   Upload as UploadIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 
 const ProductItemsPage = () => {
+  const navigate = useNavigate();
   const [productItems, setProductItems] = useState<ProductItem[]>([]);
   const [filteredProductItems, setFilteredProductItems] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,31 +124,6 @@ const ProductItemsPage = () => {
     });
     setSelectedImageFiles([]);
     setImagePreviews([]);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (productItem: ProductItem) => {
-    setIsEditMode(true);
-    setSelectedProductItem(productItem);
-    setFormData({
-      name: productItem.name,
-      imageUrl: productItem.imageUrl || null,
-    });
-    setSelectedImageFiles([]);
-
-    // Parse existing images from JSON string
-    let existingImages: string[] = [];
-    if (productItem.imageUrl) {
-      try {
-        existingImages = JSON.parse(productItem.imageUrl);
-        if (!Array.isArray(existingImages)) {
-          existingImages = [productItem.imageUrl];
-        }
-      } catch {
-        existingImages = [productItem.imageUrl];
-      }
-    }
-    setImagePreviews(existingImages);
     setIsModalOpen(true);
   };
 
@@ -453,7 +431,27 @@ const ProductItemsPage = () => {
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <MUICustomBtn
-                        onClick={() => handleOpenEditModal(item)}
+                        onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
+                        tooltip="View Product Item Details"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#e8f5e9',
+                          color: '#2e7d32',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          '&:hover': {
+                            bgcolor: '#c8e6c9',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+                          },
+                        }}
+                      >
+                        <VisibilityIcon sx={{ fontSize: 16 }} />
+                      </MUICustomBtn>
+                      <MUICustomBtn
+                        onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
                         tooltip="Edit Product Item"
                         variant="contained"
                         sx={{
