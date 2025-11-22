@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -33,6 +34,7 @@ import {
   Delete as DeleteIcon,
   Visibility,
   VisibilityOff,
+  AccountCircle as AccountCircleIcon,
 } from '@mui/icons-material';
 import {
   getUsersService,
@@ -46,6 +48,7 @@ import {
 import { useToast } from '../../Utils/ToastContext';
 
 const UsersPage = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +144,10 @@ const UsersPage = () => {
   const handleOpenDeleteModal = (user: UserResponse) => {
     setUserToDelete(user);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleViewProfile = (user: UserResponse) => {
+    navigate(`/dashboard/users/${user.userId}`);
   };
 
   const handleCloseModal = () => {
@@ -326,6 +333,26 @@ const UsersPage = () => {
                   <TableCell>{formatDate(user.createdAt)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                      <MUICustomBtn
+                        onClick={() => handleViewProfile(user)}
+                        tooltip="View Profile"
+                        variant="contained"
+                        sx={{
+                          bgcolor: '#f3e5f5',
+                          color: '#9c27b0',
+                          minWidth: 32,
+                          width: 32,
+                          height: 32,
+                          padding: 0,
+                          '&:hover': {
+                            bgcolor: '#e1bee7',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 8px rgba(156, 39, 176, 0.2)',
+                          },
+                        }}
+                      >
+                        <AccountCircleIcon fontSize="small" />
+                      </MUICustomBtn>
                       <MUICustomBtn
                         onClick={() => handleOpenEditModal(user)}
                         disabled={user.userId === currentUser?.userId}

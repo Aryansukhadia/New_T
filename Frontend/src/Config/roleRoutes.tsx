@@ -84,6 +84,12 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['admin'],
         },
         {
+            path: 'users/:userId',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
             path: 'roles',
             component: () => <RolesPage />,
             requireAuth: true,
@@ -203,6 +209,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'users/add',
             component: () => <AddUserPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'users/:userId',
+            component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

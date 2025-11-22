@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getMeService, changePasswordService, type UserResponse } from '../../Services/ApiServices';
+import { useParams } from 'react-router-dom';
+import { getMeService, getUserByIdService, changePasswordService, resetPasswordService, getUserInfo, type UserResponse } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 import { validatePassword } from '../../Utils/passwordValidation';
 import {
@@ -29,7 +30,9 @@ import {
 } from '@mui/icons-material';
 
 const ProfilePage = () => {
+    const { userId: urlUserId } = useParams<{ userId?: string }>();
     const { showSuccess, showError } = useToast();
+    const currentUser = getUserInfo();
 
     const [user, setUser] = useState<UserResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -41,15 +44,27 @@ const ProfilePage = () => {
         password: '',
     });
 
+    // Check if viewing own profile or another user's profile
+    const isViewingOwnProfile = !urlUserId || urlUserId === currentUser?.userId;
+
     useEffect(() => {
         fetchUserProfile();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [urlUserId]);
 
     const fetchUserProfile = async () => {
         try {
             setLoading(true);
-            const response = await getMeService();
+            let response;
+
+            if (urlUserId) {
+                // Fetch specific user by ID
+                response = await getUserByIdService(urlUserId);
+            } else {
+                // Fetch current user's profile
+                response = await getMeService();
+            }
+
             if (response.success === 200 && response.data) {
                 setUser(response.data);
             } else {
@@ -86,8 +101,9 @@ const ProfilePage = () => {
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        const passwordToValidate = passwordData.password;
         // Validate password
-        const validation = validatePassword(passwordData.password);
+        const validation = validatePassword(passwordToValidate);
         if (!validation.isValid) {
             showError(validation.message, 'Validation Error');
             return;
@@ -96,7 +112,17 @@ const ProfilePage = () => {
         setPasswordFormLoading(true);
 
         try {
-            const response = await changePasswordService(passwordData);
+            let response;
+
+            if (isViewingOwnProfile) {
+                // Use changePasswordService for own profile
+                response = await changePasswordService({ password: passwordToValidate });
+            } else if (urlUserId) {
+                // Use resetPasswordService for other users
+                response = await resetPasswordService(urlUserId, { newPassword: passwordToValidate });
+            } else {
+                throw new Error('Invalid state: no userId available');
+            }
 
             if (response.success === 200) {
                 showSuccess(response.message || 'Password changed successfully!', 'Success');
@@ -233,7 +259,7 @@ const ProfilePage = () => {
                                 py: 1.5,
                             }}
                         >
-                            Change Password
+                            {isViewingOwnProfile ? 'Change Password' : 'Reset Password'}
                         </Button>
                     </Box>
 
@@ -348,7 +374,7 @@ const ProfilePage = () => {
 
             {/* Change Password Dialog */}
             <Dialog open={isChangePasswordModalOpen} onClose={handleCloseChangePasswordModal} maxWidth="sm" fullWidth>
-                <DialogTitle>Change Password</DialogTitle>
+                <DialogTitle>{isViewingOwnProfile ? 'Change Password' : 'Reset Password'}</DialogTitle>
                 <DialogContent>
                     <Box component="form" onSubmit={handleChangePassword} sx={{ pt: 2 }}>
                         <TextField
@@ -399,7 +425,7 @@ const ProfilePage = () => {
                             minWidth: 140,
                         }}
                     >
-                        {passwordFormLoading ? <CircularProgress size={20} /> : 'Change Password'}
+                        {passwordFormLoading ? <CircularProgress size={20} /> : (isViewingOwnProfile ? 'Change Password' : 'Reset Password')}
                     </Button>
                 </DialogActions>
             </Dialog>

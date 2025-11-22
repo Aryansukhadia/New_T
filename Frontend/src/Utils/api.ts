@@ -55,6 +55,11 @@ export const API_CONFIG: ApiConfig = {
             method: 'POST',
             baseUrl: NODEJS_BASE_URL,
         },
+        resetPassword: {
+            path: '/users/reset-password/{userId}',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
         getUserRoles: {
             path: '/users/roles',
             method: 'GET',

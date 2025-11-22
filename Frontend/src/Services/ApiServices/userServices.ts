@@ -24,6 +24,10 @@ export interface ChangePasswordRequest {
   password: string;
 }
 
+export interface ResetPasswordRequest {
+  newPassword: string;
+}
+
 // ============================================
 // USER SERVICES
 // ============================================
@@ -57,6 +61,27 @@ export const changePasswordService = async (
 ): Promise<ApiResponse<null>> => {
   const response = await apiInstance.post<ApiResponse<null>>(
     getApiUrl('changePassword'),
+    passwordData
+  );
+  return response.data;
+};
+
+/**
+ * Reset Password Service
+ * POST /api/users/reset-password/:userId
+ * 
+ * Resets a user's password (requires admin or subAdmin role)
+ * 
+ * @param userId - User ID whose password needs to be reset
+ * @param passwordData - Object containing the new password
+ * @returns Promise with success message
+ */
+export const resetPasswordService = async (
+  userId: string,
+  passwordData: ResetPasswordRequest
+): Promise<ApiResponse<null>> => {
+  const response = await apiInstance.post<ApiResponse<null>>(
+    getApiUrl('resetPassword', { userId }),
     passwordData
   );
   return response.data;
