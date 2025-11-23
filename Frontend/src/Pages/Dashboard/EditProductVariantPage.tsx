@@ -20,9 +20,8 @@ import {
   CircularProgress,
   Checkbox,
   FormControlLabel,
+  IconButton,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
   Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
@@ -53,8 +52,10 @@ const EditProductVariantPage = () => {
   });
 
   const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
-  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]); // Original image URLs from server
+  const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]); // URLs of images to be deleted
 
   const fetchData = useCallback(async () => {
     if (!id) return;
@@ -76,7 +77,12 @@ const EditProductVariantPage = () => {
           productItemIds: variantData.productItems?.map((item) => item.id) || [],
         });
         setSelectedProductItems(variantData.productItems?.map((item) => item.id) || []);
-        setPhotoPreview(variantData.photoUrl ? variantData.photoUrl : null);
+        // Parse existing images
+        const images = parseImages(variantData.photoUrl);
+        setImagePreviews(images);
+        setOriginalImages(images); // Store original images
+        setDeletedImageUrls([]); // Reset deleted images
+        setSelectedImageFiles([]); // Reset new uploads
       } else {
         showError(variantResponse.message || 'Failed to load product variant', 'Error');
       }
@@ -96,6 +102,16 @@ const EditProductVariantPage = () => {
     fetchData();
   }, [fetchData]);
 
+  const parseImages = (photoUrl: string | null): string[] => {
+    if (!photoUrl) return [];
+    try {
+      const parsed = JSON.parse(photoUrl);
+      return Array.isArray(parsed) ? parsed : [photoUrl];
+    } catch {
+      return [photoUrl];
+    }
+  };
+
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -104,22 +120,90 @@ const EditProductVariantPage = () => {
     }));
   };
 
-  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedPhotoFile(file);
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files).slice(0, 5); // Limit to 5 files
+
+      // Calculate remaining original images (not deleted) for slot calculation
+      const remainingOriginalImages = originalImages.filter(
+        (img) => !deletedImageUrls.includes(img)
+      );
+
+      // Get existing new upload previews (data URLs that are not original images)
+      const existingNewUploadPreviews = imagePreviews.filter(
+        (preview) => preview.startsWith('data:') && !originalImages.includes(preview)
+      );
+
+      const totalSlots = 5;
+      const currentTotal = remainingOriginalImages.length + existingNewUploadPreviews.length;
+      const availableSlots = totalSlots - currentTotal;
+      const filesToAdd = fileArray.slice(0, availableSlots);
+
+      if (filesToAdd.length === 0) {
+        return; // No slots available
+      }
+
+      const newFiles = [...selectedImageFiles, ...filesToAdd];
+      setSelectedImageFiles(newFiles);
+
+      // Create previews: keep ALL original images (including deleted ones) + existing new uploads + new file previews
+      // Deleted images should remain visible (blurred) in previews
+      const newPreviews: string[] = [...originalImages, ...existingNewUploadPreviews];
+      let loadedCount = 0;
+      const totalNewFiles = filesToAdd.length;
+
+      filesToAdd.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPreviews.push(reader.result as string);
+          loadedCount++;
+          if (loadedCount === totalNewFiles) {
+            setImagePreviews(newPreviews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
-  const handleRemovePhoto = () => {
-    setSelectedPhotoFile(null);
-    setPhotoPreview(null);
+  const handleRemoveImage = (index: number) => {
+    const imageToRemove = imagePreviews[index];
+
+    // Calculate remaining original images (not deleted yet)
+    const remainingOriginalImages = originalImages.filter(
+      (img) => !deletedImageUrls.includes(img)
+    );
+
+    // Check if it's an original image (URL) or a new upload (data URL starts with "data:")
+    const isOriginalImage = remainingOriginalImages.includes(imageToRemove);
+
+    if (isOriginalImage) {
+      // Add to deleted images array (but keep in previews - just blur it)
+      setDeletedImageUrls((prev) => [...prev, imageToRemove]);
+    } else {
+      // It's a new upload (data URL), find the corresponding file index
+      // New uploads are added after remaining original images
+      const newImageIndex = index - remainingOriginalImages.length;
+      if (newImageIndex >= 0 && newImageIndex < selectedImageFiles.length) {
+        setSelectedImageFiles((prev) => prev.filter((_, i) => i !== newImageIndex));
+        // Remove new uploads from previews (only blur original images)
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+      }
+    }
+  };
+
+  const handleUndoDeleteImage = (imageUrl: string) => {
+    // Remove from deleted images array
+    setDeletedImageUrls((prev) => prev.filter((url) => url !== imageUrl));
+  };
+
+  const handleRemoveAllImages = () => {
+    // Add all original images to deleted list (but keep in previews - just blur them)
+    setDeletedImageUrls(originalImages);
+    setSelectedImageFiles([]);
+    // Keep original images in previews but remove new uploads
+    setImagePreviews(originalImages);
     setFormData((prev) => ({ ...prev, photoUrl: null }));
   };
 
@@ -138,14 +222,42 @@ const EditProductVariantPage = () => {
     setFormLoading(true);
 
     try {
+      // Calculate remaining images (original images that weren't deleted)
+      const remainingOriginalImages = originalImages.filter(
+        (img) => !deletedImageUrls.includes(img)
+      );
+
+      // Only send truly new files that weren't in the original images
+      const newImageFiles = selectedImageFiles; // These are already new files from file input
+
+      // If there are new uploads, backend will combine them with remaining originals
+      // Otherwise, send remaining original images
+      let finalPhotoUrl: string | null = null;
+      if (newImageFiles.length === 0 && remainingOriginalImages.length > 0) {
+        // No new uploads, but we have remaining original images
+        finalPhotoUrl = remainingOriginalImages.length === 1
+          ? remainingOriginalImages[0]
+          : JSON.stringify(remainingOriginalImages);
+      } else if (newImageFiles.length === 0 && remainingOriginalImages.length === 0) {
+        // All images deleted, no new images
+        finalPhotoUrl = null;
+      }
+      // If newImageFiles.length > 0, finalPhotoUrl stays null
+      // Backend will handle combining new uploads with remaining originals
+
       const updateData: UpdateProductVariantRequest = {
         name: formData.name,
         description: formData.description || null,
-        photoUrl: formData.photoUrl || null,
+        photoUrl: finalPhotoUrl,
         productItemIds: selectedProductItems.length > 0 ? selectedProductItems : undefined,
       };
 
-      const response = await updateProductVariantService(id, updateData, selectedPhotoFile);
+      const response = await updateProductVariantService(
+        id,
+        updateData,
+        newImageFiles.length > 0 ? newImageFiles : null,
+        deletedImageUrls.length > 0 ? deletedImageUrls : null
+      );
 
       if (response.success === 200) {
         showSuccess(response.message || 'Product variant updated successfully!', 'Success');
@@ -220,8 +332,12 @@ const EditProductVariantPage = () => {
       </Box>
 
       <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        <Grid container spacing={2.5}>
-          <Grid xs={12} md={6}>
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+          gap: 2.5
+        }}>
+          <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <ShoppingBagIcon sx={{ fontSize: 20 }} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -244,9 +360,9 @@ const EditProductVariantPage = () => {
             <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary', display: 'block' }}>
               {t('productVariants.productCannotChange')}
             </Typography>
-          </Grid>
+          </Box>
 
-          <Grid xs={12} md={6}>
+          <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <TagsIcon sx={{ fontSize: 20 }} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -263,8 +379,8 @@ const EditProductVariantPage = () => {
               required
               disabled={formLoading}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
@@ -287,14 +403,14 @@ const EditProductVariantPage = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <ImageIcon sx={{ fontSize: 20 }} />
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {t('productVariants.uploadPhoto')} ({t('orders.optional')})
+              {t('productVariants.uploadPhoto')} ({t('orders.optional')}) - Max 5 Images
             </Typography>
           </Box>
           <Button
             component="label"
             variant="contained"
             startIcon={<UploadIcon />}
-            disabled={formLoading}
+            disabled={formLoading || imagePreviews.length >= 5}
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               '&:hover': {
@@ -304,6 +420,7 @@ const EditProductVariantPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              mb: 2,
             }}
           >
             {t('productVariants.choosePhotoFile')}
@@ -311,52 +428,104 @@ const EditProductVariantPage = () => {
               type="file"
               hidden
               id="photoFile"
+              multiple
               accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handlePhotoFileChange}
-              disabled={formLoading}
+              onChange={handleImageFileChange}
+              disabled={formLoading || imagePreviews.length >= 5}
             />
           </Button>
-          {selectedPhotoFile && (
-            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-              Selected: {selectedPhotoFile.name}
-            </Typography>
-          )}
-          {photoPreview && (
-            <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-              <Box
-                component="img"
-                src={photoPreview}
-                alt="Preview"
-                sx={{
-                  maxWidth: 300,
-                  maxHeight: 200,
-                  borderRadius: 1,
-                  border: '2px solid #e0e0e0',
-                  objectFit: 'cover',
-                }}
-              />
-              <MUICustomBtn
-                onClick={handleRemovePhoto}
-                tooltip="Remove photo"
-                variant="contained"
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  bgcolor: '#dc3545',
-                  color: 'white',
-                  width: 32,
-                  height: 32,
-                  minWidth: 32,
-                  padding: 0,
-                  '&:hover': {
-                    bgcolor: '#c82333',
-                    transform: 'scale(1.1)',
-                  },
-                }}
-              >
-                <CloseIcon sx={{ fontSize: 16 }} />
-              </MUICustomBtn>
+          {imagePreviews.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Image Previews ({imagePreviews.length}/5)
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={handleRemoveAllImages}
+                  sx={{
+                    textTransform: 'none',
+                    color: '#dc3545',
+                    '&:hover': { bgcolor: '#ffebee' }
+                  }}
+                >
+                  Remove All
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                {imagePreviews.map((preview, index) => {
+                  const isDeleted = deletedImageUrls.includes(preview);
+                  return (
+                    <Box key={index} sx={{ position: 'relative', display: 'inline-block' }}>
+                      <Box
+                        component="img"
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        sx={{
+                          width: 120,
+                          height: 120,
+                          borderRadius: 1,
+                          border: isDeleted ? '2px solid #dc3545' : '2px solid #e0e0e0',
+                          objectFit: 'cover',
+                          filter: isDeleted ? 'blur(4px) grayscale(100%) opacity(0.5)' : 'none',
+                          transition: 'all 0.3s ease',
+                          cursor: isDeleted ? 'not-allowed' : 'pointer',
+                        }}
+                      />
+                      {!isDeleted && (
+                        <IconButton
+                          onClick={() => handleRemoveImage(index)}
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: '#dc3545',
+                            color: 'white',
+                            width: 24,
+                            height: 24,
+                            padding: 0,
+                            '&:hover': {
+                              bgcolor: '#c82333',
+                              transform: 'scale(1.1)',
+                            },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
+                      {isDeleted && (
+                        <Box
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUndoDeleteImage(preview);
+                          }}
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            bgcolor: 'rgba(220, 53, 69, 0.9)',
+                            color: 'white',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              bgcolor: 'rgba(220, 53, 69, 1)',
+                              transform: 'translate(-50%, -50%) scale(1.05)',
+                            },
+                          }}
+                        >
+                          Undo Deleted
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
             </Box>
           )}
         </Box>

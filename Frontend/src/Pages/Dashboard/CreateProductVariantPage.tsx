@@ -130,7 +130,7 @@ const CreateProductVariantPage = () => {
                 productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
             };
 
-            const response = await createProductVariantService(createData, selectedPhotoFile);
+            const response = await createProductVariantService(createData, selectedPhotoFile ? [selectedPhotoFile] : null);
 
             if (response.success === 201) {
                 showSuccess(response.message || 'Product variant created successfully!', 'Success');

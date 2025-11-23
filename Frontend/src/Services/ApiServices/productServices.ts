@@ -226,12 +226,12 @@ export const getProductVariantByIdService = async (
  * POST /api/productVariants
  * 
  * @param variantData - Product variant data to be created
- * @param photoFile - Optional photo file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with created product variant data
  */
 export const createProductVariantService = async (
   variantData: CreateProductVariantRequest,
-  photoFile?: File | null
+  imageFiles?: File[] | null
 ): Promise<ApiResponse<ProductVariant>> => {
   const formData = new FormData();
   formData.append('productId', variantData.productId);
@@ -244,8 +244,10 @@ export const createProductVariantService = async (
   }
   // Always send productItemIds, even if empty array
   formData.append('productItemIds', JSON.stringify(variantData.productItemIds || []));
-  if (photoFile) {
-    formData.append('photo', photoFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
   }
 
   const response = await apiInstance.post<ApiResponse<ProductVariant>>(
@@ -266,13 +268,15 @@ export const createProductVariantService = async (
  * 
  * @param variantId - Product Variant ID
  * @param variantData - Product variant data to update
- * @param photoFile - Optional photo file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
+ * @param deletedImageUrls - Optional array of image URLs to delete
  * @returns Promise with updated product variant data
  */
 export const updateProductVariantService = async (
   variantId: string,
   variantData: UpdateProductVariantRequest,
-  photoFile?: File | null
+  imageFiles?: File[] | null,
+  deletedImageUrls?: string[] | null
 ): Promise<ApiResponse<ProductVariant>> => {
   const formData = new FormData();
   if (variantData.productId !== undefined) {
@@ -290,8 +294,13 @@ export const updateProductVariantService = async (
   if (variantData.productItemIds !== undefined) {
     formData.append('productItemIds', JSON.stringify(variantData.productItemIds));
   }
-  if (photoFile) {
-    formData.append('photo', photoFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+  }
+  if (deletedImageUrls && deletedImageUrls.length > 0) {
+    formData.append('deletedImageUrls', JSON.stringify(deletedImageUrls));
   }
 
   const response = await apiInstance.put<ApiResponse<ProductVariant>>(
