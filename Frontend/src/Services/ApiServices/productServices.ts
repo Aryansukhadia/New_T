@@ -30,7 +30,7 @@ export interface ProductVariant {
   productId: string;
   name: string;
   description: string | null;
-  photoUrl: string | null;
+  imageUrl: string | null;
   createdAt: string;
   product?: Product;
   productItems?: ProductItem[];
@@ -40,7 +40,7 @@ export interface CreateProductVariantRequest {
   productId: string;
   name: string;
   description?: string | null;
-  photoUrl?: string | null;
+  imageUrl?: string | null;
   productItemIds?: string[];
 }
 
@@ -48,7 +48,7 @@ export interface UpdateProductVariantRequest {
   productId?: string;
   name?: string;
   description?: string | null;
-  photoUrl?: string | null;
+  imageUrl?: string | null;
   productItemIds?: string[];
 }
 
@@ -239,8 +239,8 @@ export const createProductVariantService = async (
   if (variantData.description) {
     formData.append('description', variantData.description);
   }
-  if (variantData.photoUrl) {
-    formData.append('photoUrl', variantData.photoUrl);
+  if (variantData.imageUrl) {
+    formData.append('imageUrl', variantData.imageUrl);
   }
   // Always send productItemIds, even if empty array
   formData.append('productItemIds', JSON.stringify(variantData.productItemIds || []));
@@ -288,8 +288,8 @@ export const updateProductVariantService = async (
   if (variantData.description !== undefined) {
     formData.append('description', variantData.description || '');
   }
-  if (variantData.photoUrl !== undefined) {
-    formData.append('photoUrl', variantData.photoUrl || '');
+  if (variantData.imageUrl !== undefined) {
+    formData.append('imageUrl', variantData.imageUrl || '');
   }
   if (variantData.productItemIds !== undefined) {
     formData.append('productItemIds', JSON.stringify(variantData.productItemIds));

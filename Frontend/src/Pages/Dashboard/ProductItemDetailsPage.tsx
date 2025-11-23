@@ -46,7 +46,7 @@ interface ProductItemDetails extends ProductItem {
     name: string;
     productId: string;
     description: string | null;
-    photoUrl: string | null;
+    imageUrl: string | null;
     createdAt: string;
   }>;
   itemStatuses?: Array<{

@@ -48,7 +48,7 @@ const CreateProductVariantPage = () => {
         productId: '',
         name: '',
         description: null,
-        photoUrl: null,
+        imageUrl: null,
         productItemIds: [],
     });
 
@@ -89,7 +89,7 @@ const CreateProductVariantPage = () => {
         const { name, value } = e.target;
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'photoUrl' || name === 'description' ? (value === '' ? null : value) : value,
+            [name]: name === 'imageUrl' || name === 'description' ? (value === '' ? null : value) : value,
         }));
     };
 
@@ -108,7 +108,7 @@ const CreateProductVariantPage = () => {
     const handleRemovePhoto = () => {
         setSelectedPhotoFile(null);
         setPhotoPreview(null);
-        setFormData((prev) => ({ ...prev, photoUrl: null }));
+        setFormData((prev) => ({ ...prev, imageUrl: null }));
     };
 
     const handleProductItemToggle = (itemId: string) => {
@@ -126,7 +126,7 @@ const CreateProductVariantPage = () => {
                 productId: formData.productId,
                 name: formData.name,
                 description: formData.description || null,
-                photoUrl: formData.photoUrl || null,
+                imageUrl: formData.imageUrl || null,
                 productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
             };
 

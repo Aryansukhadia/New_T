@@ -47,7 +47,7 @@ const EditProductVariantPage = () => {
   const [formData, setFormData] = useState<UpdateProductVariantRequest>({
     name: '',
     description: null,
-    photoUrl: null,
+    imageUrl: null,
     productItemIds: [],
   });
 
@@ -73,12 +73,12 @@ const EditProductVariantPage = () => {
         setFormData({
           name: variantData.name,
           description: variantData.description || null,
-          photoUrl: variantData.photoUrl || null,
+          imageUrl: variantData.imageUrl || null,
           productItemIds: variantData.productItems?.map((item) => item.id) || [],
         });
         setSelectedProductItems(variantData.productItems?.map((item) => item.id) || []);
         // Parse existing images
-        const images = parseImages(variantData.photoUrl);
+        const images = parseImages(variantData.imageUrl);
         setImagePreviews(images);
         setOriginalImages(images); // Store original images
         setDeletedImageUrls([]); // Reset deleted images
@@ -102,13 +102,13 @@ const EditProductVariantPage = () => {
     fetchData();
   }, [fetchData]);
 
-  const parseImages = (photoUrl: string | null): string[] => {
-    if (!photoUrl) return [];
+  const parseImages = (imageUrl: string | null): string[] => {
+    if (!imageUrl) return [];
     try {
-      const parsed = JSON.parse(photoUrl);
-      return Array.isArray(parsed) ? parsed : [photoUrl];
+      const parsed = JSON.parse(imageUrl);
+      return Array.isArray(parsed) ? parsed : [imageUrl];
     } catch {
-      return [photoUrl];
+      return [imageUrl];
     }
   };
 
@@ -116,7 +116,7 @@ const EditProductVariantPage = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'photoUrl' || name === 'description' ? (value === '' ? null : value) : value,
+      [name]: name === 'imageUrl' || name === 'description' ? (value === '' ? null : value) : value,
     }));
   };
 
@@ -204,7 +204,7 @@ const EditProductVariantPage = () => {
     setSelectedImageFiles([]);
     // Keep original images in previews but remove new uploads
     setImagePreviews(originalImages);
-    setFormData((prev) => ({ ...prev, photoUrl: null }));
+    setFormData((prev) => ({ ...prev, imageUrl: null }));
   };
 
   const handleProductItemToggle = (itemId: string) => {
@@ -232,23 +232,23 @@ const EditProductVariantPage = () => {
 
       // If there are new uploads, backend will combine them with remaining originals
       // Otherwise, send remaining original images
-      let finalPhotoUrl: string | null = null;
+      let finalImageUrl: string | null = null;
       if (newImageFiles.length === 0 && remainingOriginalImages.length > 0) {
         // No new uploads, but we have remaining original images
-        finalPhotoUrl = remainingOriginalImages.length === 1
+        finalImageUrl = remainingOriginalImages.length === 1
           ? remainingOriginalImages[0]
           : JSON.stringify(remainingOriginalImages);
       } else if (newImageFiles.length === 0 && remainingOriginalImages.length === 0) {
         // All images deleted, no new images
-        finalPhotoUrl = null;
+        finalImageUrl = null;
       }
-      // If newImageFiles.length > 0, finalPhotoUrl stays null
+      // If newImageFiles.length > 0, finalImageUrl stays null
       // Backend will handle combining new uploads with remaining originals
 
       const updateData: UpdateProductVariantRequest = {
         name: formData.name,
         description: formData.description || null,
-        photoUrl: finalPhotoUrl,
+        imageUrl: finalImageUrl,
         productItemIds: selectedProductItems.length > 0 ? selectedProductItems : undefined,
       };
 

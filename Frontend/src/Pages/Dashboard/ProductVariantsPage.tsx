@@ -333,10 +333,10 @@ const ProductVariantsPage = () => {
                   <TableCell>{variant.product?.name || '—'}</TableCell>
                   <TableCell>{variant?.description || '—'}</TableCell>
                   <TableCell>
-                    {variant.photoUrl ? (
+                    {variant.imageUrl ? (
                       <Box
                         component="img"
-                        src={variant.photoUrl}
+                        src={variant.imageUrl}
                         alt={variant.name}
                         sx={{
                           width: 60,
