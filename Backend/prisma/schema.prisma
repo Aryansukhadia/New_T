@@ -187,7 +187,7 @@ model ProductVariant {
   productId   String
   name        String
   description String?
-  photoUrl    String?
+  imageUrl    String?
   createdBy   String
   updatedBy  String?
   createdAt   DateTime @default(now())

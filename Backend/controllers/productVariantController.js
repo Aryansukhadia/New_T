@@ -4,7 +4,7 @@ import { deleteUploadedFiles, handleImageUpload, deleteFilesByUrls, processUploa
 
 export const addProductVariant = async (req, res) => {
     try {
-        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw } = req.body;
+        const { productId, name, description, imageUrl, productItemIds: productItemIdsRaw } = req.body;
 
         if (!productId || typeof productId !== "string" || productId.trim() === "") {
             // Delete uploaded files if validation fails
@@ -79,14 +79,14 @@ export const addProductVariant = async (req, res) => {
         }
 
         // Handle images using generalized utility function (supports up to 5 images)
-        const finalPhotoUrl = handleImageUpload(req.files, photoUrl);
+        const finalImageUrl = handleImageUpload(req.files, imageUrl);
 
         const newProductVariant = await prisma.productVariant.create({
             data: {
                 productId: productId.trim(),
                 name: name.trim(),
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-                photoUrl: finalPhotoUrl,
+                imageUrl: finalImageUrl,
                 createdBy: req.user.userId,
                 updatedBy: req.user.userId,
                 productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
@@ -107,7 +107,7 @@ export const addProductVariant = async (req, res) => {
         //     productId: productId.trim(),
         //     name: name.trim(),
         //     description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-        //     photoUrl: finalPhotoUrl,
+        //     imageUrl: finalImageUrl,
         //     productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
         //         ? {
         //             connect: productItemIds
@@ -216,7 +216,7 @@ export const getProductVariantById = async (req, res) => {
 export const updateProductVariant = async (req, res) => {
     try {
         const { id } = req.params;
-        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw, deletedImageUrls } = req.body;
+        const { productId, name, description, imageUrl, productItemIds: productItemIdsRaw, deletedImageUrls } = req.body;
 
         if (productId && (typeof productId !== "string" || productId.trim() === "")) {
             // Delete uploaded files if validation fails
@@ -312,14 +312,14 @@ export const updateProductVariant = async (req, res) => {
                 if (Array.isArray(deletedUrls)) {
                     // Parse existing images
                     let existingImages = [];
-                    if (existingVariant.photoUrl) {
+                    if (existingVariant.imageUrl) {
                         try {
-                            existingImages = JSON.parse(existingVariant.photoUrl);
+                            existingImages = JSON.parse(existingVariant.imageUrl);
                             if (!Array.isArray(existingImages)) {
-                                existingImages = [existingVariant.photoUrl];
+                                existingImages = [existingVariant.imageUrl];
                             }
                         } catch {
-                            existingImages = [existingVariant.photoUrl];
+                            existingImages = [existingVariant.imageUrl];
                         }
                     }
 
@@ -334,39 +334,39 @@ export const updateProductVariant = async (req, res) => {
             }
         } else {
             // No deletions, keep all original images
-            if (existingVariant.photoUrl) {
+            if (existingVariant.imageUrl) {
                 try {
-                    remainingOriginalImages = JSON.parse(existingVariant.photoUrl);
+                    remainingOriginalImages = JSON.parse(existingVariant.imageUrl);
                     if (!Array.isArray(remainingOriginalImages)) {
-                        remainingOriginalImages = [existingVariant.photoUrl];
+                        remainingOriginalImages = [existingVariant.imageUrl];
                     }
                 } catch {
-                    remainingOriginalImages = [existingVariant.photoUrl];
+                    remainingOriginalImages = [existingVariant.imageUrl];
                 }
             }
         }
 
         // Handle images - combine new uploads with remaining original images
-        let finalPhotoUrl = null;
+        let finalImageUrl = null;
         if (req.files && req.files.length > 0) {
             // New files uploaded - combine with remaining original images
             const newImageUrlsJson = processUploadedImages(req.files);
             if (newImageUrlsJson) {
                 const newImageUrls = JSON.parse(newImageUrlsJson);
                 const allImages = [...remainingOriginalImages, ...newImageUrls];
-                finalPhotoUrl = allImages.length === 1 ? allImages[0] : JSON.stringify(allImages);
+                finalImageUrl = allImages.length === 1 ? allImages[0] : JSON.stringify(allImages);
             } else {
                 // No new images processed, use remaining original images
-                finalPhotoUrl = remainingOriginalImages.length === 1
+                finalImageUrl = remainingOriginalImages.length === 1
                     ? remainingOriginalImages[0]
                     : JSON.stringify(remainingOriginalImages);
             }
-        } else if (photoUrl !== undefined) {
-            // photoUrl provided - use it (should contain remaining original images)
-            finalPhotoUrl = processImageUrlInput(photoUrl);
+        } else if (imageUrl !== undefined) {
+            // imageUrl provided - use it (should contain remaining original images)
+            finalImageUrl = processImageUrlInput(imageUrl);
         } else if (remainingOriginalImages.length > 0) {
-            // No new uploads, no photoUrl provided, but we have remaining original images
-            finalPhotoUrl = remainingOriginalImages.length === 1
+            // No new uploads, no imageUrl provided, but we have remaining original images
+            finalImageUrl = remainingOriginalImages.length === 1
                 ? remainingOriginalImages[0]
                 : JSON.stringify(remainingOriginalImages);
         }
@@ -374,7 +374,7 @@ export const updateProductVariant = async (req, res) => {
         const updateData = {
             name: name.trim(),
             description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            photoUrl: finalPhotoUrl,
+            imageUrl: finalImageUrl,
         };
 
         if (productId) {
