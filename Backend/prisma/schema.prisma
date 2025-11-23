@@ -70,8 +70,11 @@ model User {
 
   // Product management relations
   createdProductItems   ProductItem[]     @relation("ProductItemCreator")
+  updatedProductItems   ProductItem[]     @relation("ProductItemUpdater")
   createdProducts        Product[]        @relation("ProductCreator")
+  updatedProducts        Product[]        @relation("ProductUpdater")
   createdProductVariants ProductVariant[]  @relation("ProductVariantCreator")
+  updatedProductVariants ProductVariant[]  @relation("ProductVariantUpdater")
 }
 
 /////////////////////////////
@@ -150,10 +153,13 @@ model ProductItem {
   name      String
   imageUrl  String?
   createdBy String
+  updatedBy String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   isDeleted Boolean @default(false)
 
   creator       User            @relation("ProductItemCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater       User?           @relation("ProductItemUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   itemStatuses ItemStatus[]
   workPieces   OrderWorkPiece[]
   variants     ProductVariant[]
@@ -165,10 +171,13 @@ model Product {
   name        String
   description String?
   createdBy   String
+  updatedBy  String?
   createdAt   DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   isDeleted   Boolean @default(false)
 
   creator  User            @relation("ProductCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater  User?           @relation("ProductUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   variants ProductVariant[]
 }
 
@@ -180,11 +189,14 @@ model ProductVariant {
   description String?
   photoUrl    String?
   createdBy   String
+  updatedBy  String?
   createdAt   DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   isDeleted   Boolean @default(false)
 
   product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   creator      User          @relation("ProductVariantCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater      User?         @relation("ProductVariantUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   productItems ProductItem[]
   orderItems   OrderItem[]
 }

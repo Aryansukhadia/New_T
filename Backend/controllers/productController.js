@@ -23,10 +23,8 @@ export const addProduct = async (req, res) => {
         const newProduct = await prisma.product.create({
             data: {
                 name: name.trim(),
+                createdBy: req.user.userId,
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            },
-            include: {
-                variants: true
             }
         });
 
@@ -62,8 +60,8 @@ export const getProducts = async (req, res) => {
 
         // Fetch products with pagination
         const products = await prisma.product.findMany({
-            include: {
-                variants: true
+            where: {
+                isDeleted: false
             },
             orderBy: {
                 createdAt: 'desc'
@@ -99,10 +97,7 @@ export const getProductById = async (req, res) => {
         const { id } = req.params;
 
         const product = await prisma.product.findUnique({
-            where: { id },
-            include: {
-                variants: true
-            }
+            where: { id, isDeleted: false }
         });
 
         if (!product) {
@@ -133,6 +128,9 @@ export const updateProduct = async (req, res) => {
         if (!existingProduct) {
             return sendResponse(res, 404, "Product not found");
         }
+        else if (existingProduct.isDeleted) {
+            return sendResponse(res, 400, "Product is deleted");
+        }
 
         // Check if another product with same name exists
         const duplicateProduct = await prisma.product.findFirst({
@@ -150,10 +148,8 @@ export const updateProduct = async (req, res) => {
             where: { id },
             data: {
                 name: name.trim(),
+                updatedBy: req.user.userId,
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            },
-            include: {
-                variants: true
             }
         });
 
@@ -169,11 +165,14 @@ export const deleteProduct = async (req, res) => {
         const { id } = req.params;
 
         const product = await prisma.product.findUnique({
-            where: { id }
+            where: { id, isDeleted: false },
         });
 
         if (!product) {
             return sendResponse(res, 404, "Product not found");
+        }
+        else if (product.isDeleted) {
+            return sendResponse(res, 400, "Product is deleted");
         }
 
         // Check if product has variants
@@ -185,8 +184,12 @@ export const deleteProduct = async (req, res) => {
             return sendResponse(res, 400, "Cannot delete product with existing variants. Please delete variants first.");
         }
 
-        await prisma.product.delete({
-            where: { id }
+        await prisma.product.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+                updatedBy: req.user.userId,
+            }
         });
 
         return sendResponse(res, 200, "Product deleted successfully");
@@ -195,4 +198,3 @@ export const deleteProduct = async (req, res) => {
         return sendResponse(res, 500, "Failed to delete product", { error: error.message });
     }
 };
-

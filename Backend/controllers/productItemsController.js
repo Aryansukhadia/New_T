@@ -33,10 +33,7 @@ export const addProductItem = async (req, res) => {
                 name: name.trim(),
                 imageUrl: finalImageUrl,
                 createdBy: req.user.userId,
-            },
-            include: {
-                variants: true,
-                itemStatuses: true
+                updatedBy: req.user.userId,
             }
         });
 
@@ -76,10 +73,6 @@ export const getProductItems = async (req, res) => {
         const productItems = await prisma.productItem.findMany({
             where: {
                 isDeleted: false
-            },
-            include: {
-                variants: true,
-                itemStatuses: true
             },
             orderBy: {
                 createdAt: 'desc'
@@ -221,6 +214,7 @@ export const updateProductItem = async (req, res) => {
                     : JSON.stringify(remainingOriginalImages);
             }
         } else if (imageUrl !== undefined) {
+            // imageUrl provided - use it (should contain remaining original images)
             finalImageUrl = processImageUrlInput(imageUrl);
         } else if (remainingOriginalImages.length > 0) {
             // No new uploads, no imageUrl provided, but we have remaining original images
@@ -234,11 +228,8 @@ export const updateProductItem = async (req, res) => {
             data: {
                 name: name.trim(),
                 imageUrl: finalImageUrl,
+                updatedBy: req.user.userId,
             },
-            include: {
-                variants: true,
-                itemStatuses: true
-            }
         });
 
         return sendResponse(res, 200, "Product item updated successfully", updatedProductItem);
@@ -277,7 +268,8 @@ export const deleteProductItem = async (req, res) => {
         await prisma.productItem.update({
             where: { id },
             data: {
-                isDeleted: true
+                isDeleted: true,
+                updatedBy: req.user.userId,
             },
             include: {
                 variants: true,
