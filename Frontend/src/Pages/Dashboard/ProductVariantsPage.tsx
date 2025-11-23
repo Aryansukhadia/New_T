@@ -333,29 +333,59 @@ const ProductVariantsPage = () => {
                   <TableCell>{variant.product?.name || '—'}</TableCell>
                   <TableCell>{variant?.description || '—'}</TableCell>
                   <TableCell>
-                    {variant.imageUrl ? (
-                      <Box
-                        component="img"
-                        src={variant.imageUrl}
-                        alt={variant.name}
-                        sx={{
-                          width: 60,
-                          height: 60,
-                          objectFit: 'cover',
-                          borderRadius: 1,
-                          border: '2px solid #e0e0e0',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            transform: 'scale(1.1)',
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                          },
-                        }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
+                    {variant.imageUrl ? (() => {
+                      // Try to parse as JSON array
+                      const images = JSON.parse(variant.imageUrl);
+                      const imageArray = Array.isArray(images) ? images : [variant.imageUrl];
+                      return (
+                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                          {imageArray.slice(0, 3).map((imgUrl: string, idx: number) => (
+                            <Box
+                              key={idx}
+                              component="img"
+                              src={imgUrl}
+                              alt={`${variant.name} ${idx + 1}`}
+                              sx={{
+                                width: 60,
+                                height: 60,
+                                objectFit: 'cover',
+                                borderRadius: 1,
+                                border: '2px solid #e0e0e0',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.1)',
+                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                                },
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ))}
+                          {imageArray.length > 3 && (
+                            <Box
+                              sx={{
+                                width: 60,
+                                height: 60,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 1,
+                                border: '2px solid #e0e0e0',
+                                bgcolor: '#f5f5f5',
+                                color: '#666',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                              }}
+                            >
+                              +{imageArray.length - 3}
+                            </Box>
+                          )}
+                        </Box>
+                      );
+
+                    })() : (
                       <Typography variant="body2" color="text.secondary">
                         —
                       </Typography>

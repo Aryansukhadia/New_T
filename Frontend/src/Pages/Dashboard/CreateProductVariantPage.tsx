@@ -53,8 +53,9 @@ const CreateProductVariantPage = () => {
     });
 
     const [selectedProductItems, setSelectedProductItems] = useState<string[]>([]);
-    const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
 
     const fetchData = useCallback(async () => {
         try {
@@ -83,6 +84,28 @@ const CreateProductVariantPage = () => {
         fetchData();
     }, [fetchData]);
 
+    // Parse imageUrl from formData and update previews
+    const parseImages = (imageUrl: string | null): string[] => {
+        if (!imageUrl) return [];
+        try {
+            const parsed = JSON.parse(imageUrl);
+            return Array.isArray(parsed) ? parsed : [imageUrl];
+        } catch {
+            return [imageUrl];
+        }
+    };
+
+    // Update imageUrls when formData.imageUrl changes
+    useEffect(() => {
+        const parsedUrls = parseImages(formData.imageUrl || null);
+        setImageUrls(parsedUrls);
+        // Update previews: URL images first, then file previews
+        setImagePreviews((prev) => {
+            const filePreviews = prev.filter(preview => preview.startsWith('data:'));
+            return [...parsedUrls, ...filePreviews];
+        });
+    }, [formData.imageUrl]);
+
     const handleFormChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string>,
     ) => {
@@ -94,21 +117,82 @@ const CreateProductVariantPage = () => {
     };
 
     const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedPhotoFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPhotoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const totalSlots = 5;
+            // Count both URL images and file uploads
+            const currentTotal = imageUrls.length + selectedImageFiles.length;
+            const availableSlots = totalSlots - currentTotal;
+
+            if (availableSlots <= 0) {
+                showError('Maximum 5 images allowed', 'Limit Reached');
+                return;
+            }
+
+            const fileArray = Array.from(files).slice(0, availableSlots);
+            const newFiles = [...selectedImageFiles, ...fileArray];
+            setSelectedImageFiles(newFiles);
+
+            // Create previews for new files (keep URL images + existing file previews + new file previews)
+            const existingFilePreviews = imagePreviews.filter(preview => preview.startsWith('data:'));
+            const newPreviews: string[] = [...imageUrls, ...existingFilePreviews];
+            let loadedCount = 0;
+            const totalNewFiles = fileArray.length;
+
+            fileArray.forEach((file) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    newPreviews.push(reader.result as string);
+                    loadedCount++;
+                    if (loadedCount === totalNewFiles) {
+                        setImagePreviews(newPreviews);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
+        // Reset input so same file can be selected again
+        e.target.value = '';
     };
 
-    const handleRemovePhoto = () => {
-        setSelectedPhotoFile(null);
-        setPhotoPreview(null);
-        setFormData((prev) => ({ ...prev, imageUrl: null }));
+    const handleRemoveImage = (index: number) => {
+        const imageToRemove = imagePreviews[index];
+
+        // Check if it's a URL image (not a data URL) or a file preview (starts with data:)
+        const isUrlImage = !imageToRemove.startsWith('data:') && imageUrls.includes(imageToRemove);
+
+        if (isUrlImage) {
+            // Find the actual index in imageUrls array
+            const urlIndex = imageUrls.findIndex(url => url === imageToRemove);
+            if (urlIndex !== -1) {
+                // Remove from URL images
+                const newImageUrls = imageUrls.filter((_, i) => i !== urlIndex);
+                setImageUrls(newImageUrls);
+                // Update formData.imageUrl
+                const newImageUrl = newImageUrls.length === 0
+                    ? null
+                    : newImageUrls.length === 1
+                        ? newImageUrls[0]
+                        : JSON.stringify(newImageUrls);
+                setFormData((prev) => ({ ...prev, imageUrl: newImageUrl }));
+                // Update previews: URL images + file previews
+                const filePreviews = imagePreviews.filter(preview => preview.startsWith('data:'));
+                setImagePreviews([...newImageUrls, ...filePreviews]);
+            }
+        } else {
+            // It's a file upload - find the corresponding file index
+            // File previews come after URL images in imagePreviews
+            const fileIndex = index - imageUrls.length;
+            if (fileIndex >= 0 && fileIndex < selectedImageFiles.length) {
+                setSelectedImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+                // Update previews: keep URL images, remove the file preview at this index
+                setImagePreviews((prev) => {
+                    const filePreviews = prev.filter(preview => preview.startsWith('data:'));
+                    const newFilePreviews = filePreviews.filter((_, i) => i !== fileIndex);
+                    return [...imageUrls, ...newFilePreviews];
+                });
+            }
+        }
     };
 
     const handleProductItemToggle = (itemId: string) => {
@@ -130,7 +214,7 @@ const CreateProductVariantPage = () => {
                 productItemIds: selectedProductItems.length > 0 ? selectedProductItems : [],
             };
 
-            const response = await createProductVariantService(createData, selectedPhotoFile ? [selectedPhotoFile] : null);
+            const response = await createProductVariantService(createData, selectedImageFiles.length > 0 ? selectedImageFiles : null);
 
             if (response.success === 201) {
                 showSuccess(response.message || 'Product variant created successfully!', 'Success');
@@ -290,49 +374,54 @@ const CreateProductVariantPage = () => {
                             accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                             onChange={handlePhotoFileChange}
                             disabled={formLoading}
+                            multiple
                         />
                     </Button>
-                    {selectedPhotoFile && (
+                    {imagePreviews.length > 0 && (
                         <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                            Selected: {selectedPhotoFile.name}
+                            {imagePreviews.length} image(s) selected ({imageUrls.length} URL(s), {selectedImageFiles.length} file(s))
                         </Typography>
                     )}
-                    {photoPreview && (
-                        <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-                            <Box
-                                component="img"
-                                src={photoPreview}
-                                alt="Preview"
-                                sx={{
-                                    maxWidth: 300,
-                                    maxHeight: 200,
-                                    borderRadius: 1,
-                                    border: '2px solid #e0e0e0',
-                                    objectFit: 'cover',
-                                }}
-                            />
-                            <MUICustomBtn
-                                onClick={handleRemovePhoto}
-                                tooltip="Remove photo"
-                                variant="contained"
-                                sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    bgcolor: '#dc3545',
-                                    color: 'white',
-                                    width: 32,
-                                    height: 32,
-                                    minWidth: 32,
-                                    padding: 0,
-                                    '&:hover': {
-                                        bgcolor: '#c82333',
-                                        transform: 'scale(1.1)',
-                                    },
-                                }}
-                            >
-                                <CloseIcon sx={{ fontSize: 16 }} />
-                            </MUICustomBtn>
+                    {imagePreviews.length > 0 && (
+                        <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                            {imagePreviews.map((preview, index) => (
+                                <Box key={index} sx={{ position: 'relative', display: 'inline-block' }}>
+                                    <Box
+                                        component="img"
+                                        src={preview}
+                                        alt={`Preview ${index + 1}`}
+                                        sx={{
+                                            width: 150,
+                                            height: 150,
+                                            borderRadius: 1,
+                                            border: '2px solid #e0e0e0',
+                                            objectFit: 'cover',
+                                        }}
+                                    />
+                                    <MUICustomBtn
+                                        onClick={() => handleRemoveImage(index)}
+                                        tooltip="Remove image"
+                                        variant="contained"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8,
+                                            right: 8,
+                                            bgcolor: '#dc3545',
+                                            color: 'white',
+                                            width: 32,
+                                            height: 32,
+                                            minWidth: 32,
+                                            padding: 0,
+                                            '&:hover': {
+                                                bgcolor: '#c82333',
+                                                transform: 'scale(1.1)',
+                                            },
+                                        }}
+                                    >
+                                        <CloseIcon sx={{ fontSize: 16 }} />
+                                    </MUICustomBtn>
+                                </Box>
+                            ))}
                         </Box>
                     )}
                 </Box>
