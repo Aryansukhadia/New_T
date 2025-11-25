@@ -288,6 +288,32 @@ export const API_CONFIG: ApiConfig = {
             method: 'DELETE',
             baseUrl: NODEJS_BASE_URL,
         },
+        // Ready-Made Inventory Endpoints
+        getReadyMadeInventories: {
+            path: '/ready-made-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getReadyMadeInventoryById: {
+            path: '/ready-made-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createReadyMadeInventory: {
+            path: '/ready-made-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateReadyMadeInventory: {
+            path: '/ready-made-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteReadyMadeInventory: {
+            path: '/ready-made-inventories/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
 
         // ============================================
         // PRODUCT ORDER ENDPOINTS

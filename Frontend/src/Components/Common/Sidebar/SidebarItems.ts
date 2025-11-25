@@ -61,6 +61,7 @@ export const sidebarItems: SidebarItems = {
       icon: FaWarehouse,
       children: [
         { label: "Fabric Inventory", path: "/dashboard/inventory/fabric-inventory" },
+        { label: "Ready-Made Inventory", path: "/dashboard/inventory/ready-made-inventory" },
       ],
     },
     {
@@ -101,6 +102,7 @@ export const sidebarItems: SidebarItems = {
       icon: FaWarehouse,
       children: [
         { label: "Fabric Inventory", path: "/dashboard/inventory/fabric-inventory" },
+        { label: "Ready-Made Inventory", path: "/dashboard/inventory/ready-made-inventory" },
       ],
     },
     {

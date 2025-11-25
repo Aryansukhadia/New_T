@@ -26,6 +26,9 @@ import ProfilePage from '../Pages/Dashboard/ProfilePage';
 import FabricInventoriesPage from '../Pages/Inventory/FabricInventory/FabricInventoriesPage';
 import CreateFabricInventoryPage from '../Pages/Inventory/FabricInventory/CreateFabricInventoryPage';
 import EditFabricInventoryPage from '../Pages/Inventory/FabricInventory/EditFabricInventoryPage';
+import ReadyMadeInventoriesPage from '../Pages/Inventory/ReadyMadeInventory/ReadyMadeInventoriesPage';
+import CreateReadyMadeInventoryPage from '../Pages/Inventory/ReadyMadeInventory/CreateReadyMadeInventoryPage';
+import EditReadyMadeInventoryPage from '../Pages/Inventory/ReadyMadeInventory/EditReadyMadeInventoryPage';
 
 export interface RouteConfig {
     path: string;
@@ -178,6 +181,24 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['admin'],
         },
         {
+            path: 'inventory/ready-made-inventory',
+            component: () => <ReadyMadeInventoriesPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'inventory/ready-made-inventory/create',
+            component: () => <CreateReadyMadeInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'inventory/ready-made-inventory/edit/:id',
+            component: () => <EditReadyMadeInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
             path: 'orders',
             component: () => <OrdersPage />,
             requireAuth: true,
@@ -321,6 +342,24 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'inventory/fabric-inventory/edit/:id',
             component: () => <EditFabricInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/ready-made-inventory',
+            component: () => <ReadyMadeInventoriesPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/ready-made-inventory/create',
+            component: () => <CreateReadyMadeInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/ready-made-inventory/edit/:id',
+            component: () => <EditReadyMadeInventoryPage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

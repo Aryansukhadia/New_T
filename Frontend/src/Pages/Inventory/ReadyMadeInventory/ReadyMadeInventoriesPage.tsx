@@ -27,22 +27,22 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import {
-  getFabricInventoriesService,
-  deleteFabricInventoryService,
-  type FabricInventoryItem,
+  getReadyMadeInventoriesService,
+  deleteReadyMadeInventoryService,
+  type ReadyMadeInventoryItem,
   type PaginationMeta,
 } from '../../../Services/ApiServices';
 import { useToast } from '../../../Utils/ToastContext';
 
-const FabricInventoriesPage = () => {
+const ReadyMadeInventoriesPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-  const [inventories, setInventories] = useState<FabricInventoryItem[]>([]);
-  const [filteredInventories, setFilteredInventories] = useState<FabricInventoryItem[]>([]);
+  const [inventories, setInventories] = useState<ReadyMadeInventoryItem[]>([]);
+  const [filteredInventories, setFilteredInventories] = useState<ReadyMadeInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [inventoryToDelete, setInventoryToDelete] = useState<FabricInventoryItem | null>(null);
+  const [inventoryToDelete, setInventoryToDelete] = useState<ReadyMadeInventoryItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
   // Pagination state
@@ -55,7 +55,7 @@ const FabricInventoriesPage = () => {
       setLoading(true);
       const apiPage = page + 1;
 
-      const response = await getFabricInventoriesService(apiPage, pageSize);
+      const response = await getReadyMadeInventoriesService(apiPage, pageSize);
 
       if (response.success === 200 && response.data) {
         const { inventories: inventoriesData, pagination } = response.data;
@@ -85,20 +85,20 @@ const FabricInventoriesPage = () => {
     const filtered = inventories.filter(
       (inventory) =>
         inventory.name.toLowerCase().includes(term) ||
-        (inventory.fabric && inventory.fabric.color.toLowerCase().includes(term))
+        (inventory.readyMade && inventory.readyMade.color.toLowerCase().includes(term))
     );
     setFilteredInventories(filtered);
   }, [searchTerm, inventories]);
 
-  const handleCreateFabric = () => {
-    navigate('/dashboard/inventory/fabric-inventory/create');
+  const handleCreateReadyMade = () => {
+    navigate('/dashboard/inventory/ready-made-inventory/create');
   };
 
-  const handleEditFabric = (inventory: FabricInventoryItem) => {
-    navigate(`/dashboard/inventory/fabric-inventory/edit/${inventory.id}`);
+  const handleEditReadyMade = (inventory: ReadyMadeInventoryItem) => {
+    navigate(`/dashboard/inventory/ready-made-inventory/edit/${inventory.id}`);
   };
 
-  const handleOpenDeleteModal = (inventory: FabricInventoryItem) => {
+  const handleOpenDeleteModal = (inventory: ReadyMadeInventoryItem) => {
     setInventoryToDelete(inventory);
     setIsDeleteModalOpen(true);
   };
@@ -114,22 +114,22 @@ const FabricInventoriesPage = () => {
     setFormLoading(true);
 
     try {
-      const response = await deleteFabricInventoryService(inventoryToDelete.id);
+      const response = await deleteReadyMadeInventoryService(inventoryToDelete.id);
 
       if (response.success === 200) {
-        showSuccess(response.message || 'Fabric inventory deleted successfully!', 'Success');
+        showSuccess(response.message || 'Ready-made inventory deleted successfully!', 'Success');
         await fetchData(currentPage);
         setTimeout(() => {
           handleCloseDeleteModal();
         }, 1000);
       } else {
-        const errorMsg = response.message || 'Failed to delete fabric inventory';
+        const errorMsg = response.message || 'Failed to delete ready-made inventory';
         showError(errorMsg, 'Delete Failed');
       }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
-        const errorMsg = axiosError.response?.data?.message || 'Failed to delete fabric inventory';
+        const errorMsg = axiosError.response?.data?.message || 'Failed to delete ready-made inventory';
         showError(errorMsg, 'Delete Failed');
       } else {
         const errorMsg = 'An unexpected error occurred';
@@ -162,13 +162,13 @@ const FabricInventoriesPage = () => {
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Fabric Inventory
+          Ready-Made Inventory
         </Typography>
         <MUICustomBtn
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={handleCreateFabric}
-          tooltip="Add new fabric inventory"
+          onClick={handleCreateReadyMade}
+          tooltip="Add new ready-made inventory"
           sx={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             '&:hover': {
@@ -180,14 +180,14 @@ const FabricInventoriesPage = () => {
             fontWeight: 600,
           }}
         >
-          Add New Fabric
+          Add New Ready-Made Item
         </MUICustomBtn>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
         <TextField
           fullWidth
-          placeholder="Search fabrics by name or color..."
+          placeholder="Search by name, item name, or color..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           variant="outlined"
@@ -204,8 +204,8 @@ const FabricInventoriesPage = () => {
           <InventoryIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
           <Typography variant="body1">
             {searchTerm
-              ? 'No fabric items found matching your criteria'
-              : 'No fabric items found'}
+              ? 'No ready-made items found matching your criteria'
+              : 'No ready-made items found'}
           </Typography>
         </Box>
       ) : (
@@ -217,18 +217,22 @@ const FabricInventoriesPage = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Color</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Image</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Length (m)</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredInventories.map((inventory) => {
-                const images = inventory.fabric ? parseImages(inventory.fabric.imageUrl) : [];
+                const images = inventory.readyMade ? parseImages(inventory.readyMade.imageUrl) : [];
+                const sizeDisplay = inventory.readyMade
+                  ? `${inventory.readyMade.sizeLabel || ''}${inventory.readyMade.sizeLabel && inventory.readyMade.sizeNumber ? ' ' : ''}${inventory.readyMade.sizeNumber || ''}`.trim() || '—'
+                  : '—';
                 return (
                   <TableRow key={inventory.id} hover>
                     <TableCell>{inventory.name}</TableCell>
-                    <TableCell>{inventory.fabric?.color || '—'}</TableCell>
+                    <TableCell>{inventory.readyMade?.color || '—'}</TableCell>
                     <TableCell>
                       {images.length > 0 ? (
                         <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
@@ -282,14 +286,15 @@ const FabricInventoriesPage = () => {
                         </Typography>
                       )}
                     </TableCell>
-                    <TableCell>{inventory.fabric?.price ? `${Number(inventory.fabric.price).toFixed(2)}` : '—'}</TableCell>
-                    <TableCell>{inventory.fabric?.length ? `${Number(inventory.fabric.length).toFixed(2)} m` : '—'}</TableCell>
+                    <TableCell>{inventory.readyMade?.price ? `${Number(inventory.readyMade.price).toFixed(2)}` : '—'}</TableCell>
+                    <TableCell>{inventory.readyMade?.quantity ?? '—'}</TableCell>
+                    <TableCell>{sizeDisplay}</TableCell>
                     <TableCell>{formatDate(inventory.createdAt)}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <MUICustomBtn
-                          onClick={() => handleEditFabric(inventory)}
-                          tooltip="Edit Fabric"
+                          onClick={() => handleEditReadyMade(inventory)}
+                          tooltip="Edit Ready-Made Item"
                           variant="contained"
                           sx={{
                             bgcolor: '#e3f2fd',
@@ -309,7 +314,7 @@ const FabricInventoriesPage = () => {
                         </MUICustomBtn>
                         <MUICustomBtn
                           onClick={() => handleOpenDeleteModal(inventory)}
-                          tooltip="Delete Fabric"
+                          tooltip="Delete Ready-Made Item"
                           variant="contained"
                           sx={{
                             bgcolor: '#ffebee',
@@ -357,11 +362,11 @@ const FabricInventoriesPage = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
-        <DialogTitle>Delete Fabric Inventory</DialogTitle>
+        <DialogTitle>Delete Ready-Made Inventory</DialogTitle>
         <DialogContent>
           {inventoryToDelete && (
             <Typography>
-              Are you sure you want to delete fabric <strong>{inventoryToDelete.name}</strong>?
+              Are you sure you want to delete ready-made item <strong>{inventoryToDelete.name}</strong>?
               This action cannot be undone.
             </Typography>
           )}
@@ -380,7 +385,7 @@ const FabricInventoriesPage = () => {
             disabled={formLoading}
             variant="contained"
             color="error"
-            tooltip="Permanently delete this fabric"
+            tooltip="Permanently delete this ready-made item"
             sx={{
               textTransform: 'none',
               fontWeight: 600,
@@ -394,5 +399,5 @@ const FabricInventoriesPage = () => {
   );
 };
 
-export default FabricInventoriesPage;
+export default ReadyMadeInventoriesPage;
 
