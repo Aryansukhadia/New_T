@@ -330,7 +330,6 @@ model ReadyMadeInventory {
   id            String   @id @default(uuid())
   inventoryId   String   @unique
   color         String
-  name          String
   imageUrl      String       
   quantity      Int            @default(0)
   price         Decimal       @db.Decimal(10,2)
