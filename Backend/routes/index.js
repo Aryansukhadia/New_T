@@ -10,6 +10,7 @@ import itemStagePhotoRoutes from "./itemStagePhotoRoutes.js";
 import uploadRoutes from "./uploadRoutes.js";
 import productOrderRoutes from "./productOrderRoutes.js";
 import workPieceRoutes from "./workPieceRoutes.js";
+import fabricInventoryRoutes from "./fabricInventoryRoutes.js";
 
 const router = Router();
 router.use("/users", userRoutes);
@@ -29,5 +30,8 @@ router.use("/itemStagePhotos", itemStagePhotoRoutes);
 // Order Management Routes
 router.use("/productOrders", productOrderRoutes);
 router.use("/workPieces", workPieceRoutes);
+
+// Inventory Management Routes
+router.use("/fabric-inventories", fabricInventoryRoutes);
 
 export default router;

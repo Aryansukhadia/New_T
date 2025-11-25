@@ -40,6 +40,12 @@ enum Role {
   subAdmin
 }
 
+enum InventoryType {
+  fabric
+  readyMade
+  accessory
+}
+
 /////////////////////////////
 // USER MANAGEMENT
 /////////////////////////////
@@ -75,6 +81,10 @@ model User {
   updatedProducts        Product[]        @relation("ProductUpdater")
   createdProductVariants ProductVariant[]  @relation("ProductVariantCreator")
   updatedProductVariants ProductVariant[]  @relation("ProductVariantUpdater")
+
+  // Inventory management relations
+  createdInventories   Inventory[]        @relation("InventoryCreator")
+  updatedInventories   Inventory[]        @relation("InventoryUpdater")
 }
 
 /////////////////////////////
@@ -279,4 +289,63 @@ model ItemStatus {
   orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productItem ProductItem @relation(fields: [productItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   updatedBy   User?       @relation("UserItemStatusUpdates", fields: [updatedById], references: [userId], onDelete: SetNull, onUpdate: Cascade)
+}
+
+
+/////////////////////////////
+// INVENTORY MANAGEMENT
+/////////////////////////////
+
+model Inventory {
+  id          String         @id @default(uuid())
+  type        InventoryType
+  name        String
+  isDeleted   Boolean        @default(false)
+
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  creator     User      @relation("InventoryCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater     User?     @relation("InventoryUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
+
+  fabric      FabricInventory?
+  readyMade   ReadyMadeInventory?
+  accessory   AccessoryInventory?
+}
+
+model FabricInventory {
+  id            String   @id @default(uuid())
+  inventoryId   String   @unique
+  color         String
+  imageUrl      String       
+  price         Decimal?       @db.Decimal(10,2)
+  length        Decimal       @db.Decimal(10,2)
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+}
+
+model ReadyMadeInventory {
+  id            String   @id @default(uuid())
+  inventoryId   String   @unique
+  color         String
+  name          String
+  imageUrl      String       
+  quantity      Int            @default(0)
+  price         Decimal       @db.Decimal(10,2)
+  sizeLabel     String?        // M, L, XL, FreeSize
+  sizeNumber    Int?           // 30, 32, 34, 36...
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+}
+
+model AccessoryInventory {
+  id            String        @id @default(uuid())
+  inventoryId   String        @unique
+  
+  // Dynamic fields stored as JSON
+  properties    Json    // stores type, size, material, color, etc.
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 }
