@@ -23,6 +23,9 @@ import ProductVariantsPage from '../Pages/Dashboard/ProductVariantsPage';
 import CreateProductVariantPage from '../Pages/Dashboard/CreateProductVariantPage';
 import EditProductVariantPage from '../Pages/Dashboard/EditProductVariantPage';
 import ProfilePage from '../Pages/Dashboard/ProfilePage';
+import FabricInventoriesPage from '../Pages/Inventory/FabricInventory/FabricInventoriesPage';
+import CreateFabricInventoryPage from '../Pages/Inventory/FabricInventory/CreateFabricInventoryPage';
+import EditFabricInventoryPage from '../Pages/Inventory/FabricInventory/EditFabricInventoryPage';
 
 export interface RouteConfig {
     path: string;
@@ -157,6 +160,24 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['admin'],
         },
         {
+            path: 'inventory/fabric-inventory',
+            component: () => <FabricInventoriesPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'inventory/fabric-inventory/create',
+            component: () => <CreateFabricInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'inventory/fabric-inventory/edit/:id',
+            component: () => <EditFabricInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
             path: 'orders',
             component: () => <OrdersPage />,
             requireAuth: true,
@@ -282,6 +303,24 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'product-variants/edit/:id',
             component: () => <EditProductVariantPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/fabric-inventory',
+            component: () => <FabricInventoriesPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/fabric-inventory/create',
+            component: () => <CreateFabricInventoryPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'inventory/fabric-inventory/edit/:id',
+            component: () => <EditFabricInventoryPage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

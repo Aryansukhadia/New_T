@@ -1,4 +1,4 @@
-const NODEJS_BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL || 'http://localhost:3000/api';
+const NODEJS_BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL;
 
 interface EndpointConfig {
     path: string;
@@ -256,6 +256,35 @@ export const API_CONFIG: ApiConfig = {
         },
         deleteProductItem: {
             path: '/productItems/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
+        // FABRIC INVENTORY ENDPOINTS
+        // ============================================
+        getFabricInventories: {
+            path: '/fabric-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getFabricInventoryById: {
+            path: '/fabric-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createFabricInventory: {
+            path: '/fabric-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateFabricInventory: {
+            path: '/fabric-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteFabricInventory: {
+            path: '/fabric-inventories/{id}',
             method: 'DELETE',
             baseUrl: NODEJS_BASE_URL,
         },
