@@ -12,6 +12,7 @@ import productOrderRoutes from "./productOrderRoutes.js";
 import workPieceRoutes from "./workPieceRoutes.js";
 import fabricInventoryRoutes from "./fabricInventoryRoutes.js";
 import readyMadeInventoryRoutes from "./readyMadeInventoryRoutes.js";
+import accessoryInventoryRoutes from "./accessoryInventoryRoutes.js";
 
 const router = Router();
 router.use("/users", userRoutes);
@@ -35,5 +36,6 @@ router.use("/workPieces", workPieceRoutes);
 // Inventory Management Routes
 router.use("/fabric-inventories", fabricInventoryRoutes);
 router.use("/ready-made-inventories", readyMadeInventoryRoutes);
+router.use("/accessory-inventories", accessoryInventoryRoutes);
 
 export default router;

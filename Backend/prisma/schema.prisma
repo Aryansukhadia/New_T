@@ -342,9 +342,10 @@ model ReadyMadeInventory {
 model AccessoryInventory {
   id            String        @id @default(uuid())
   inventoryId   String        @unique
+  quantity      Int
   
   // Dynamic fields stored as JSON
-  properties    Json    // stores type, size, material, color, etc.
+  properties    Json?    // stores type, size, material, color, etc.
 
   inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 }
