@@ -314,6 +314,32 @@ export const API_CONFIG: ApiConfig = {
             method: 'DELETE',
             baseUrl: NODEJS_BASE_URL,
         },
+        // Accessory Inventory Endpoints
+        getAccessoryInventories: {
+            path: '/accessory-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getAccessoryInventoryById: {
+            path: '/accessory-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createAccessoryInventory: {
+            path: '/accessory-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateAccessoryInventory: {
+            path: '/accessory-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteAccessoryInventory: {
+            path: '/accessory-inventories/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
 
         // ============================================
         // PRODUCT ORDER ENDPOINTS

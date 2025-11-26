@@ -15,6 +15,7 @@ export * from './productServices';
 export * from './productOrderServices';
 export * from './fabricInventoryServices';
 export * from './readyMadeInventoryServices';
+export * from './accessoryInventoryServices';
 
 // Helpers
 export * from './authHelpers';

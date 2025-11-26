@@ -62,6 +62,7 @@ export const sidebarItems: SidebarItems = {
       children: [
         { label: "Fabric Inventory", path: "/dashboard/inventory/fabric-inventory" },
         { label: "Ready-Made Inventory", path: "/dashboard/inventory/ready-made-inventory" },
+        { label: "Accessory Inventory", path: "/dashboard/inventory/accessory-inventory" },
       ],
     },
     {
@@ -103,6 +104,7 @@ export const sidebarItems: SidebarItems = {
       children: [
         { label: "Fabric Inventory", path: "/dashboard/inventory/fabric-inventory" },
         { label: "Ready-Made Inventory", path: "/dashboard/inventory/ready-made-inventory" },
+        { label: "Accessory Inventory", path: "/dashboard/inventory/accessory-inventory" },
       ],
     },
     {
