@@ -19,7 +19,6 @@ export const FormContainer: React.FC<{ children: React.ReactNode }> = ({ childre
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: 2.5,
     }}

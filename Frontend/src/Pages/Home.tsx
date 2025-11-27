@@ -5,7 +5,6 @@ import { isAuthenticated, removeAuthToken } from '../Services/ApiServices';
 import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const HomeContainer = styled.div`
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;

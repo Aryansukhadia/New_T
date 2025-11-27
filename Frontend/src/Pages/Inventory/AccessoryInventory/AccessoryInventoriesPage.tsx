@@ -17,7 +17,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
 } from '@mui/material';
 import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import CustomTablePaginationComponent from '../../../Components/Common/CustomTablePagination';
@@ -164,11 +163,6 @@ const AccessoryInventoriesPage = () => {
     } catch {
       return typeof imageUrl === 'string' ? [imageUrl] : [];
     }
-  };
-
-  const getPropertyValue = (properties: Record<string, any> | null, key: string): string => {
-    if (!properties) return '—';
-    return properties[key] !== undefined && properties[key] !== null ? String(properties[key]) : '—';
   };
 
   return (

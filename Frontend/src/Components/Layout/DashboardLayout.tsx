@@ -14,8 +14,6 @@ const DashboardLayout = () => {
     <Box
       sx={{
         display: 'flex',
-        minHeight: '100vh',
-        backgroundColor: '#f5f7fa',
       }}
     >
       <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
@@ -25,7 +23,6 @@ const DashboardLayout = () => {
           flex: 1,
           padding: 3,
           transition: 'margin-left 0.3s ease',
-          minHeight: '100vh',
         }}
       >
         <Outlet />
