@@ -11,7 +11,6 @@ import {
   type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   Box,
   Card,
@@ -19,13 +18,6 @@ import {
   Button,
   TextField,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -42,7 +34,11 @@ import {
   Upload as UploadIcon,
   Visibility as VisibilityIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
+import DataTable, { type Column } from '../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 
 const ProductItemsPage = () => {
   const navigate = useNavigate();
@@ -57,6 +53,7 @@ const ProductItemsPage = () => {
   const [productItemToDelete, setProductItemToDelete] = useState<ProductItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   const { showSuccess, showError } = useToast();
 
@@ -287,6 +284,228 @@ const ProductItemsPage = () => {
     });
   };
 
+  const parseImages = (imageUrl: string | null): string[] => {
+    if (!imageUrl) return [];
+    try {
+      const parsed = JSON.parse(imageUrl);
+      return Array.isArray(parsed) ? parsed : [imageUrl];
+    } catch {
+      return [imageUrl];
+    }
+  };
+
+  // Table columns configuration
+  const columns: Column<ProductItem>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (item) => item.name,
+    },
+    {
+      id: 'image',
+      label: 'Image',
+      render: (item) => {
+        const images = parseImages(item.imageUrl);
+        return images.length > 0 ? (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {images.slice(0, 2).map((imgUrl: string, idx: number) => (
+              <Box
+                key={idx}
+                component="img"
+                src={imgUrl}
+                alt={`${item.name} ${idx + 1}`}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ))}
+            {images.length > 2 && (
+              <Box sx={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center' }}>
+                +{images.length - 2}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        );
+      },
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (item) => formatDate(item.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (item) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
+            tooltip="View Product Item Details"
+            variant="contained"
+            sx={{
+              bgcolor: '#e8f5e9',
+              color: '#2e7d32',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#c8e6c9',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+              },
+            }}
+          >
+            <VisibilityIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
+            tooltip="Edit Product Item"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(item)}
+            tooltip="Delete Product Item"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<ProductItem>[] = [
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (item) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(item.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<ProductItem>[] = [
+    {
+      id: 'view',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
+          tooltip="View Details"
+          variant="contained"
+          sx={{
+            bgcolor: '#e8f5e9',
+            color: '#2e7d32',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#c8e6c9',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+            },
+          }}
+        >
+          <VisibilityIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'edit',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
+          tooltip="Edit"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(item)}
+          tooltip="Delete"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -311,6 +530,24 @@ const ProductItemsPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </Button>
           <Button
             variant="contained"
@@ -359,186 +596,43 @@ const ProductItemsPage = () => {
               : 'No product items found. Add your first product item to get started!'}
           </Typography>
         </Box>
+      ) : viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={filteredProductItems}
+          getRowKey={(item) => item.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+        />
       ) : (
-        <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #e0e0e0' }}>
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Created At</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#666' }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredProductItems.map((item) => (
-                <TableRow key={item.id} sx={{ '&:hover': { bgcolor: '#f8f9fa' } }}>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell sx={{ textAlign: 'center' }}>
-                    {item.imageUrl ? (() => {
-                      try {
-                        const images = JSON.parse(item.imageUrl);
-                        const imageArray = Array.isArray(images) ? images : [item.imageUrl];
-                        return (
-                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
-                            {imageArray.slice(0, 3).map((imgUrl: string, idx: number) => (
-                              <Box
-                                key={idx}
-                                component="img"
-                                src={imgUrl}
-                                alt={`${item.name} ${idx + 1}`}
-                                sx={{
-                                  width: 40,
-                                  height: 40,
-                                  objectFit: 'cover',
-                                  borderRadius: 1,
-                                  border: '2px solid #e0e0e0',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  '&:hover': {
-                                    transform: 'scale(1.1)',
-                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                                  },
-                                }}
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            ))}
-                            {imageArray.length > 3 && (
-                              <Box sx={{
-                                width: 40,
-                                height: 40,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: '#f0f0f0',
-                                borderRadius: 1,
-                                fontSize: 12,
-                                color: '#666'
-                              }}>
-                                +{imageArray.length - 3}
-                              </Box>
-                            )}
-                          </Box>
-                        );
-                      } catch {
-                        return (
-                          <Box
-                            component="img"
-                            src={item.imageUrl}
-                            alt={item.name}
-                            sx={{
-                              width: 60,
-                              height: 60,
-                              objectFit: 'cover',
-                              borderRadius: 1,
-                              border: '2px solid #e0e0e0',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                transform: 'scale(1.1)',
-                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                              },
-                            }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        );
-                      }
-                    })() : (
-                      <span style={{ color: '#999' }}>—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(item.createdAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <MUICustomBtn
-                        onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
-                        tooltip="View Product Item Details"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e8f5e9',
-                          color: '#2e7d32',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#c8e6c9',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
-                          },
-                        }}
-                      >
-                        <VisibilityIcon sx={{ fontSize: 16 }} />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
-                        tooltip="Edit Product Item"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1976d2',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#bbdefb',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                          },
-                        }}
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleOpenDeleteModal(item)}
-                        tooltip="Delete Product Item"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#ffebee',
-                          color: '#d32f2f',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffcdd2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                          },
-                        }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 16 }} />
-                      </MUICustomBtn>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <tfoot>
-              <tr>
-                {!searchTerm && paginationMeta && (
-                  <CustomTablePaginationComponent
-                    count={paginationMeta.totalCount}
-                    page={currentPage}
-                    rowsPerPage={pageSize}
-                    onPageChange={(_event, page) => setCurrentPage(page)}
-                    onRowsPerPageChange={(event) => {
-                      const newRowsPerPage = parseInt(event.target.value, 10);
-                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-                      setPageSize(actualRowsPerPage);
-                      setCurrentPage(0);
-                    }}
-                  />
-                )}
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+        <DataCardGrid
+          data={filteredProductItems}
+          getCardTitle={(item) => item.name}
+          fields={cardFields}
+          actions={cardActions}
+          getRowKey={(item) => item.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+          columns={4}
+        />
       )}
 
       {/* Create/Edit Dialog */}

@@ -25,9 +25,13 @@ import {
   PersonAdd as PersonAddIcon,
   Straighten as StraightenIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
+import DataTable, { type Column } from '../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 
 import {
   getCustomersService,
@@ -46,6 +50,7 @@ const CustomersPage = () => {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0); // MUI TablePagination uses 0-based indexing
@@ -184,6 +189,215 @@ const CustomersPage = () => {
     });
   };
 
+  // Table columns configuration
+  const columns: Column<Customer>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (customer) => customer.fullName,
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      render: (customer) => customer.emailId,
+    },
+    {
+      id: 'mobile',
+      label: 'Mobile',
+      render: (customer) => customer.mobileNo,
+    },
+    {
+      id: 'address',
+      label: 'Address',
+      render: (customer) => customer.address,
+    },
+    {
+      id: 'reference',
+      label: 'Reference',
+      render: (customer) => customer.reference || '—',
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (customer) => formatDate(customer.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (customer) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => handleManageMeasurements(customer)}
+            tooltip="Manage Measurements"
+            variant="contained"
+            sx={{
+              bgcolor: '#fff3e0',
+              color: '#f57c00',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffe0b2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
+              },
+            }}
+          >
+            <StraightenIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleEditCustomer(customer)}
+            tooltip="Edit Customer"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(customer)}
+            tooltip="Delete Customer"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<Customer>[] = [
+    {
+      id: 'mobile',
+      label: 'Mobile',
+      render: (customer) => <Typography variant="body2">{customer.mobileNo}</Typography>,
+    },
+    {
+      id: 'address',
+      label: 'Address',
+      render: (customer) => <Typography variant="body2">{customer.address}</Typography>,
+    },
+    {
+      id: 'reference',
+      label: 'Reference',
+      render: (customer) => <Typography variant="body2">{customer.reference || '—'}</Typography>,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (customer) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(customer.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<Customer>[] = [
+    {
+      id: 'measurements',
+      render: (customer) => (
+        <MUICustomBtn
+          onClick={() => handleManageMeasurements(customer)}
+          tooltip="Manage Measurements"
+          variant="contained"
+          sx={{
+            bgcolor: '#fff3e0',
+            color: '#f57c00',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffe0b2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
+            },
+          }}
+        >
+          <StraightenIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'edit',
+      render: (customer) => (
+        <MUICustomBtn
+          onClick={() => handleEditCustomer(customer)}
+          tooltip="Edit Customer"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (customer) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(customer)}
+          tooltip="Delete Customer"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -209,6 +423,25 @@ const CustomersPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            tooltip="Toggle view mode"
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </MUICustomBtn>
           <MUICustomBtn
             variant="contained"
@@ -259,114 +492,34 @@ const CustomersPage = () => {
                   : 'No customers found. Add your first customer to get started!'}
               </Typography>
             </Box>
+          ) : viewMode === 'table' ? (
+            <DataTable
+              columns={columns}
+              data={filteredCustomers}
+              getRowKey={(customer) => customer.customerId}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              searchTerm={searchTerm}
+            />
           ) : (
-            <>
-              <TableContainer component={Paper} variant="outlined">
-                <Table>
-                  <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Mobile</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Address</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Reference</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.customerId} hover>
-                        <TableCell>{customer.fullName}</TableCell>
-                        <TableCell>{customer.emailId}</TableCell>
-                        <TableCell>{customer.mobileNo}</TableCell>
-                        <TableCell>{customer.address}</TableCell>
-                        <TableCell>{customer.reference || '—'}</TableCell>
-                        <TableCell>{formatDate(customer.createdAt)}</TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <MUICustomBtn
-                              onClick={() => handleManageMeasurements(customer)}
-                              tooltip="Manage Measurements"
-                              variant="contained"
-                              sx={{
-                                bgcolor: '#fff3e0',
-                                color: '#f57c00',
-                                minWidth: 32,
-                                width: 32,
-                                height: 32,
-                                padding: 0,
-                                '&:hover': {
-                                  bgcolor: '#ffe0b2',
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: '0 4px 8px rgba(245, 124, 0, 0.2)',
-                                },
-                              }}
-                            >
-                              <StraightenIcon fontSize="small" />
-                            </MUICustomBtn>
-                            <MUICustomBtn
-                              onClick={() => handleEditCustomer(customer)}
-                              tooltip="Edit Customer"
-                              variant="contained"
-                              sx={{
-                                bgcolor: '#e3f2fd',
-                                color: '#1976d2',
-                                minWidth: 32,
-                                width: 32,
-                                height: 32,
-                                padding: 0,
-                                '&:hover': {
-                                  bgcolor: '#bbdefb',
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                                },
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </MUICustomBtn>
-                            <MUICustomBtn
-                              onClick={() => handleOpenDeleteModal(customer)}
-                              tooltip="Delete Customer"
-                              variant="contained"
-                              sx={{
-                                bgcolor: '#ffebee',
-                                color: '#d32f2f',
-                                minWidth: 32,
-                                width: 32,
-                                height: 32,
-                                padding: 0,
-                                '&:hover': {
-                                  bgcolor: '#ffcdd2',
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                                },
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </MUICustomBtn>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <tfoot>
-                    <tr>
-                      {/* Pagination Controls - Only show when not searching */}
-                      {paginationMeta && (
-                        <CustomTablePaginationComponent
-                          count={paginationMeta.totalCount}
-                          page={currentPage}
-                          rowsPerPage={pageSize}
-                          onPageChange={handlePageChange}
-                          onRowsPerPageChange={handleChangeRowsPerPage}
-                        />
-                      )}
-                    </tr>
-                  </tfoot>
-                </Table>
-              </TableContainer>
-            </>
+            <DataCardGrid
+              data={filteredCustomers}
+              getCardTitle={(customer) => customer.fullName}
+              getCardSubtitle={(customer) => customer.emailId}
+              fields={cardFields}
+              actions={cardActions}
+              getRowKey={(customer) => customer.customerId}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              searchTerm={searchTerm}
+              columns={3}
+            />
           )}
 
 

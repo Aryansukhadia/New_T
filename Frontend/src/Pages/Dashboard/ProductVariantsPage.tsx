@@ -5,13 +5,6 @@ import {
   Card,
   Typography,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -21,7 +14,6 @@ import {
   Chip,
 } from '@mui/material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
-import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   Category as CategoryIcon,
   Add as AddIcon,
@@ -29,6 +21,8 @@ import {
   Delete as DeleteIcon,
   Link as LinkIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import {
   getProductVariantsService,
@@ -44,6 +38,8 @@ import {
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 import { useTranslation } from '../../hooks/useTranslation';
+import DataTable, { type Column } from '../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 
 const ProductVariantsPage = () => {
   const navigate = useNavigate();
@@ -61,6 +57,7 @@ const ProductVariantsPage = () => {
   const [variantToManageItems, setVariantToManageItems] = useState<ProductVariant | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   const { showSuccess, showError } = useToast();
 
@@ -246,6 +243,323 @@ const ProductVariantsPage = () => {
     });
   };
 
+  const parseImages = (imageUrl: string | null): string[] => {
+    if (!imageUrl) return [];
+    try {
+      const parsed = JSON.parse(imageUrl);
+      return Array.isArray(parsed) ? parsed : [imageUrl];
+    } catch {
+      return [imageUrl];
+    }
+  };
+
+  // Table columns configuration
+  const columns: Column<ProductVariant>[] = [
+    {
+      id: 'name',
+      label: t('productVariants.name'),
+      render: (variant) => variant.name,
+    },
+    {
+      id: 'product',
+      label: t('productVariants.product'),
+      render: (variant) => variant.product?.name || '—',
+    },
+    {
+      id: 'description',
+      label: t('productVariants.description'),
+      render: (variant) => variant?.description || '—',
+    },
+    {
+      id: 'photo',
+      label: t('productVariants.photo'),
+      render: (variant) => {
+        const images = parseImages(variant.imageUrl);
+        return images.length > 0 ? (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {images.slice(0, 2).map((imgUrl: string, idx: number) => (
+              <Box
+                key={idx}
+                component="img"
+                src={imgUrl}
+                alt={`${variant.name} ${idx + 1}`}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ))}
+            {images.length > 2 && (
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                  bgcolor: '#f5f5f5',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                }}
+              >
+                +{images.length - 2}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        );
+      },
+    },
+    {
+      id: 'productItems',
+      label: t('productVariants.productItems'),
+      render: (variant) =>
+        variant.productItems && variant.productItems.length > 0 ? (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {variant.productItems.slice(0, 3).map((item) => (
+              <Chip
+                key={item.id}
+                label={item.name}
+                size="small"
+                sx={{
+                  bgcolor: '#e3f2fd',
+                  color: '#1976d2',
+                  fontWeight: 500,
+                }}
+              />
+            ))}
+            {variant.productItems.length > 3 && (
+              <Chip
+                label={`+${variant.productItems.length - 3}`}
+                size="small"
+                sx={{
+                  bgcolor: '#f5f5f5',
+                  color: '#666',
+                  fontWeight: 500,
+                }}
+              />
+            )}
+          </Box>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      id: 'createdAt',
+      label: t('productVariants.createdAt'),
+      render: (variant) => formatDate(variant.createdAt),
+    },
+    {
+      id: 'actions',
+      label: t('common.actions'),
+      render: (variant) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => handleOpenManageItemsModal(variant)}
+            tooltip="Manage Product Items"
+            variant="contained"
+            sx={{
+              bgcolor: '#e8f5e9',
+              color: '#2e7d32',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#c8e6c9',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+              },
+            }}
+          >
+            <LinkIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleEditVariant(variant)}
+            tooltip="Edit Variant"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(variant)}
+            tooltip="Delete Variant"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<ProductVariant>[] = [
+    {
+      id: 'product',
+      label: 'Product',
+      render: (variant) => <Typography variant="body2">{variant.product?.name || '—'}</Typography>,
+    },
+    {
+      id: 'description',
+      label: 'Description',
+      render: (variant) => <Typography variant="body2">{variant?.description || '—'}</Typography>,
+    },
+    {
+      id: 'productItems',
+      label: 'Items',
+      render: (variant) =>
+        variant.productItems && variant.productItems.length > 0 ? (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {variant.productItems.slice(0, 4).map((item) => (
+              <Chip
+                key={item.id}
+                label={item.name}
+                size="small"
+                sx={{
+                  bgcolor: '#e3f2fd',
+                  color: '#1976d2',
+                  fontWeight: 500,
+                }}
+              />
+            ))}
+            {variant.productItems.length > 4 && (
+              <Typography variant="caption" color="text.secondary">
+                +{variant.productItems.length - 4} more
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2">—</Typography>
+        ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (variant) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(variant.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<ProductVariant>[] = [
+    {
+      id: 'manage',
+      render: (variant) => (
+        <MUICustomBtn
+          onClick={() => handleOpenManageItemsModal(variant)}
+          tooltip="Manage Product Items"
+          variant="contained"
+          sx={{
+            bgcolor: '#e8f5e9',
+            color: '#2e7d32',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#c8e6c9',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+            },
+          }}
+        >
+          <LinkIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'edit',
+      render: (variant) => (
+        <MUICustomBtn
+          onClick={() => handleEditVariant(variant)}
+          tooltip="Edit Variant"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (variant) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(variant)}
+          tooltip="Delete Variant"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -271,6 +585,25 @@ const ProductVariantsPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            tooltip="Toggle view mode"
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </MUICustomBtn>
           <MUICustomBtn
             variant="contained"
@@ -337,193 +670,44 @@ const ProductVariantsPage = () => {
               : t('productVariants.noVariants')}
           </Typography>
         </Box>
+      ) : viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={filteredVariants}
+          getRowKey={(variant) => variant.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+        />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.name')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.product')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.description')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.photo')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.productItems')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('productVariants.createdAt')}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{t('common.actions')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredVariants.map((variant) => (
-                <TableRow key={variant.id} hover>
-                  <TableCell>{variant.name}</TableCell>
-                  <TableCell>{variant.product?.name || '—'}</TableCell>
-                  <TableCell>{variant?.description || '—'}</TableCell>
-                  <TableCell>
-                    {variant.imageUrl ? (() => {
-                      // Try to parse as JSON array
-                      const images = JSON.parse(variant.imageUrl);
-                      const imageArray = Array.isArray(images) ? images : [variant.imageUrl];
-                      return (
-                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          {imageArray.slice(0, 3).map((imgUrl: string, idx: number) => (
-                            <Box
-                              key={idx}
-                              component="img"
-                              src={imgUrl}
-                              alt={`${variant.name} ${idx + 1}`}
-                              sx={{
-                                width: 60,
-                                height: 60,
-                                objectFit: 'cover',
-                                borderRadius: 1,
-                                border: '2px solid #e0e0e0',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  transform: 'scale(1.1)',
-                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                                },
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ))}
-                          {imageArray.length > 3 && (
-                            <Box
-                              sx={{
-                                width: 60,
-                                height: 60,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: 1,
-                                border: '2px solid #e0e0e0',
-                                bgcolor: '#f5f5f5',
-                                color: '#666',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                              }}
-                            >
-                              +{imageArray.length - 3}
-                            </Box>
-                          )}
-                        </Box>
-                      );
-
-                    })() : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {variant.productItems && variant.productItems.length > 0 ? (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {variant.productItems.map((item) => (
-                          <Chip
-                            key={item.id}
-                            label={item.name}
-                            size="small"
-                            sx={{
-                              bgcolor: '#e3f2fd',
-                              color: '#1976d2',
-                              fontWeight: 500,
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(variant.createdAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <MUICustomBtn
-                        onClick={() => handleOpenManageItemsModal(variant)}
-                        tooltip="Manage Product Items"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e8f5e9',
-                          color: '#2e7d32',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#c8e6c9',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
-                          },
-                        }}
-                      >
-                        <LinkIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleEditVariant(variant)}
-                        tooltip="Edit Variant"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1976d2',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#bbdefb',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                          },
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleOpenDeleteModal(variant)}
-                        tooltip="Delete Variant"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#ffebee',
-                          color: '#d32f2f',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffcdd2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </MUICustomBtn>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <tfoot>
-              <tr>
-                {!searchTerm && paginationMeta && (
-                  <CustomTablePaginationComponent
-                    count={paginationMeta.totalCount}
-                    page={currentPage}
-                    rowsPerPage={pageSize}
-                    onPageChange={(_event, page) => setCurrentPage(page)}
-                    onRowsPerPageChange={(event) => {
-                      const newRowsPerPage = parseInt(event.target.value, 10);
-                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-                      setPageSize(actualRowsPerPage);
-                      setCurrentPage(0);
-                    }}
-                  />
-                )}
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+        <DataCardGrid
+          data={filteredVariants}
+          getCardTitle={(variant) => variant.name}
+          getCardSubtitle={(variant) => variant.product?.name || 'No product'}
+          fields={cardFields}
+          actions={cardActions}
+          getRowKey={(variant) => variant.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+          columns={3}
+        />
       )}
 
       {/* Manage Items Dialog */}

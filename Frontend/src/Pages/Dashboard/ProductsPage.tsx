@@ -27,6 +27,8 @@ import {
   Delete as DeleteIcon,
   Description as DescriptionIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import {
   getProductsService,
@@ -39,6 +41,8 @@ import {
   type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
+import DataTable, { type Column } from '../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -52,6 +56,7 @@ const ProductsPage = () => {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   const { showSuccess, showError } = useToast();
 
@@ -249,6 +254,159 @@ const ProductsPage = () => {
     });
   };
 
+  // Table columns configuration
+  const columns: Column<Product>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (product) => product.name,
+    },
+    {
+      id: 'description',
+      label: 'Description',
+      render: (product) => product.description || '—',
+    },
+    {
+      id: 'variants',
+      label: 'Variants Count',
+      render: (product) => product.variants?.length || 0,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (product) => formatDate(product.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (product) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            size="small"
+            onClick={() => handleOpenEditModal(product)}
+            tooltip="Edit Product"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            size="small"
+            onClick={() => handleOpenDeleteModal(product)}
+            tooltip="Delete Product"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<Product>[] = [
+    {
+      id: 'description',
+      label: 'Description',
+      render: (product) => <Typography variant="body2">{product.description || '—'}</Typography>,
+    },
+    {
+      id: 'variants',
+      label: 'Variants',
+      render: (product) => <Typography variant="body2">{product.variants?.length || 0} variants</Typography>,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (product) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(product.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<Product>[] = [
+    {
+      id: 'edit',
+      render: (product) => (
+        <MUICustomBtn
+          size="small"
+          onClick={() => handleOpenEditModal(product)}
+          tooltip="Edit Product"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (product) => (
+        <MUICustomBtn
+          size="small"
+          onClick={() => handleOpenDeleteModal(product)}
+          tooltip="Delete Product"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -273,6 +431,24 @@ const ProductsPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </Button>
           <Button
             variant="contained"
@@ -320,94 +496,44 @@ const ProductsPage = () => {
               : 'No products found. Add your first product to get started!'}
           </Typography>
         </Box>
+      ) : viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={filteredProducts}
+          getRowKey={(product) => product.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+        />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Variants Count</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow key={product.id} hover>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.description || '—'}</TableCell>
-                  <TableCell>{product.variants?.length || 0}</TableCell>
-                  <TableCell>{formatDate(product.createdAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <MUICustomBtn
-                        size="small"
-                        onClick={() => handleOpenEditModal(product)}
-                        tooltip="Edit Product"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1976d2',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#bbdefb',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                          },
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        size="small"
-                        onClick={() => handleOpenDeleteModal(product)}
-                        tooltip="Delete Product"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#ffebee',
-                          color: '#d32f2f',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffcdd2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </MUICustomBtn>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <tfoot>
-              <tr>
-                {!searchTerm && paginationMeta && (
-                  <CustomTablePaginationComponent
-                    count={paginationMeta.totalCount}
-                    page={currentPage}
-                    rowsPerPage={pageSize}
-                    onPageChange={(_event, page) => setCurrentPage(page)}
-                    onRowsPerPageChange={(event) => {
-                      const newRowsPerPage = parseInt(event.target.value, 10);
-                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-                      setPageSize(actualRowsPerPage);
-                      setCurrentPage(0);
-                    }}
-                  />
-                )}
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+        <DataCardGrid
+          data={filteredProducts}
+          getCardTitle={(product) => product.name}
+          getCardSubtitle={(product) => product.description || 'No description'}
+          fields={cardFields}
+          actions={cardActions}
+          getRowKey={(product) => product.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+          columns={3}
+        />
       )}
 
       {/* Create/Edit Dialog */}

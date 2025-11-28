@@ -20,10 +20,13 @@ import {
   DialogActions,
   MenuItem,
   InputAdornment,
+  Chip,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
+import DataTable, { type Column } from '../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 import {
   People as PeopleIcon,
   Person as PersonIcon,
@@ -36,6 +39,8 @@ import {
   VisibilityOff,
   AccountCircle as AccountCircleIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import {
   getUsersService,
@@ -62,6 +67,7 @@ const UsersPage = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const { showSuccess, showError } = useToast();
 
   // Pagination state
@@ -267,6 +273,228 @@ const UsersPage = () => {
     });
   };
 
+  // Table columns configuration
+  const columns: Column<UserResponse>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (user) => user.fullName,
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      render: (user) => user.emailId,
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      render: (user) => (
+        <Chip
+          label={user.role}
+          size="small"
+          sx={{
+            bgcolor: user.role === 'superAdmin' ? '#e3f2fd' : user.role === 'admin' ? '#f3e5f5' : '#fff3e0',
+            color: user.role === 'superAdmin' ? '#1976d2' : user.role === 'admin' ? '#9c27b0' : '#f57c00',
+            fontWeight: 600,
+          }}
+        />
+      ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (user) => formatDate(user.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (user) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => handleViewProfile(user)}
+            tooltip="View Profile"
+            variant="contained"
+            sx={{
+              bgcolor: '#f3e5f5',
+              color: '#9c27b0',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#e1bee7',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(156, 39, 176, 0.2)',
+              },
+            }}
+          >
+            <AccountCircleIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenEditModal(user)}
+            disabled={user.userId === currentUser?.userId}
+            tooltip="Edit User"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(user)}
+            disabled={user.userId === currentUser?.userId}
+            tooltip="Delete User"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<UserResponse>[] = [
+    {
+      id: 'email',
+      label: 'Email',
+      render: (user) => (
+        <Typography variant="body2" color="text.secondary">
+          {user.emailId}
+        </Typography>
+      ),
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      render: (user) => (
+        <Chip
+          label={user.role}
+          size="small"
+          sx={{
+            bgcolor: user.role === 'superAdmin' ? '#e3f2fd' : user.role === 'admin' ? '#f3e5f5' : '#fff3e0',
+            color: user.role === 'superAdmin' ? '#1976d2' : user.role === 'admin' ? '#9c27b0' : '#f57c00',
+            fontWeight: 600,
+          }}
+        />
+      ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (user) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(user.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<UserResponse>[] = [
+    {
+      id: 'view',
+      render: (user) => (
+        <MUICustomBtn
+          onClick={() => handleViewProfile(user)}
+          tooltip="View Profile"
+          variant="contained"
+          sx={{
+            bgcolor: '#f3e5f5',
+            color: '#9c27b0',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#e1bee7',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(156, 39, 176, 0.2)',
+            },
+          }}
+        >
+          <AccountCircleIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'edit',
+      render: (user) => (
+        <MUICustomBtn
+          onClick={() => handleOpenEditModal(user)}
+          disabled={user.userId === currentUser?.userId}
+          tooltip="Edit User"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (user) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(user)}
+          disabled={user.userId === currentUser?.userId}
+          tooltip="Delete User"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -291,6 +519,24 @@ const UsersPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </Button>
           <Button
             variant="contained"
@@ -336,114 +582,44 @@ const UsersPage = () => {
             {searchTerm ? 'No users found matching your search' : 'No users found'}
           </Typography>
         </Box>
+      ) : viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={filteredUsers}
+          getRowKey={(user) => user.userId}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+        />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.userId} hover>
-                  <TableCell>{user.fullName}</TableCell>
-                  <TableCell>{user.emailId}</TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell>{formatDate(user.createdAt)}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <MUICustomBtn
-                        onClick={() => handleViewProfile(user)}
-                        tooltip="View Profile"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#f3e5f5',
-                          color: '#9c27b0',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#e1bee7',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(156, 39, 176, 0.2)',
-                          },
-                        }}
-                      >
-                        <AccountCircleIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleOpenEditModal(user)}
-                        disabled={user.userId === currentUser?.userId}
-                        tooltip="Edit User"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#e3f2fd',
-                          color: '#1976d2',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#bbdefb',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                          },
-                        }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </MUICustomBtn>
-                      <MUICustomBtn
-                        onClick={() => handleOpenDeleteModal(user)}
-                        disabled={user.userId === currentUser?.userId}
-                        tooltip="Delete User"
-                        variant="contained"
-                        sx={{
-                          bgcolor: '#ffebee',
-                          color: '#d32f2f',
-                          minWidth: 32,
-                          width: 32,
-                          height: 32,
-                          padding: 0,
-                          '&:hover': {
-                            bgcolor: '#ffcdd2',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                          },
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </MUICustomBtn>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <tfoot>
-              <tr>
-                {!searchTerm && paginationMeta && (
-                  <CustomTablePaginationComponent
-                    count={paginationMeta.totalCount}
-                    page={currentPage}
-                    rowsPerPage={pageSize}
-                    onPageChange={(_event, page) => setCurrentPage(page)}
-                    onRowsPerPageChange={(event) => {
-                      const newRowsPerPage = parseInt(event.target.value, 10);
-                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-                      setPageSize(actualRowsPerPage);
-                      setCurrentPage(0);
-                    }}
-                  />
-                )}
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+        <DataCardGrid
+          data={filteredUsers}
+          getCardTitle={(user) => user.fullName}
+          getCardSubtitle={(user) => user.emailId}
+          fields={cardFields}
+          actions={cardActions}
+          getRowKey={(user) => user.userId}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+          columns={3}
+        />
       )}
 
       {/* Create/Edit Dialog */}

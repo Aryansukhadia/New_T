@@ -39,12 +39,7 @@ export const sidebarItems: SidebarItems = {
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     {
-      label: "Users",
-      icon: FaUsers,
-      children: [
-        { label: "All Users", path: "/dashboard/users" },
-        { label: "Add User", path: "/dashboard/users/add" },
-      ],
+      label: "Users", icon: FaUsers, path: "/dashboard/users"
     },
     { label: "Customers", icon: FaUser, path: "/dashboard/customers" },
     {
@@ -65,14 +60,7 @@ export const sidebarItems: SidebarItems = {
         { label: "Accessory Inventory", path: "/dashboard/inventory/accessory-inventory" },
       ],
     },
-    {
-      label: "Orders",
-      icon: FaShoppingCart,
-      children: [
-        { label: "All Orders", path: "/dashboard/orders" },
-        { label: "Book Order", path: "/dashboard/orders/book" },
-      ],
-    },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
     { label: "Reports", icon: FaChartLine, path: "/dashboard/reports" },
     { label: "Financials", icon: FaDollarSign, path: "/dashboard/financials" },
   ],
@@ -80,14 +68,7 @@ export const sidebarItems: SidebarItems = {
   subAdmin: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    {
-      label: "Users",
-      icon: FaUsers,
-      children: [
-        { label: "All Users", path: "/dashboard/users" },
-        { label: "Add User", path: "/dashboard/users/add" },
-      ],
-    },
+    { label: "Users", icon: FaUsers, path: "/dashboard/users" },
     { label: "Customers", icon: FaUser, path: "/dashboard/customers" },
     {
       label: "Products",
@@ -107,14 +88,7 @@ export const sidebarItems: SidebarItems = {
         { label: "Accessory Inventory", path: "/dashboard/inventory/accessory-inventory" },
       ],
     },
-    {
-      label: "Orders",
-      icon: FaShoppingCart,
-      children: [
-        { label: "All Orders", path: "/dashboard/orders" },
-        { label: "Book Order", path: "/dashboard/orders/book" },
-      ],
-    },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
   ],
 };
 
