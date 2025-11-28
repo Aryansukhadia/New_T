@@ -25,6 +25,7 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import {
   getFabricInventoriesService,
@@ -44,6 +45,7 @@ const FabricInventoriesPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [inventoryToDelete, setInventoryToDelete] = useState<FabricInventoryItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
@@ -164,36 +166,59 @@ const FabricInventoriesPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Fabric Inventory
         </Typography>
-        <MUICustomBtn
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateFabric}
-          tooltip="Add new fabric inventory"
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            },
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          Add New Fabric
-        </MUICustomBtn>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            tooltip="Toggle filter visibility"
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateFabric}
+            tooltip="Add new fabric inventory"
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Add New Fabric
+          </MUICustomBtn>
+        </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <TextField
-          fullWidth
-          placeholder="Search fabrics by name or color..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          variant="outlined"
-          sx={{ maxWidth: 500 }}
-        />
-      </Box>
+      {showFilter && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            fullWidth
+            placeholder="Search fabrics by name or color..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            sx={{ maxWidth: 500 }}
+          />
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 5 }}>

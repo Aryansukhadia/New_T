@@ -28,6 +28,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Link as LinkIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import {
   getProductVariantsService,
@@ -59,6 +60,7 @@ const ProductVariantsPage = () => {
   const [isManageItemsModalOpen, setIsManageItemsModalOpen] = useState(false);
   const [variantToManageItems, setVariantToManageItems] = useState<ProductVariant | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   const { showSuccess, showError } = useToast();
 
@@ -250,54 +252,77 @@ const ProductVariantsPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {t('productVariants.title')}
         </Typography>
-        <MUICustomBtn
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateVariant}
-          tooltip="Create a new product variant"
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            },
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          {t('productVariants.addNewVariant')}
-        </MUICustomBtn>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            tooltip="Toggle filter visibility"
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateVariant}
+            tooltip="Create a new product variant"
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {t('productVariants.addNewVariant')}
+          </MUICustomBtn>
+        </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-        <TextField
-          select
-          label="Filter by Product"
-          value={selectedProductFilter}
-          onChange={(e) => {
-            setSelectedProductFilter(e.target.value);
-            setCurrentPage(0);
-          }}
-          sx={{ minWidth: 250 }}
-        >
-          <MenuItem value="">All Products</MenuItem>
-          {allProducts.map((product) => (
-            <MenuItem key={product.id} value={product.id}>
-              {product.name}
-            </MenuItem>
-          ))}
-        </TextField>
+      {showFilter && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <TextField
+            select
+            label="Filter by Product"
+            value={selectedProductFilter}
+            onChange={(e) => {
+              setSelectedProductFilter(e.target.value);
+              setCurrentPage(0);
+            }}
+            sx={{ minWidth: 250 }}
+          >
+            <MenuItem value="">All Products</MenuItem>
+            {allProducts.map((product) => (
+              <MenuItem key={product.id} value={product.id}>
+                {product.name}
+              </MenuItem>
+            ))}
+          </TextField>
 
-        <TextField
-          fullWidth
-          placeholder="Search variants by name, description, or product..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          variant="outlined"
-          sx={{ maxWidth: 500 }}
-        />
-      </Box>
+          <TextField
+            fullWidth
+            placeholder="Search variants by name, description, or product..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            sx={{ maxWidth: 500 }}
+          />
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 5 }}>

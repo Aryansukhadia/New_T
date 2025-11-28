@@ -24,6 +24,7 @@ import {
   Delete as DeleteIcon,
   PersonAdd as PersonAddIcon,
   Straighten as StraightenIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
@@ -44,6 +45,7 @@ const CustomersPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0); // MUI TablePagination uses 0-based indexing
@@ -188,36 +190,59 @@ const CustomersPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Customer Management
         </Typography>
-        <MUICustomBtn
-          variant="contained"
-          startIcon={<PersonAddIcon />}
-          onClick={handleAddCustomer}
-          tooltip="Add a new customer to the system"
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            },
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          Add New Customer
-        </MUICustomBtn>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            tooltip="Toggle filter visibility"
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="contained"
+            startIcon={<PersonAddIcon />}
+            onClick={handleAddCustomer}
+            tooltip="Add a new customer to the system"
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Add New Customer
+          </MUICustomBtn>
+        </Box>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="Search customers by name, email, mobile, address, or reference..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          variant="outlined"
-          sx={{ maxWidth: 500 }}
-        />
-      </Box>
+      {showFilter && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search customers by name, email, mobile, address, or reference..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            sx={{ maxWidth: 500 }}
+          />
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 5 }}>

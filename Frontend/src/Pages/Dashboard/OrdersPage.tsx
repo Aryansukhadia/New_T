@@ -5,6 +5,7 @@ import {
   Card,
   Typography,
   Button,
+  TextField,
   Table,
   TableBody,
   TableCell,
@@ -21,6 +22,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Add as AddIcon,
   Visibility as VisibilityIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import {
   getBookedOrdersService,
@@ -50,7 +52,10 @@ const OrdersPage = () => {
   const { t } = useTranslation();
 
   const [orders, setOrders] = useState<ProductOrder[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<ProductOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(0); // 0-based for MUI TablePagination
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -85,6 +90,22 @@ const OrdersPage = () => {
     fetchOrders();
   }, [fetchOrders]);
 
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredOrders(orders);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    const filtered = orders.filter(
+      (order) =>
+        order.id.toLowerCase().includes(term) ||
+        (order.customerName && order.customerName.toLowerCase().includes(term)) ||
+        order.status.toLowerCase().includes(term)
+    );
+    setFilteredOrders(filtered);
+  }, [searchTerm, orders]);
+
   const handleBookOrder = () => {
     navigate('/dashboard/orders/book');
   };
@@ -108,33 +129,68 @@ const OrdersPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {t('orders.title')}
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleBookOrder}
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            },
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          {t('orders.bookNewOrder')}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleBookOrder}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {t('orders.bookNewOrder')}
+          </Button>
+        </Box>
       </Box>
+
+      {showFilter && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search orders by order ID, customer name, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            variant="outlined"
+            sx={{ maxWidth: 500 }}
+          />
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 5 }}>
           <CircularProgress />
         </Box>
-      ) : orders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
           <ShoppingCartIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
-          <Typography variant="body1">{t('orders.noOrders')}</Typography>
+          <Typography variant="body1">
+            {searchTerm ? 'No orders found matching your search' : t('orders.noOrders')}
+          </Typography>
         </Box>
       ) : (
         <>
@@ -152,7 +208,7 @@ const OrdersPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <TableRow key={order.id} hover>
                     <TableCell>{order.id.substring(0, 8)}...</TableCell>
                     <TableCell>{order.customerName || '—'}</TableCell>

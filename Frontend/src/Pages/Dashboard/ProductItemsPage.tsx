@@ -41,6 +41,7 @@ import {
   Close as CloseIcon,
   Upload as UploadIcon,
   Visibility as VisibilityIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 
 const ProductItemsPage = () => {
@@ -55,6 +56,7 @@ const ProductItemsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productItemToDelete, setProductItemToDelete] = useState<ProductItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
 
   const { showSuccess, showError } = useToast();
 
@@ -291,34 +293,56 @@ const ProductItemsPage = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Product Items Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateModal}
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-            },
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          Add New Product Item
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenCreateModal}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Add New Product Item
+          </Button>
+        </Box>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="Search product items by name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ maxWidth: 400 }}
-        />
-      </Box>
+      {showFilter && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search product items by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ maxWidth: 400 }}
+          />
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 5 }}>
