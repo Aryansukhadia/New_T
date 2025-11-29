@@ -199,31 +199,37 @@ const ProfilePage = () => {
 
     return (
         <Box>
-            <Card sx={{ borderRadius: 1.5, p: 4 }}>
+            <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3, md: 4 } }}>
                 <Box sx={{
                     display: 'flex',
                     flexDirection: { xs: 'column', md: 'row' },
-                    gap: 4
+                    gap: { xs: 3, md: 4 }
                 }}>
                     {/* Left Side - Avatar */}
                     <Box sx={{
-                        flex: '0 0 280px',
+                        flex: { xs: '1', md: '0 0 280px' },
                         textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
                     }}>
                         <Avatar
                             sx={{
-                                width: 150,
-                                height: 150,
-                                mx: 'auto',
+                                width: { xs: 120, sm: 150 },
+                                height: { xs: 120, sm: 150 },
                                 mb: 2,
-                                fontSize: 56,
+                                fontSize: { xs: 48, sm: 56 },
                                 fontWeight: 600,
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             }}
                         >
                             {getInitials(user.fullName)}
                         </Avatar>
-                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                        <Typography variant="h5" sx={{ 
+                            fontWeight: 700, 
+                            mb: 1,
+                            fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                        }}>
                             {user.fullName}
                         </Typography>
                         <Box
@@ -235,13 +241,13 @@ const ProfilePage = () => {
                                 bgcolor: getRoleBadgeColor(user.role),
                                 color: 'white',
                                 fontWeight: 600,
-                                fontSize: 14,
+                                fontSize: { xs: 13, sm: 14 },
                                 mb: 3,
                             }}
                         >
                             {user.role}
                         </Box>
-                        <Divider sx={{ my: 3 }} />
+                        <Divider sx={{ my: 3, width: '100%', display: { xs: 'none', md: 'block' } }} />
                         <Button
                             variant="contained"
                             startIcon={<LockIcon />}
@@ -257,6 +263,7 @@ const ProfilePage = () => {
                                 textTransform: 'none',
                                 fontWeight: 600,
                                 py: 1.5,
+                                maxWidth: { xs: '100%', md: '280px' },
                             }}
                         >
                             {isViewingOwnProfile ? 'Change Password' : 'Reset Password'}
@@ -265,105 +272,152 @@ const ProfilePage = () => {
 
                     {/* Right Side - Profile Information */}
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 3 }}>
+                        <Typography variant="h6" sx={{ 
+                            fontWeight: 700, 
+                            mb: 3,
+                            fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                        }}>
                             Profile Information
                         </Typography>
 
                         {/* User ID */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            mb: 3, 
+                            gap: { xs: 1.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                        }}>
                             <Box
                                 sx={{
-                                    width: 50,
-                                    height: 50,
+                                    width: { xs: 45, sm: 50 },
+                                    height: { xs: 45, sm: 50 },
                                     borderRadius: 1.5,
                                     bgcolor: '#e3f2fd',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    flexShrink: 0,
                                 }}
                             >
-                                <PersonIcon sx={{ color: '#1976d2', fontSize: 28 }} />
+                                <PersonIcon sx={{ color: '#1976d2', fontSize: { xs: 24, sm: 28 } }} />
                             </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     User ID
                                 </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 16 }}>
+                                <Typography variant="body1" sx={{ 
+                                    fontWeight: 600, 
+                                    fontFamily: 'monospace', 
+                                    fontSize: { xs: 14, sm: 16 },
+                                    wordBreak: 'break-all'
+                                }}>
                                     {user.userId}
                                 </Typography>
                             </Box>
                         </Box>
 
                         {/* Email */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            mb: 3, 
+                            gap: { xs: 1.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                        }}>
                             <Box
                                 sx={{
-                                    width: 50,
-                                    height: 50,
+                                    width: { xs: 45, sm: 50 },
+                                    height: { xs: 45, sm: 50 },
                                     borderRadius: 1.5,
                                     bgcolor: '#f3e5f5',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    flexShrink: 0,
                                 }}
                             >
-                                <EmailIcon sx={{ color: '#9c27b0', fontSize: 28 }} />
+                                <EmailIcon sx={{ color: '#9c27b0', fontSize: { xs: 24, sm: 28 } }} />
                             </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Email Address
                                 </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: 16 }}>
+                                <Typography variant="body1" sx={{ 
+                                    fontWeight: 600, 
+                                    fontSize: { xs: 14, sm: 16 },
+                                    wordBreak: 'break-word'
+                                }}>
                                     {user.emailId}
                                 </Typography>
                             </Box>
                         </Box>
 
                         {/* Role */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            mb: 3, 
+                            gap: { xs: 1.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                        }}>
                             <Box
                                 sx={{
-                                    width: 50,
-                                    height: 50,
+                                    width: { xs: 45, sm: 50 },
+                                    height: { xs: 45, sm: 50 },
                                     borderRadius: 1.5,
                                     bgcolor: '#e8f5e9',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    flexShrink: 0,
                                 }}
                             >
-                                <ShieldIcon sx={{ color: '#4caf50', fontSize: 28 }} />
+                                <ShieldIcon sx={{ color: '#4caf50', fontSize: { xs: 24, sm: 28 } }} />
                             </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Role
                                 </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 600, textTransform: 'capitalize', fontSize: 16 }}>
+                                <Typography variant="body1" sx={{ 
+                                    fontWeight: 600, 
+                                    textTransform: 'capitalize', 
+                                    fontSize: { xs: 14, sm: 16 }
+                                }}>
                                     {user.role}
                                 </Typography>
                             </Box>
                         </Box>
 
                         {/* Created At */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: { xs: 1.5, sm: 2 },
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' }
+                        }}>
                             <Box
                                 sx={{
-                                    width: 50,
-                                    height: 50,
+                                    width: { xs: 45, sm: 50 },
+                                    height: { xs: 45, sm: 50 },
                                     borderRadius: 1.5,
                                     bgcolor: '#fff3e0',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    flexShrink: 0,
                                 }}
                             >
-                                <CalendarIcon sx={{ color: '#ff9800', fontSize: 28 }} />
+                                <CalendarIcon sx={{ color: '#ff9800', fontSize: { xs: 24, sm: 28 } }} />
                             </Box>
-                            <Box sx={{ flex: 1 }}>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Member Since
                                 </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 600, fontSize: 16 }}>
+                                <Typography variant="body1" sx={{ 
+                                    fontWeight: 600, 
+                                    fontSize: { xs: 14, sm: 16 }
+                                }}>
                                     {formatDate(user.createdAt)}
                                 </Typography>
                             </Box>
@@ -373,8 +427,25 @@ const ProfilePage = () => {
             </Card>
 
             {/* Change Password Dialog */}
-            <Dialog open={isChangePasswordModalOpen} onClose={handleCloseChangePasswordModal} maxWidth="sm" fullWidth>
-                <DialogTitle>{isViewingOwnProfile ? 'Change Password' : 'Reset Password'}</DialogTitle>
+            <Dialog 
+                open={isChangePasswordModalOpen} 
+                onClose={handleCloseChangePasswordModal} 
+                maxWidth="sm" 
+                fullWidth
+                fullScreen={false}
+                sx={{
+                    '& .MuiDialog-paper': {
+                        m: { xs: 2, sm: 3 },
+                        width: { xs: 'calc(100% - 32px)', sm: '100%' }
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                    pb: 1
+                }}>
+                    {isViewingOwnProfile ? 'Change Password' : 'Reset Password'}
+                </DialogTitle>
                 <DialogContent>
                     <Box component="form" onSubmit={handleChangePassword} sx={{ pt: 2 }}>
                         <TextField
@@ -399,15 +470,32 @@ const ProfilePage = () => {
                                     </InputAdornment>
                                 ),
                             }}
+                            sx={{
+                                '& .MuiInputBase-input': {
+                                    fontSize: { xs: '0.9rem', sm: '1rem' }
+                                },
+                                '& .MuiFormHelperText-root': {
+                                    fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                                }
+                            }}
                         />
                     </Box>
                 </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
+                <DialogActions sx={{ 
+                    p: { xs: 2, sm: 2 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 0 }
+                }}>
                     <Button
                         onClick={handleCloseChangePasswordModal}
                         variant="outlined"
                         disabled={passwordFormLoading}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                        fullWidth={window.innerWidth < 600}
+                        sx={{ 
+                            textTransform: 'none', 
+                            fontWeight: 600,
+                            order: { xs: 2, sm: 1 }
+                        }}
                     >
                         Cancel
                     </Button>
@@ -415,6 +503,7 @@ const ProfilePage = () => {
                         onClick={handleChangePassword}
                         disabled={passwordFormLoading}
                         variant="contained"
+                        fullWidth={window.innerWidth < 600}
                         sx={{
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             '&:hover': {
@@ -422,7 +511,8 @@ const ProfilePage = () => {
                             },
                             textTransform: 'none',
                             fontWeight: 600,
-                            minWidth: 140,
+                            minWidth: { sm: 140 },
+                            order: { xs: 1, sm: 2 }
                         }}
                     >
                         {passwordFormLoading ? <CircularProgress size={20} /> : (isViewingOwnProfile ? 'Change Password' : 'Reset Password')}
