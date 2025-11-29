@@ -488,12 +488,27 @@ const UsersPage = () => {
   ];
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        mb: 3, 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2 
+      }}>
+        <Typography variant="h5" sx={{ 
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           User Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 1, sm: 2 },
+          flexWrap: 'wrap',
+          width: { xs: '100%', sm: 'auto' }
+        }}>
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
@@ -508,10 +523,13 @@ const UsersPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              px: { xs: 1.5, sm: 2 },
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
           </Button>
+          {/* Hide view toggle button on screens < 1024px */}
           <Button
             variant="outlined"
             startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
@@ -526,6 +544,9 @@ const UsersPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              px: { xs: 1.5, sm: 2 },
+              display: { xs: 'none', lg: 'flex' }, // Hide on screens < 1024px
             }}
           >
             {viewMode === 'table' ? 'Card View' : 'Table View'}
@@ -543,6 +564,9 @@ const UsersPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              px: { xs: 1.5, sm: 2 },
+              flex: { xs: 1, sm: 0 },
             }}
           >
             Add New User
@@ -558,7 +582,12 @@ const UsersPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
-            sx={{ maxWidth: 500 }}
+            sx={{ 
+              maxWidth: { xs: '100%', sm: 500 },
+              '& .MuiInputBase-input': {
+                fontSize: { xs: '0.9rem', sm: '1rem' }
+              }
+            }}
           />
         </Box>
       )}
@@ -574,44 +603,75 @@ const UsersPage = () => {
             {searchTerm ? 'No users found matching your search' : 'No users found'}
           </Typography>
         </Box>
-      ) : viewMode === 'table' ? (
-        <DataTable
-          columns={columns}
-          data={filteredUsers}
-          getRowKey={(user) => user.userId}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-        />
       ) : (
-        <DataCardGrid
-          data={filteredUsers}
-          getCardTitle={(user) => user.fullName}
-          getCardSubtitle={(user) => user.emailId}
-          fields={cardFields}
-          actions={cardActions}
-          getRowKey={(user) => user.userId}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-          columns={3}
-        />
+        <>
+          {/* Desktop view - show table or card based on viewMode */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {viewMode === 'table' ? (
+              <DataTable
+                columns={columns}
+                data={filteredUsers}
+                getRowKey={(user) => user.userId}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <DataCardGrid
+                data={filteredUsers}
+                getCardTitle={(user) => user.fullName}
+                getCardSubtitle={(user) => user.emailId}
+                fields={cardFields}
+                actions={cardActions}
+                getRowKey={(user) => user.userId}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+                columns={3}
+              />
+            )}
+          </Box>
+
+          {/* Mobile/Tablet view - always show card view on screens < 1024px */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+            <DataCardGrid
+              data={filteredUsers}
+              getCardTitle={(user) => user.fullName}
+              getCardSubtitle={(user) => user.emailId}
+              fields={cardFields}
+              actions={cardActions}
+              getRowKey={(user) => user.userId}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={(_event, page) => setCurrentPage(page)}
+              onRowsPerPageChange={(event) => {
+                const newRowsPerPage = parseInt(event.target.value, 10);
+                const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                setPageSize(actualRowsPerPage);
+                setCurrentPage(0);
+              }}
+              searchTerm={searchTerm}
+              columns={1}
+            />
+          </Box>
+        </>
       )}
 
       {/* Create/Edit Dialog */}
