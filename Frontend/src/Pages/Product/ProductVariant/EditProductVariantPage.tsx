@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../../hooks/useTranslation';
 import {
   getProductVariantByIdService,
   getProductItemsService,
@@ -8,8 +8,8 @@ import {
   type ProductVariant,
   type ProductItem,
   type UpdateProductVariantRequest,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
 import {
   Box,
   Card,

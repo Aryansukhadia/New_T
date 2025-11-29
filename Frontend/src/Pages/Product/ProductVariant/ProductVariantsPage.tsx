@@ -13,7 +13,7 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import {
   Category as CategoryIcon,
   Add as AddIcon,
@@ -35,11 +35,11 @@ import {
   type Product,
   type ProductItem,
   type PaginationMeta,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
-import { useTranslation } from '../../hooks/useTranslation';
-import DataTable, { type Column } from '../../Components/Common/DataTable';
-import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
+import { useTranslation } from '../../../hooks/useTranslation';
+import DataTable, { type Column } from '../../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../../Components/Common/DataCardGrid';
 
 const ProductVariantsPage = () => {
   const navigate = useNavigate();

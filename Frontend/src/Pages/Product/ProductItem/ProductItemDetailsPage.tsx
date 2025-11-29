@@ -37,8 +37,8 @@ import {
   updateProductItemService,
   type ProductItem,
   type UpdateProductItemRequest,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
 
 interface ProductItemDetails extends ProductItem {
   variants?: Array<{

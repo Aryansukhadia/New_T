@@ -12,7 +12,7 @@ import {
     MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import {
     Add as AddIcon,
     ArrowBack as ArrowBackIcon,
@@ -23,7 +23,7 @@ import {
     Upload as UploadIcon,
     Close as CloseIcon,
 } from '@mui/icons-material';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '../../../hooks/useTranslation';
 import {
     getProductsService,
     getProductItemsService,
@@ -31,8 +31,8 @@ import {
     type Product,
     type ProductItem,
     type CreateProductVariantRequest,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
 
 const CreateProductVariantPage = () => {
     const navigate = useNavigate();

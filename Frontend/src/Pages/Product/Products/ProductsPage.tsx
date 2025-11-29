@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import {
   ShoppingBag as ShoppingBagIcon,
   Add as AddIcon,
@@ -31,10 +31,10 @@ import {
   type CreateProductRequest,
   type UpdateProductRequest,
   type PaginationMeta,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
-import DataTable, { type Column } from '../../Components/Common/DataTable';
-import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
+import DataTable, { type Column } from '../../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../../Components/Common/DataCardGrid';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);

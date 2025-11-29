@@ -9,8 +9,8 @@ import {
   type CreateProductItemRequest,
   type UpdateProductItemRequest,
   type PaginationMeta,
-} from '../../Services/ApiServices';
-import { useToast } from '../../Utils/ToastContext';
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
 import {
   Box,
   Card,
@@ -23,7 +23,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import MUICustomBtn from '../../Components/Common/MUICustomBtn';
+import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import {
   Inventory as BoxIcon,
   Add as AddIcon,
@@ -37,8 +37,8 @@ import {
   ViewModule as ViewModuleIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
-import DataTable, { type Column } from '../../Components/Common/DataTable';
-import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
+import DataTable, { type Column } from '../../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../../Components/Common/DataCardGrid';
 
 const ProductItemsPage = () => {
   const navigate = useNavigate();
