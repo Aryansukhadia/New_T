@@ -22,7 +22,7 @@ const AdminCreateUser = () => {
     fullName: '',
     emailId: '',
     password: '',
-    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | '',
+    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | 'cutter' | 'stitcher' | 'finisher' | 'deliveryBoy' | 'accountant' | '',
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +44,7 @@ const AdminCreateUser = () => {
         fullName: formData.fullName,
         emailId: formData.emailId,
         password: formData.password,
-        role: formData.role as 'superAdmin' | 'admin' | 'subAdmin',
+        role: formData.role as 'superAdmin' | 'admin' | 'subAdmin' | 'cutter' | 'stitcher' | 'finisher' | 'deliveryBoy' | 'accountant',
       });
 
       if (response.success === 201 && response.data) {
@@ -241,6 +241,11 @@ const AdminCreateUser = () => {
             <MenuItem value="superAdmin">SuperAdmin</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
             <MenuItem value="subAdmin">SubAdmin</MenuItem>
+            <MenuItem value="cutter">Cutter</MenuItem>
+            <MenuItem value="stitcher">Stitcher</MenuItem>
+            <MenuItem value="finisher">Finisher</MenuItem>
+            <MenuItem value="deliveryBoy">Delivery Boy</MenuItem>
+            <MenuItem value="accountant">Accountant</MenuItem>
           </TextField>
 
           <MUICustomBtn

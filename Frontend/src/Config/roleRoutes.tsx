@@ -5,6 +5,8 @@ import DashboardHome from '../Pages/Dashboard/DashboardHome';
 import CreateAdminPage from '../Pages/Dashboard/CreateAdminPage';
 import AddUserPage from '../Pages/Dashboard/AddUserPage';
 import UsersPage from '../Pages/Dashboard/UsersPage';
+import CreateUserPage from '../Pages/Dashboard/CreateUserPage';
+import UpdateUserPage from '../Pages/Dashboard/UpdateUserPage';
 import RolesPage from '../Pages/Dashboard/RolesPage';
 import CustomersPage from '../Pages/Dashboard/CustomersPage';
 import CreateCustomerPage from '../Pages/Dashboard/CreateCustomerPage';
@@ -84,6 +86,18 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'users',
             component: () => <UsersPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'users/create',
+            component: () => <CreateUserPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
+            path: 'users/edit/:userId',
+            component: () => <UpdateUserPage />,
             requireAuth: true,
             allowedRoles: ['admin'],
         },
@@ -273,6 +287,18 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'users',
             component: () => <UsersPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'users/create',
+            component: () => <CreateUserPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'users/edit/:userId',
+            component: () => <UpdateUserPage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

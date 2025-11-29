@@ -36,7 +36,6 @@ export const FormCard: React.FC<{ children: React.ReactNode }> = ({ children }) 
       padding: 5,
       boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
       width: '100%',
-      maxWidth: 450,
     }}
   >
     {children}

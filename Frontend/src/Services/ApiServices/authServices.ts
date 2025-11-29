@@ -75,7 +75,7 @@ export const registerService = async (
  * @returns Promise with created user data
  */
 export const createUserByAdminService = async (
-  userData: { fullName: string; emailId: string; password: string; role: 'superAdmin' | 'admin' | 'subAdmin' }
+  userData: { fullName: string; emailId: string; password: string; role: 'superAdmin' | 'admin' | 'subAdmin' | 'cutter' | 'stitcher' | 'finisher' | 'deliveryBoy' | 'accountant' }
 ): Promise<ApiResponse<UserResponse>> => {
   const response = await apiInstance.post<ApiResponse<UserResponse>>(
     getApiUrl('register'),

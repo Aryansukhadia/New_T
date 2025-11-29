@@ -11,24 +11,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  MenuItem,
-  InputAdornment,
   Chip,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import DataTable, { type Column } from '../../Components/Common/DataTable';
 import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 import {
   People as PeopleIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Lock as LockIcon,
   PersonAdd as PersonAddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility,
-  VisibilityOff,
   AccountCircle as AccountCircleIcon,
   FilterList as FilterListIcon,
   ViewModule as ViewModuleIcon,
@@ -36,14 +28,13 @@ import {
 } from '@mui/icons-material';
 import {
   getUsersService,
-  updateUserService,
   deleteUserService,
-  createUserByAdminService,
   getUserInfo,
   type UserResponse,
   type PaginationMeta,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
+import { getRoleColor } from '../../Utils/roles';
 
 const UsersPage = () => {
   const navigate = useNavigate();
@@ -51,13 +42,9 @@ const UsersPage = () => {
   const [filteredUsers, setFilteredUsers] = useState<UserResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserResponse | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const { showSuccess, showError } = useToast();
@@ -66,13 +53,6 @@ const UsersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
-
-  const [formData, setFormData] = useState({
-    fullName: '',
-    emailId: '',
-    password: '',
-    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | '',
-  });
 
   const currentUser = getUserInfo();
 
@@ -97,6 +77,7 @@ const UsersPage = () => {
 
   useEffect(() => {
     fetchUsers(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, pageSize]);
 
   useEffect(() => {
@@ -115,44 +96,16 @@ const UsersPage = () => {
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
-
-
-  const handleOpenCreateModal = () => {
-    setIsEditMode(false);
-    setSelectedUser(null);
-    setFormData({
-      fullName: '',
-      emailId: '',
-      password: '',
-      role: '',
-    });
-    setIsModalOpen(true);
+  const handleAddUser = () => {
+    navigate('/dashboard/users/create');
   };
 
-  const handleOpenEditModal = (user: UserResponse) => {
-    setIsEditMode(true);
-    setSelectedUser(user);
-    setFormData({
-      fullName: user.fullName,
-      emailId: user.emailId,
-      password: '', // Don't populate password for edit
-      role: user.role as 'superAdmin' | 'admin' | 'subAdmin',
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenDeleteModal = (user: UserResponse) => {
-    setUserToDelete(user);
-    setIsDeleteModalOpen(true);
+  const handleEditUser = (user: UserResponse) => {
+    navigate(`/dashboard/users/edit/${user.userId}`);
   };
 
   const handleViewProfile = (user: UserResponse) => {
     navigate(`/dashboard/users/${user.userId}`);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
   };
 
   const handleCloseDeleteModal = () => {
@@ -160,72 +113,9 @@ const UsersPage = () => {
     setUserToDelete(null);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSelectChange = (event: SelectChangeEvent<string>) => {
-    const { name, value } = event.target;
-    if (!name) return;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormLoading(true);
-
-    try {
-      if (isEditMode && selectedUser) {
-        // Update user (only fullName can be updated currently based on backend)
-        const response = await updateUserService(selectedUser.userId, {
-          fullName: formData.fullName,
-        });
-
-        if (response.success === 200) {
-          showSuccess('User updated successfully!', 'Success');
-          await fetchUsers();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1500);
-        } else {
-          showError(response.message || 'Failed to update user', 'Update Failed');
-        }
-      } else {
-        // Create new user
-        const response = await createUserByAdminService({
-          fullName: formData.fullName,
-          emailId: formData.emailId,
-          password: formData.password,
-          role: formData.role as 'superAdmin' | 'admin' | 'subAdmin',
-        });
-
-        if (response.success === 201) {
-          showSuccess('User created successfully!', 'Success');
-          await fetchUsers();
-          setTimeout(() => {
-            handleCloseModal();
-          }, 1500);
-        } else {
-          showError(response.message || 'Failed to create user', 'Create Failed');
-        }
-      }
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { message?: string } } };
-        showError(axiosError.response?.data?.message || 'An error occurred', 'Error');
-      } else {
-        showError('An unexpected error occurred', 'Error');
-      }
-    } finally {
-      setFormLoading(false);
-    }
+  const handleOpenDeleteModal = (user: UserResponse) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
   };
 
   const handleDelete = async () => {
@@ -280,17 +170,20 @@ const UsersPage = () => {
     {
       id: 'role',
       label: 'Role',
-      render: (user) => (
-        <Chip
-          label={user.role}
-          size="small"
-          sx={{
-            bgcolor: user.role === 'superAdmin' ? '#e3f2fd' : user.role === 'admin' ? '#f3e5f5' : '#fff3e0',
-            color: user.role === 'superAdmin' ? '#1976d2' : user.role === 'admin' ? '#9c27b0' : '#f57c00',
-            fontWeight: 600,
-          }}
-        />
-      ),
+      render: (user) => {
+        const { bgcolor, color } = getRoleColor(user.role);
+        return (
+          <Chip
+            label={user.role}
+            size="small"
+            sx={{
+              bgcolor,
+              color,
+              fontWeight: 600,
+            }}
+          />
+        );
+      },
     },
     {
       id: 'createdAt',
@@ -323,7 +216,7 @@ const UsersPage = () => {
             <AccountCircleIcon fontSize="small" />
           </MUICustomBtn>
           <MUICustomBtn
-            onClick={() => handleOpenEditModal(user)}
+            onClick={() => handleEditUser(user)}
             disabled={user.userId === currentUser?.userId}
             tooltip="Edit User"
             variant="contained"
@@ -383,17 +276,20 @@ const UsersPage = () => {
     {
       id: 'role',
       label: 'Role',
-      render: (user) => (
-        <Chip
-          label={user.role}
-          size="small"
-          sx={{
-            bgcolor: user.role === 'superAdmin' ? '#e3f2fd' : user.role === 'admin' ? '#f3e5f5' : '#fff3e0',
-            color: user.role === 'superAdmin' ? '#1976d2' : user.role === 'admin' ? '#9c27b0' : '#f57c00',
-            fontWeight: 600,
-          }}
-        />
-      ),
+      render: (user) => {
+        const { bgcolor, color } = getRoleColor(user.role);
+        return (
+          <Chip
+            label={user.role}
+            size="small"
+            sx={{
+              bgcolor,
+              color,
+              fontWeight: 600,
+            }}
+          />
+        );
+      },
     },
     {
       id: 'createdAt',
@@ -437,7 +333,7 @@ const UsersPage = () => {
       id: 'edit',
       render: (user) => (
         <MUICustomBtn
-          onClick={() => handleOpenEditModal(user)}
+          onClick={() => handleEditUser(user)}
           disabled={user.userId === currentUser?.userId}
           tooltip="Edit User"
           variant="contained"
@@ -489,42 +385,49 @@ const UsersPage = () => {
 
   return (
     <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'flex-start', sm: 'center' }, 
-        mb: 3, 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
         flexDirection: { xs: 'column', sm: 'row' },
-        gap: 2 
+        gap: 2
       }}>
-        <Typography variant="h5" sx={{ 
+        <Typography variant="h5" sx={{
           fontWeight: 700,
           fontSize: { xs: '1.25rem', sm: '1.5rem' }
         }}>
           User Management
         </Typography>
-        <Box sx={{ 
-          display: 'flex', 
-          gap: { xs: 1, sm: 2 },
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
           flexWrap: 'wrap',
-          width: { xs: '100%', sm: 'auto' }
+          width: { xs: '100%', sm: 'auto' },
+          alignItems: 'center'
         }}>
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
             onClick={() => setShowFilter(!showFilter)}
             sx={{
-              borderColor: showFilter ? '#667eea' : '#ccc',
+              borderColor: showFilter ? '#667eea' : '#e0e0e0',
+              borderWidth: 1.5,
               color: showFilter ? '#667eea' : '#666',
+              bgcolor: showFilter ? 'rgba(102, 126, 234, 0.08)' : 'transparent',
               '&:hover': {
                 borderColor: '#667eea',
-                bgcolor: 'rgba(102, 126, 234, 0.04)',
-                transform: 'translateY(-2px)',
+                bgcolor: 'rgba(102, 126, 234, 0.12)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 4px rgba(102, 126, 234, 0.2)',
               },
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              px: { xs: 1.5, sm: 2 },
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
@@ -535,17 +438,23 @@ const UsersPage = () => {
             startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
             onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
             sx={{
-              borderColor: '#ccc',
+              borderColor: '#e0e0e0',
+              borderWidth: 1.5,
               color: '#666',
+              bgcolor: 'transparent',
               '&:hover': {
                 borderColor: '#667eea',
-                bgcolor: 'rgba(102, 126, 234, 0.04)',
-                transform: 'translateY(-2px)',
+                bgcolor: 'rgba(102, 126, 234, 0.12)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 4px rgba(102, 126, 234, 0.2)',
               },
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              px: { xs: 1.5, sm: 2 },
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
               display: { xs: 'none', lg: 'flex' }, // Hide on screens < 1024px
             }}
           >
@@ -554,19 +463,24 @@ const UsersPage = () => {
           <Button
             variant="contained"
             startIcon={<PersonAddIcon />}
-            onClick={handleOpenCreateModal}
+            onClick={handleAddUser}
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
               '&:hover': {
                 background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
               },
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-              px: { xs: 1.5, sm: 2 },
-              flex: { xs: 1, sm: 0 },
+              fontSize: '0.875rem',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              minWidth: { xs: 'auto', sm: 140 },
             }}
           >
             Add New User
@@ -582,7 +496,7 @@ const UsersPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
-            sx={{ 
+            sx={{
               maxWidth: { xs: '100%', sm: 500 },
               '& .MuiInputBase-input': {
                 fontSize: { xs: '0.9rem', sm: '1rem' }
@@ -673,113 +587,6 @@ const UsersPage = () => {
           </Box>
         </>
       )}
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditMode ? 'Edit User' : 'Create New User'}</DialogTitle>
-        <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Full Name"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleInputChange}
-              placeholder="Enter full name (e.g., John Doe)"
-              required
-              disabled={formLoading}
-              InputProps={{
-                startAdornment: <PersonIcon sx={{ mr: 1, color: 'action.active' }} />,
-              }}
-            />
-
-            <TextField
-              fullWidth
-              type="email"
-              label="Email Address"
-              name="emailId"
-              value={formData.emailId}
-              onChange={handleInputChange}
-              placeholder="Enter email address (e.g., john.doe@example.com)"
-              required
-              disabled={formLoading || isEditMode}
-              InputProps={{
-                startAdornment: <EmailIcon sx={{ mr: 1, color: 'action.active' }} />,
-              }}
-              helperText={isEditMode ? 'Email address cannot be modified after account creation' : ''}
-            />
-
-            {!isEditMode && (
-              <TextField
-                fullWidth
-                type={showPassword ? 'text' : 'password'}
-                label="Password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="Enter password (minimum 6 characters)"
-                required
-                disabled={formLoading}
-                inputProps={{ minLength: 6 }}
-                InputProps={{
-                  startAdornment: <LockIcon sx={{ mr: 1, color: 'action.active' }} />,
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <MUICustomBtn
-                        onClick={() => setShowPassword(!showPassword)}
-                        disabled={formLoading}
-                        tooltip="Toggle password visibility"
-                        variant="contained"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </MUICustomBtn>
-                    </InputAdornment>
-                  ),
-                }}
-                helperText="Password must be at least 6 characters long"
-              />
-            )}
-
-            <TextField
-              fullWidth
-              select
-              label="Role"
-              name="role"
-              value={formData.role}
-              onChange={(event) => handleSelectChange(event as SelectChangeEvent<string>)}
-              required
-              disabled={formLoading || isEditMode}
-              helperText={isEditMode ? 'Role cannot be modified after account creation' : ''}
-            >
-              <MenuItem value="">-- Select a role --</MenuItem>
-              <MenuItem value="superAdmin">SuperAdmin</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="subAdmin">SubAdmin</MenuItem>
-            </TextField>
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleCloseModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={formLoading}
-            variant="contained"
-            startIcon={isEditMode ? <EditIcon /> : <PersonAddIcon />}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-              },
-              textTransform: 'none',
-              fontWeight: 600,
-            }}
-          >
-            {formLoading ? <CircularProgress size={20} color="inherit" /> : isEditMode ? 'Update User' : 'Create User'}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
