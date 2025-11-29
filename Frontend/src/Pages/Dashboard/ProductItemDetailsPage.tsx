@@ -380,12 +380,24 @@ const ProductItemDetailsPage = () => {
   return (
     <Box>
       {/* Breadcrumb and Back Button */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{
+        mb: 2,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
         <Button
           variant="text"
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/dashboard/product-items')}
-          sx={{ textTransform: 'none', color: '#666' }}
+          sx={{
+            textTransform: 'none',
+            color: '#666',
+            fontSize: '0.875rem',
+            px: 1,
+          }}
         >
           Back to Product Items
         </Button>
@@ -401,6 +413,9 @@ const ProductItemDetailsPage = () => {
               '&:hover': {
                 background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
               },
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
             }}
           >
             Edit Product Item
@@ -408,7 +423,7 @@ const ProductItemDetailsPage = () => {
         )}
       </Box>
 
-      <Card sx={{ borderRadius: 2, p: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <Card sx={{ borderRadius: 2, p: { xs: 2, sm: 3 }, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
           {/* Left Side - Image Gallery */}
           <Box sx={{ width: { xs: '100%', md: '40%' } }}>
