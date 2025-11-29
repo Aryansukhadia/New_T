@@ -692,6 +692,7 @@ const ProductVariantsPage = () => {
           data={filteredVariants}
           getCardTitle={(variant) => variant.name}
           getCardSubtitle={(variant) => variant.product?.name || 'No product'}
+          getCardImages={(variant) => parseImages(variant.imageUrl)}
           fields={cardFields}
           actions={cardActions}
           getRowKey={(variant) => variant.id}

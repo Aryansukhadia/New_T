@@ -617,6 +617,7 @@ const ProductItemsPage = () => {
         <DataCardGrid
           data={filteredProductItems}
           getCardTitle={(item) => item.name}
+          getCardImages={(item) => parseImages(item.imageUrl)}
           fields={cardFields}
           actions={cardActions}
           getRowKey={(item) => item.id}

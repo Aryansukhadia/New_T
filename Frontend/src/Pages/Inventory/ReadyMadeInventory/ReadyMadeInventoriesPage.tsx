@@ -5,13 +5,6 @@ import {
   Card,
   Typography,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -19,14 +12,17 @@ import {
   DialogActions,
 } from '@mui/material';
 import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
-import CustomTablePaginationComponent from '../../../Components/Common/CustomTablePagination';
 import {
   Inventory as InventoryIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
+import DataTable, { type Column } from '../../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../../Components/Common/DataCardGrid';
 import {
   getReadyMadeInventoriesService,
   deleteReadyMadeInventoryService,
@@ -46,6 +42,7 @@ const ReadyMadeInventoriesPage = () => {
   const [inventoryToDelete, setInventoryToDelete] = useState<ReadyMadeInventoryItem | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
@@ -160,6 +157,229 @@ const ReadyMadeInventoriesPage = () => {
     }
   };
 
+  const getSizeDisplay = (item: ReadyMadeInventoryItem): string => {
+    if (!item.readyMade) return '—';
+    const { sizeLabel, sizeNumber } = item.readyMade;
+    return `${sizeLabel || ''}${sizeLabel && sizeNumber ? ' ' : ''}${sizeNumber || ''}`.trim() || '—';
+  };
+
+  // Table columns configuration
+  const columns: Column<ReadyMadeInventoryItem>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (item) => item.name,
+    },
+    {
+      id: 'color',
+      label: 'Color',
+      render: (item) => item.readyMade?.color || '—',
+    },
+    {
+      id: 'image',
+      label: 'Image',
+      render: (item) => {
+        const images = item.readyMade ? parseImages(item.readyMade.imageUrl) : [];
+        return images.length > 0 ? (
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+            {images.slice(0, 2).map((imgUrl: string, idx: number) => (
+              <Box
+                key={idx}
+                component="img"
+                src={imgUrl}
+                alt={`${item.name} ${idx + 1}`}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ))}
+            {images.length > 2 && (
+              <Box sx={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center', ml: 0.5 }}>
+                +{images.length - 2}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        );
+      },
+    },
+    {
+      id: 'price',
+      label: 'Price',
+      render: (item) => item.readyMade?.price ? `₹${Number(item.readyMade.price).toFixed(2)}` : '—',
+    },
+    {
+      id: 'quantity',
+      label: 'Quantity',
+      render: (item) => item.readyMade?.quantity || '—',
+    },
+    {
+      id: 'size',
+      label: 'Size',
+      render: (item) => getSizeDisplay(item),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (item) => formatDate(item.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (item) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => handleEditReadyMade(item)}
+            tooltip="Edit Ready-Made"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon fontSize="small" />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(item)}
+            tooltip="Delete Ready-Made"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon fontSize="small" />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<ReadyMadeInventoryItem>[] = [
+    {
+      id: 'color',
+      label: 'Color',
+      render: (item) => (
+        <Typography variant="body2">{item.readyMade?.color || '—'}</Typography>
+      ),
+    },
+    {
+      id: 'price',
+      label: 'Price',
+      render: (item) => (
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {item.readyMade?.price ? `₹${Number(item.readyMade.price).toFixed(2)}` : '—'}
+        </Typography>
+      ),
+    },
+    {
+      id: 'quantity',
+      label: 'Quantity',
+      render: (item) => (
+        <Typography variant="body2">{item.readyMade?.quantity || '—'}</Typography>
+      ),
+    },
+    {
+      id: 'size',
+      label: 'Size',
+      render: (item) => (
+        <Typography variant="body2">{getSizeDisplay(item)}</Typography>
+      ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Added On',
+      render: (item) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(item.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<ReadyMadeInventoryItem>[] = [
+    {
+      id: 'edit',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => handleEditReadyMade(item)}
+          tooltip="Edit"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(item)}
+          tooltip="Delete"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
   return (
     <Card sx={{ borderRadius: 1.5, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
@@ -185,6 +405,25 @@ const ReadyMadeInventoriesPage = () => {
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </MUICustomBtn>
+          <MUICustomBtn
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            tooltip="Toggle view mode"
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
           </MUICustomBtn>
           <MUICustomBtn
             variant="contained"
@@ -233,156 +472,48 @@ const ReadyMadeInventoriesPage = () => {
               : 'No ready-made items found'}
           </Typography>
         </Box>
+      ) : viewMode === 'table' ? (
+        <DataTable
+          columns={columns}
+          data={filteredInventories}
+          getRowKey={(item) => item.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+        />
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 600 }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Color</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Image</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Price</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Quantity</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Created At</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredInventories.map((inventory) => {
-                const images = inventory.readyMade ? parseImages(inventory.readyMade.imageUrl) : [];
-                const sizeDisplay = inventory.readyMade
-                  ? `${inventory.readyMade.sizeLabel || ''}${inventory.readyMade.sizeLabel && inventory.readyMade.sizeNumber ? ' ' : ''}${inventory.readyMade.sizeNumber || ''}`.trim() || '—'
-                  : '—';
-                return (
-                  <TableRow key={inventory.id} hover>
-                    <TableCell>{inventory.name}</TableCell>
-                    <TableCell>{inventory.readyMade?.color || '—'}</TableCell>
-                    <TableCell>
-                      {images.length > 0 ? (
-                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                          {images.slice(0, 2).map((imgUrl: string, idx: number) => (
-                            <Box
-                              key={idx}
-                              component="img"
-                              src={imgUrl}
-                              alt={`${inventory.name} ${idx + 1}`}
-                              sx={{
-                                width: 50,
-                                height: 50,
-                                objectFit: 'cover',
-                                borderRadius: 1,
-                                border: '2px solid #e0e0e0',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  transform: 'scale(1.1)',
-                                  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-                                },
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ))}
-                          {images.length > 2 && (
-                            <Box
-                              sx={{
-                                width: 50,
-                                height: 50,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: 1,
-                                border: '2px solid #e0e0e0',
-                                bgcolor: '#f5f5f5',
-                                color: '#666',
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                              }}
-                            >
-                              +{images.length - 2}
-                            </Box>
-                          )}
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          —
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>{inventory.readyMade?.price ? `${Number(inventory.readyMade.price).toFixed(2)}` : '—'}</TableCell>
-                    <TableCell>{inventory.readyMade?.quantity ?? '—'}</TableCell>
-                    <TableCell>{sizeDisplay}</TableCell>
-                    <TableCell>{formatDate(inventory.createdAt)}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <MUICustomBtn
-                          onClick={() => handleEditReadyMade(inventory)}
-                          tooltip="Edit Ready-Made Item"
-                          variant="contained"
-                          sx={{
-                            bgcolor: '#e3f2fd',
-                            color: '#1976d2',
-                            minWidth: 32,
-                            width: 32,
-                            height: 32,
-                            padding: 0,
-                            '&:hover': {
-                              bgcolor: '#bbdefb',
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
-                            },
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </MUICustomBtn>
-                        <MUICustomBtn
-                          onClick={() => handleOpenDeleteModal(inventory)}
-                          tooltip="Delete Ready-Made Item"
-                          variant="contained"
-                          sx={{
-                            bgcolor: '#ffebee',
-                            color: '#d32f2f',
-                            minWidth: 32,
-                            width: 32,
-                            height: 32,
-                            padding: 0,
-                            '&:hover': {
-                              bgcolor: '#ffcdd2',
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
-                            },
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </MUICustomBtn>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-            <tfoot>
-              <tr>
-                {!searchTerm && paginationMeta && (
-                  <CustomTablePaginationComponent
-                    count={paginationMeta.totalCount}
-                    page={currentPage}
-                    rowsPerPage={pageSize}
-                    onPageChange={(_event, page) => setCurrentPage(page)}
-                    onRowsPerPageChange={(event) => {
-                      const newRowsPerPage = parseInt(event.target.value, 10);
-                      const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-                      setPageSize(actualRowsPerPage);
-                      setCurrentPage(0);
-                    }}
-                  />
-                )}
-              </tr>
-            </tfoot>
-          </Table>
-        </TableContainer>
+        <DataCardGrid
+          data={filteredInventories}
+          getCardTitle={(item) => item.name}
+          getCardSubtitle={(item) => item.readyMade?.color || 'No color'}
+          getCardImages={(item) => {
+            const images = item.readyMade ? parseImages(item.readyMade.imageUrl) : [];
+            return images;
+          }}
+          fields={cardFields}
+          actions={cardActions}
+          getRowKey={(item) => item.id}
+          paginationMeta={paginationMeta}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(_event, page) => setCurrentPage(page)}
+          onRowsPerPageChange={(event) => {
+            const newRowsPerPage = parseInt(event.target.value, 10);
+            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+            setPageSize(actualRowsPerPage);
+            setCurrentPage(0);
+          }}
+          searchTerm={searchTerm}
+          columns={3}
+        />
       )}
 
       {/* Delete Confirmation Dialog */}

@@ -6,13 +6,6 @@ import {
   Typography,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -24,7 +17,6 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
-import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import DataTable, { type Column } from '../../Components/Common/DataTable';
 import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 import {

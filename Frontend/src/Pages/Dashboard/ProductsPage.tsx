@@ -5,13 +5,6 @@ import {
   Typography,
   Button,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -19,7 +12,6 @@ import {
   DialogActions,
 } from '@mui/material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
-import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import {
   ShoppingBag as ShoppingBagIcon,
   Add as AddIcon,

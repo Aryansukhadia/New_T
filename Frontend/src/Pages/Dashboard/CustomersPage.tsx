@@ -5,13 +5,6 @@ import {
   Card,
   Typography,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -29,7 +22,6 @@ import {
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
-import CustomTablePaginationComponent from '../../Components/Common/CustomTablePagination';
 import DataTable, { type Column } from '../../Components/Common/DataTable';
 import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 

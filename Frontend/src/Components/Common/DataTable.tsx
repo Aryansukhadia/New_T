@@ -6,7 +6,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Box,
 } from '@mui/material';
 import CustomTablePaginationComponent from './CustomTablePagination';
 import type { PaginationMeta } from '../../Services/ApiServices';
@@ -81,8 +80,8 @@ function DataTable<T>({
                 count={paginationMeta.totalCount}
                 page={currentPage}
                 rowsPerPage={pageSize}
-                onPageChange={onPageChange || (() => {})}
-                onRowsPerPageChange={onRowsPerPageChange || (() => {})}
+                onPageChange={onPageChange || (() => { })}
+                onRowsPerPageChange={onRowsPerPageChange || (() => { })}
               />
             </tr>
           </tfoot>
