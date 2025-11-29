@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -391,68 +392,106 @@ const CustomersPage = () => {
   ];
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           Customer Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <MUICustomBtn
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          width: { xs: '100%', sm: 'auto' },
+          alignItems: 'center'
+        }}>
+          <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
             onClick={() => setShowFilter(!showFilter)}
-            tooltip="Toggle filter visibility"
             sx={{
-              borderColor: showFilter ? '#667eea' : '#ccc',
+              borderColor: showFilter ? '#667eea' : '#e0e0e0',
+              borderWidth: 1.5,
               color: showFilter ? '#667eea' : '#666',
+              bgcolor: showFilter ? 'rgba(102, 126, 234, 0.08)' : 'transparent',
               '&:hover': {
                 borderColor: '#667eea',
-                bgcolor: 'rgba(102, 126, 234, 0.04)',
-                transform: 'translateY(-2px)',
+                bgcolor: 'rgba(102, 126, 234, 0.12)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 4px rgba(102, 126, 234, 0.2)',
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
-          </MUICustomBtn>
-          <MUICustomBtn
+          </Button>
+          <Button
             variant="outlined"
             startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
             onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
-            tooltip="Toggle view mode"
             sx={{
-              borderColor: '#ccc',
+              borderColor: '#e0e0e0',
+              borderWidth: 1.5,
               color: '#666',
+              bgcolor: 'transparent',
               '&:hover': {
                 borderColor: '#667eea',
-                bgcolor: 'rgba(102, 126, 234, 0.04)',
-                transform: 'translateY(-2px)',
+                bgcolor: 'rgba(102, 126, 234, 0.12)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 2px 4px rgba(102, 126, 234, 0.2)',
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
+              display: { xs: 'none', lg: 'flex' }, // Hide on screens < 1024px
             }}
           >
             {viewMode === 'table' ? 'Card View' : 'Table View'}
-          </MUICustomBtn>
-          <MUICustomBtn
+          </Button>
+          <Button
             variant="contained"
             startIcon={<PersonAddIcon />}
             onClick={handleAddCustomer}
-            tooltip="Add a new customer to the system"
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
               '&:hover': {
                 background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1.5,
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              minWidth: { xs: 'auto', sm: 140 },
             }}
           >
             Add New Customer
-          </MUICustomBtn>
+          </Button>
         </Box>
       </Box>
 
@@ -464,7 +503,12 @@ const CustomersPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
-            sx={{ maxWidth: 500 }}
+            sx={{
+              maxWidth: { xs: '100%', sm: 500 },
+              '& .MuiInputBase-input': {
+                fontSize: { xs: '0.9rem', sm: '1rem' }
+              }
+            }}
           />
         </Box>
       )}
@@ -473,30 +517,52 @@ const CustomersPage = () => {
         <Box sx={{ textAlign: 'center', py: 5 }}>
           <CircularProgress />
         </Box>
+      ) : filteredCustomers.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
+          <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <Typography variant="body1">
+            {searchTerm
+              ? 'No customers found matching your search'
+              : 'No customers found. Add your first customer to get started!'}
+          </Typography>
+        </Box>
       ) : (
         <>
-          {filteredCustomers.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
-              <PeopleIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
-              <Typography variant="body1">
-                {searchTerm
-                  ? 'No customers found matching your search'
-                  : 'No customers found. Add your first customer to get started!'}
-              </Typography>
-            </Box>
-          ) : viewMode === 'table' ? (
-            <DataTable
-              columns={columns}
-              data={filteredCustomers}
-              getRowKey={(customer) => customer.customerId}
-              paginationMeta={paginationMeta}
-              currentPage={currentPage}
-              pageSize={pageSize}
-              onPageChange={handlePageChange}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              searchTerm={searchTerm}
-            />
-          ) : (
+          {/* Desktop view - show table or card based on viewMode */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {viewMode === 'table' ? (
+              <DataTable
+                columns={columns}
+                data={filteredCustomers}
+                getRowKey={(customer) => customer.customerId}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <DataCardGrid
+                data={filteredCustomers}
+                getCardTitle={(customer) => customer.fullName}
+                getCardSubtitle={(customer) => customer.emailId}
+                fields={cardFields}
+                actions={cardActions}
+                getRowKey={(customer) => customer.customerId}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                searchTerm={searchTerm}
+                columns={3}
+              />
+            )}
+          </Box>
+
+          {/* Mobile/Tablet view - always show card view on screens < 1024px */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
             <DataCardGrid
               data={filteredCustomers}
               getCardTitle={(customer) => customer.fullName}
@@ -510,11 +576,9 @@ const CustomersPage = () => {
               onPageChange={handlePageChange}
               onRowsPerPageChange={handleChangeRowsPerPage}
               searchTerm={searchTerm}
-              columns={3}
+              columns={1}
             />
-          )}
-
-
+          </Box>
         </>
       )}
 

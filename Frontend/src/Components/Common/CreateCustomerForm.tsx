@@ -73,7 +73,7 @@ const CreateCustomerForm = () => {
             sx={{
                 background: 'white',
                 borderRadius: 3,
-                padding: 3,
+                padding: { xs: 2, sm: 3 },
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
             }}
         >
@@ -94,6 +94,7 @@ const CreateCustomerForm = () => {
                         fontWeight: 700,
                         color: '#333',
                         margin: 0,
+                        fontSize: { xs: '1.5rem', sm: '2rem' }
                     }}
                 >
                     {t('customers.addNewCustomerTitle') || 'Add New Customer'}
@@ -102,12 +103,12 @@ const CreateCustomerForm = () => {
                     onClick={() => navigate(-1)}
                     startIcon={<ArrowBackIcon />}
                     sx={{
-                        padding: '12px 24px',
+                        padding: { xs: '10px 20px', sm: '12px 24px' },
                         background: '#f5f5f5',
                         color: '#333',
                         border: '2px solid #e0e0e0',
                         borderRadius: 2,
-                        fontSize: '14px',
+                        fontSize: { xs: '13px', sm: '14px' },
                         fontWeight: 600,
                         transition: 'all 0.2s ease',
                         '&:hover': {
@@ -129,7 +130,6 @@ const CreateCustomerForm = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 2,
-                    maxWidth: 600,
                 }}
             >
                 <Box sx={{ marginBottom: 2 }}>
@@ -322,6 +322,7 @@ const CreateCustomerForm = () => {
                         justifyContent: 'flex-end',
                         gap: 1.5,
                         marginTop: 3,
+                        flexDirection: { xs: 'column', sm: 'row' }
                     }}
                 >
                     <MuiButton
