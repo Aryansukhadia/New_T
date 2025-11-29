@@ -400,12 +400,28 @@ const ProductsPage = () => {
   ];
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           Products Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          width: { xs: '100%', sm: 'auto' },
+          alignItems: 'center'
+        }}>
           <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
@@ -420,6 +436,10 @@ const ProductsPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
@@ -438,6 +458,11 @@ const ProductsPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              display: { xs: 'none', lg: 'flex' },
             }}
           >
             {viewMode === 'table' ? 'Card View' : 'Table View'}
@@ -455,6 +480,12 @@ const ProductsPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1.5,
+              whiteSpace: 'nowrap',
+              minWidth: { xs: 'auto', sm: 140 },
             }}
           >
             Add New Product
@@ -470,7 +501,12 @@ const ProductsPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
-            sx={{ maxWidth: 500 }}
+            sx={{
+              maxWidth: { xs: '100%', sm: 500 },
+              '& .MuiInputBase-input': {
+                fontSize: { xs: '0.9rem', sm: '1rem' }
+              }
+            }}
           />
         </Box>
       )}
@@ -488,44 +524,75 @@ const ProductsPage = () => {
               : 'No products found. Add your first product to get started!'}
           </Typography>
         </Box>
-      ) : viewMode === 'table' ? (
-        <DataTable
-          columns={columns}
-          data={filteredProducts}
-          getRowKey={(product) => product.id}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-        />
       ) : (
-        <DataCardGrid
-          data={filteredProducts}
-          getCardTitle={(product) => product.name}
-          getCardSubtitle={(product) => product.description || 'No description'}
-          fields={cardFields}
-          actions={cardActions}
-          getRowKey={(product) => product.id}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-          columns={3}
-        />
+        <>
+          {/* Desktop view - show table or card based on viewMode */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {viewMode === 'table' ? (
+              <DataTable
+                columns={columns}
+                data={filteredProducts}
+                getRowKey={(product) => product.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <DataCardGrid
+                data={filteredProducts}
+                getCardTitle={(product) => product.name}
+                getCardSubtitle={(product) => product.description || 'No description'}
+                fields={cardFields}
+                actions={cardActions}
+                getRowKey={(product) => product.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+                columns={3}
+              />
+            )}
+          </Box>
+
+          {/* Mobile/Tablet view - always show card view on screens < 1024px */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+            <DataCardGrid
+              data={filteredProducts}
+              getCardTitle={(product) => product.name}
+              getCardSubtitle={(product) => product.description || 'No description'}
+              fields={cardFields}
+              actions={cardActions}
+              getRowKey={(product) => product.id}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={(_event, page) => setCurrentPage(page)}
+              onRowsPerPageChange={(event) => {
+                const newRowsPerPage = parseInt(event.target.value, 10);
+                const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                setPageSize(actualRowsPerPage);
+                setCurrentPage(0);
+              }}
+              searchTerm={searchTerm}
+              columns={1}
+            />
+          </Box>
+        </>
       )}
 
       {/* Create/Edit Dialog */}
