@@ -399,17 +399,35 @@ const ManageMeasurementPage = () => {
   );
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2,
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' }
+      }}>
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
           onClick={handleBack}
-          sx={{ textTransform: 'none', fontWeight: 600 }}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            px: 2,
+            py: 1,
+          }}
         >
           Back
         </Button>
-        <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
+        <Typography variant="h5" sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           <StraightenIcon color="primary" />
           Manage Measurements
         </Typography>

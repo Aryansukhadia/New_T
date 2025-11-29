@@ -159,23 +159,39 @@ const WorkPieceDetailsPage = () => {
   }
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           {t('orders.workpieceDetails')} - {summary.productItem.name}
         </Typography>
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
           onClick={handleBack}
-          sx={{ textTransform: 'none', fontWeight: 600 }}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            px: 2,
+            py: 1,
+          }}
         >
           {t('common.back')}
         </Button>
       </Box>
 
       <Grid container spacing={3}>
-        <Grid xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Card sx={{ p: 3, bgcolor: '#f8f9fa', border: '2px solid #e0e0e0' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1.5, mb: 2, borderBottom: '2px solid #e0e0e0' }}>
               <InventoryIcon />
