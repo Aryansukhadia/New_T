@@ -250,25 +250,34 @@ const CreateProductVariantPage = () => {
     }
 
     return (
-        <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
             <Box
                 sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
                     mb: 3,
-                    flexWrap: 'wrap',
+                    flexDirection: { xs: 'column', sm: 'row' },
                     gap: 2,
                 }}
             >
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                <Typography variant="h5" sx={{
+                    fontWeight: 700,
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                }}>
                     {t('productVariants.createNewVariant')}
                 </Typography>
                 <Button
                     variant="outlined"
                     startIcon={<ArrowBackIcon />}
                     onClick={() => navigate('/dashboard/product-variants')}
-                    sx={{ textTransform: 'none', fontWeight: 600 }}
+                    sx={{
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        px: 2,
+                        py: 1,
+                    }}
                 >
                     {t('common.back')} {t('productVariants.title')}
                 </Button>
@@ -483,6 +492,7 @@ const CreateProductVariantPage = () => {
                         mt: 3,
                         pt: 3,
                         borderTop: '2px solid #e0e0e0',
+                        flexDirection: { xs: 'column', sm: 'row' },
                     }}
                 >
                     <MUICustomBtn
