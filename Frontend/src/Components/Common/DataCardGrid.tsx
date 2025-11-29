@@ -86,31 +86,37 @@ function DataCardGrid<T>({
             md: `repeat(${columns}, 1fr)`,
           },
           gap: 3,
+          width: '100%',
         }}
       >
         {data.map((item) => (
-          <Box key={getRowKey(item)}>
+          <Box key={getRowKey(item)} sx={{ width: '100%', minWidth: 0 }}>
             <Card
               sx={{
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'row',
+                flexDirection: { xs: 'column', sm: 'row' },
                 transition: 'all 0.3s ease',
+                overflow: 'hidden',
+                width: '100%',
+                maxWidth: '100%',
               }}
             >
               {(getCardImage || getCardImages) && (
                 <Box
                   sx={{
-                    width: 200,
-                    minWidth: 200,
-                    height: '100%',
+                    width: { xs: '100%', sm: 200 },
+                    minWidth: { xs: '100%', sm: 200 },
+                    maxWidth: { xs: '100%', sm: 200 },
+                    height: { xs: 200, sm: '100%' },
                     minHeight: 200,
-                    overflow: 'hidden',
                     bgcolor: '#f5f5f5',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'relative',
+                    flexShrink: 0,
+                    overflow: 'hidden',
                     '& .slick-slider': {
                       width: '100%',
                       height: '100%',
@@ -220,8 +226,8 @@ function DataCardGrid<T>({
                   )}
                 </Box>
               )}
-              <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
+                <CardContent sx={{ flexGrow: 1, pb: 1, minWidth: 0, overflow: 'hidden' }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -230,6 +236,7 @@ function DataCardGrid<T>({
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      width: '100%',
                     }}
                   >
                     {getCardTitle(item)}
@@ -238,20 +245,20 @@ function DataCardGrid<T>({
                     <Typography
                       variant="body2"
                       color="text.secondary"
-                      sx={{ mb: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      sx={{ mb: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}
                     >
                       {getCardSubtitle(item)}
                     </Typography>
                   )}
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2, width: '100%', minWidth: 0 }}>
                     {fields.map((field) => (
-                      <Box key={field.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box key={field.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%', minWidth: 0 }}>
                         {field.showLabel !== false && (
-                          <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 80 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 80, flexShrink: 0 }}>
                             {field.label}:
                           </Typography>
                         )}
-                        <Box sx={{ flexGrow: 1 }}>{field.render(item)}</Box>
+                        <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>{field.render(item)}</Box>
                       </Box>
                     ))}
                   </Box>
