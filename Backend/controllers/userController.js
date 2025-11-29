@@ -35,9 +35,9 @@ export const addUser = async (req, res) => {
         }
 
         // Validate role is one of the allowed values
-        const allowedRoles = ['superAdmin', 'admin', 'subAdmin'];
+        const allowedRoles = getAvailableRoles(req.user.role);
         if (!allowedRoles.includes(role.trim())) {
-            return sendResponse(res, 400, "Invalid role. Must be one of: superAdmin, admin, subAdmin");
+            return sendResponse(res, 400, "Invalid role. Must be one of: superAdmin, admin, subAdmin, cutter, stitcher, finisher, deliveryBoy, accountant");
         }
 
         // Check if emailId already exists
@@ -51,20 +51,17 @@ export const addUser = async (req, res) => {
 
         // Role validation based on the authenticated user's role
         // SuperAdmin can create: admin, subAdmin
-        // Admin can create: subAdmin
+        // Admin can create: subAdmin, cutter, stitcher, finisher, deliveryBoy, accountant
         // SubAdmin cannot create anyone
         const userRole = req.user.role;
+        const availableRoles = getAvailableRoles(userRole);
 
         if (userRole === 'subAdmin') {
             return sendResponse(res, 403, "You are not authorized to create users");
         }
 
-        if (userRole === 'admin' && role !== 'subAdmin') {
-            return sendResponse(res, 403, "Admins can only create SubAdmin users");
-        }
-
-        if (userRole === 'superAdmin' && !['admin', 'subAdmin'].includes(role)) {
-            return sendResponse(res, 400, "SuperAdmin can only create Admin or SubAdmin users");
+        if (!availableRoles.includes(role.trim())) {
+            return sendResponse(res, 403, `You are not authorized to create users with role: ${role}. Available roles: ${availableRoles.join(', ')}`);
         }
 
         const id = randomUUID();

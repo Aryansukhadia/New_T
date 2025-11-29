@@ -38,6 +38,11 @@ enum Role {
   superAdmin
   admin
   subAdmin
+  cutter
+  stitcher
+  finisher
+  deliveryBoy
+  accountant
 }
 
 enum InventoryType {
