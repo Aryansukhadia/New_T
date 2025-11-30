@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
 } from '@mui/material';
 import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
 import {
@@ -345,17 +346,32 @@ const AccessoryInventoriesPage = () => {
   ];
 
   return (
-    <Card sx={{ borderRadius: 1.5, p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
           Accessory Inventory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <MUICustomBtn
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          width: { xs: '100%', sm: 'auto' },
+          alignItems: 'center'
+        }}>
+          <Button
             variant="outlined"
             startIcon={<FilterListIcon />}
             onClick={() => setShowFilter(!showFilter)}
-            tooltip="Toggle filter visibility"
             sx={{
               borderColor: showFilter ? '#667eea' : '#ccc',
               color: showFilter ? '#667eea' : '#666',
@@ -366,15 +382,18 @@ const AccessoryInventoriesPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
             }}
           >
             {showFilter ? 'Hide Filter' : 'Show Filter'}
-          </MUICustomBtn>
-          <MUICustomBtn
+          </Button>
+          <Button
             variant="outlined"
             startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
             onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
-            tooltip="Toggle view mode"
             sx={{
               borderColor: '#ccc',
               color: '#666',
@@ -385,15 +404,19 @@ const AccessoryInventoriesPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              display: { xs: 'none', lg: 'flex' },
             }}
           >
             {viewMode === 'table' ? 'Card View' : 'Table View'}
-          </MUICustomBtn>
-          <MUICustomBtn
+          </Button>
+          <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreateAccessory}
-            tooltip="Add new accessory inventory"
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
               '&:hover': {
@@ -403,22 +426,32 @@ const AccessoryInventoriesPage = () => {
               },
               textTransform: 'none',
               fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1.5,
+              whiteSpace: 'nowrap',
+              minWidth: { xs: 'auto', sm: 140 },
             }}
           >
             Add New Accessory
-          </MUICustomBtn>
+          </Button>
         </Box>
       </Box>
 
       {showFilter && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+        <Box sx={{ mb: 3 }}>
           <TextField
             fullWidth
             placeholder="Search by name or properties..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            variant="outlined"
-            sx={{ maxWidth: 500 }}
+            sx={{
+              maxWidth: { xs: '100%', sm: 400 },
+              '& .MuiInputBase-input': {
+                fontSize: { xs: '0.9rem', sm: '1rem' }
+              }
+            }}
           />
         </Box>
       )}
@@ -428,56 +461,93 @@ const AccessoryInventoriesPage = () => {
           <CircularProgress />
         </Box>
       ) : filteredInventories.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
-          <InventoryIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+        <Box sx={{ textAlign: 'center', py: 7.5, color: 'text.secondary' }}>
+          <Box sx={{ fontSize: 48, mb: 2, color: '#ccc', display: 'flex', justifyContent: 'center' }}>
+            <InventoryIcon sx={{ fontSize: 48 }} />
+          </Box>
           <Typography variant="body1">
             {searchTerm
-              ? 'No accessory items found matching your criteria'
-              : 'No accessory items found'}
+              ? 'No accessory items found matching your search'
+              : 'No accessory items found. Add your first accessory inventory to get started!'}
           </Typography>
         </Box>
-      ) : viewMode === 'table' ? (
-        <DataTable
-          columns={columns}
-          data={filteredInventories}
-          getRowKey={(item) => item.id}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-        />
       ) : (
-        <DataCardGrid
-          data={filteredInventories}
-          getCardTitle={(item) => item.name}
-          getCardImages={(item) => {
-            const properties = item.accessory?.properties || {};
-            const imageUrl = properties.imageUrl || null;
-            return parseImages(imageUrl);
-          }}
-          fields={cardFields}
-          actions={cardActions}
-          getRowKey={(item) => item.id}
-          paginationMeta={paginationMeta}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          onPageChange={(_event, page) => setCurrentPage(page)}
-          onRowsPerPageChange={(event) => {
-            const newRowsPerPage = parseInt(event.target.value, 10);
-            const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
-            setPageSize(actualRowsPerPage);
-            setCurrentPage(0);
-          }}
-          searchTerm={searchTerm}
-          columns={3}
-        />
+        <>
+          {/* Desktop view - show table or card based on viewMode */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {viewMode === 'table' ? (
+              <DataTable
+                columns={columns}
+                data={filteredInventories}
+                getRowKey={(item) => item.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <DataCardGrid
+                data={filteredInventories}
+                getCardTitle={(item) => item.name}
+                getCardImages={(item) => {
+                  const properties = item.accessory?.properties || {};
+                  const imageUrl = properties.imageUrl || null;
+                  return parseImages(imageUrl);
+                }}
+                fields={cardFields}
+                actions={cardActions}
+                getRowKey={(item) => item.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+                columns={4}
+              />
+            )}
+          </Box>
+
+          {/* Mobile/Tablet view - always show card view on screens < 1024px */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+            <DataCardGrid
+              data={filteredInventories}
+              getCardTitle={(item) => item.name}
+              getCardImages={(item) => {
+                const properties = item.accessory?.properties || {};
+                const imageUrl = properties.imageUrl || null;
+                return parseImages(imageUrl);
+              }}
+              fields={cardFields}
+              actions={cardActions}
+              getRowKey={(item) => item.id}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={(_event, page) => setCurrentPage(page)}
+              onRowsPerPageChange={(event) => {
+                const newRowsPerPage = parseInt(event.target.value, 10);
+                const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                setPageSize(actualRowsPerPage);
+                setCurrentPage(0);
+              }}
+              searchTerm={searchTerm}
+              columns={1}
+            />
+          </Box>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}
