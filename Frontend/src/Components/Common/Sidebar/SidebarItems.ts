@@ -26,6 +26,11 @@ interface SidebarItems {
   superAdmin: MenuItem[];
   admin: MenuItem[];
   subAdmin: MenuItem[];
+  cutter: MenuItem[];
+  stitcher: MenuItem[];
+  finisher: MenuItem[];
+  deliveryBoy: MenuItem[];
+  accountant: MenuItem[];
 }
 
 export const sidebarItems: SidebarItems = {
@@ -88,6 +93,36 @@ export const sidebarItems: SidebarItems = {
         { label: "Accessory Inventory", path: "/dashboard/inventory/accessory-inventory" },
       ],
     },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+  ],
+
+  cutter: [
+    { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+  ],
+
+  stitcher: [
+    { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+  ],
+
+  finisher: [
+    { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+  ],
+
+  deliveryBoy: [
+    { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
+    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+  ],
+
+  accountant: [
+    { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
+    { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
   ],
 };

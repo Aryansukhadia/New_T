@@ -46,6 +46,11 @@ export interface RoleRoutes {
     superAdmin: RouteConfig[];
     admin: RouteConfig[];
     subAdmin: RouteConfig[];
+    cutter: RouteConfig[];
+    stitcher: RouteConfig[];
+    finisher: RouteConfig[];
+    deliveryBoy: RouteConfig[];
+    accountant: RouteConfig[];
 }
 
 export const roleRoutes: RoleRoutes = {
@@ -453,6 +458,81 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['subAdmin'],
         },
     ],
+
+    cutter: [
+        {
+            path: '',
+            component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['cutter'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['cutter'],
+        }
+    ],
+
+    stitcher: [
+        {
+            path: '',
+            component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['stitcher'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['stitcher'],
+        }
+    ],
+
+    finisher: [
+        {
+            path: '',
+            component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['finisher'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['finisher'],
+        }
+    ],
+
+    deliveryBoy: [
+        {
+            path: '',
+            component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['deliveryBoy'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['deliveryBoy'],
+        }
+    ],
+
+    accountant: [
+        {
+            path: '',
+            component: () => <DashboardHome />,
+            requireAuth: true,
+            allowedRoles: ['accountant'],
+        },
+        {
+            path: 'profile',
+            component: () => <ProfilePage />,
+            requireAuth: true,
+            allowedRoles: ['accountant'],
+        }
+    ],
 };
 
 // Helper function to get all unique routes from all roles
@@ -465,6 +545,11 @@ export const getAllRoutes = (): RouteConfig[] => {
         ...roleRoutes.superAdmin,
         ...roleRoutes.admin,
         ...roleRoutes.subAdmin,
+        ...roleRoutes.cutter,
+        ...roleRoutes.stitcher,
+        ...roleRoutes.finisher,
+        ...roleRoutes.deliveryBoy,
+        ...roleRoutes.accountant,
     ];
 
     // Merge routes with same path by combining allowedRoles

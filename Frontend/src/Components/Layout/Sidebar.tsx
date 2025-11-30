@@ -47,6 +47,16 @@ const Sidebar = ({ isOpen, toggleSidebar, isMobile }: SidebarProps) => {
       return sidebarItems.admin;
     } else if (userRole === 'subadmin') {
       return sidebarItems.subAdmin;
+    } else if (userRole === 'cutter') {
+      return sidebarItems.cutter;
+    } else if (userRole === 'stitcher') {
+      return sidebarItems.stitcher;
+    } else if (userRole === 'finisher') {
+      return sidebarItems.finisher;
+    } else if (userRole === 'deliveryBoy') {
+      return sidebarItems.deliveryBoy;
+    } else if (userRole === 'accountant') {
+      return sidebarItems.accountant;
     }
     return [];
   };
