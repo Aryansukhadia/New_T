@@ -52,15 +52,10 @@ const CreateUserForm = () => {
         if (currentUser?.role) {
             const roles = getAvailableRoles(currentUser.role);
             setAvailableRoles(roles);
-            // Set first role as default if available
-            if (roles.length > 0 && !formData.role) {
-                setFormData((prev) => ({ ...prev, role: roles[0].value }));
-            }
         } else {
             setAvailableRoles([]);
         }
         setLoadingRoles(false);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,11 +67,10 @@ const CreateUserForm = () => {
     };
 
     const handleSelectChange = (event: SelectChangeEvent<string>) => {
-        const { name, value } = event.target;
-        if (!name) return;
+        const value = event.target.value;
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            role: value,
         }));
     };
 
@@ -321,11 +315,14 @@ const CreateUserForm = () => {
                         select
                         id="role"
                         name="role"
-                        value={formData.role}
-                        onChange={(event) => handleSelectChange(event as SelectChangeEvent<string>)}
+                        value={formData.role || ''}
+                        onChange={handleSelectChange}
                         required
                         disabled={submitting || loadingRoles}
                         fullWidth
+                        SelectProps={{
+                            displayEmpty: true,
+                        }}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 background: '#fafafa',
@@ -354,14 +351,11 @@ const CreateUserForm = () => {
                         ) : availableRoles.length === 0 ? (
                             <MenuItem value="" disabled>No roles available</MenuItem>
                         ) : (
-                            <>
-                                <MenuItem value="">-- Select a role --</MenuItem>
-                                {availableRoles.map((role) => (
-                                    <MenuItem key={role.value} value={role.value}>
-                                        {role.name}
-                                    </MenuItem>
-                                ))}
-                            </>
+                            availableRoles.map((role) => (
+                                <MenuItem key={role.value} value={role.value}>
+                                    {role.name}
+                                </MenuItem>
+                            ))
                         )}
                     </TextField>
                 </Box>
