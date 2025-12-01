@@ -3,7 +3,7 @@ import sendResponse from "../utils/response.js";
 
 
 /**
- * Book Order - Create an order with multiple items and automatically create OrderWorkPiece and ItemStatus entries
+ * Book Order - Create an order with multiple items (custom or ready-made) and automatically create OrderWorkPiece and ItemStatus entries
  * POST /api/productOrders/book
  * 
  * Request Body:
@@ -13,8 +13,10 @@ import sendResponse from "../utils/response.js";
  *   "notes": "string" (optional),
  *   "items": [
  *     {
- *       "productId": "string",
- *       "productVariantId": "string",
+ *       "itemType": "custom" | "readyMade",
+ *       "productId": "string" (required if itemType is "custom"),
+ *       "productVariantId": "string" (required if itemType is "custom"),
+ *       "readyMadeInventoryId": "string" (required if itemType is "readyMade"),
  *       "quantity": 1
  *     },
  *     ...
@@ -35,17 +37,33 @@ export const bookOrder = async (req, res) => {
             return sendResponse(res, 400, "items array is required and must not be empty");
         }
 
-        // Validate each item
+        // Validate each item based on itemType
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            if (!item.productId || typeof item.productId !== "string" || item.productId.trim() === "") {
-                return sendResponse(res, 400, `Item at index ${i}: productId is required`);
+
+            // Validate itemType
+            const itemType = item.itemType;
+            if (!["custom", "readyMade"].includes(itemType)) {
+                return sendResponse(res, 400, `Item at index ${i}: itemType must be either "custom" or "readyMade"`);
             }
-            if (!item.productVariantId || typeof item.productVariantId !== "string" || item.productVariantId.trim() === "") {
-                return sendResponse(res, 400, `Item at index ${i}: productVariantId is required`);
-            }
+
+            // Validate quantity
             if (!item.quantity || typeof item.quantity !== "number" || item.quantity < 1) {
                 return sendResponse(res, 400, `Item at index ${i}: quantity must be a positive number`);
+            }
+
+            // Validate fields based on itemType
+            if (itemType === "custom") {
+                if (!item.productId || typeof item.productId !== "string" || item.productId.trim() === "") {
+                    return sendResponse(res, 400, `Item at index ${i}: productId is required for custom items`);
+                }
+                if (!item.productVariantId || typeof item.productVariantId !== "string" || item.productVariantId.trim() === "") {
+                    return sendResponse(res, 400, `Item at index ${i}: productVariantId is required for custom items`);
+                }
+            } else if (itemType === "readyMade") {
+                if (!item.readyMadeInventoryId || typeof item.readyMadeInventoryId !== "string" || item.readyMadeInventoryId.trim() === "") {
+                    return sendResponse(res, 400, `Item at index ${i}: readyMadeInventoryId is required for ready-made items`);
+                }
             }
         }
 
@@ -58,39 +76,85 @@ export const bookOrder = async (req, res) => {
             return sendResponse(res, 404, "Customer not found");
         }
 
-        // Validate all product variants exist and match their productIds
-        const productVariantIds = items.map(item => item.productVariantId.trim());
-        const productVariants = await prisma.productVariant.findMany({
-            where: {
-                id: { in: productVariantIds }
-            },
-            include: {
-                product: true,
-                productItems: true
-            }
-        });
+        // Separate custom and ready-made items
+        const customItems = items.filter(item => (item.itemType || "custom") === "custom");
+        const readyMadeItems = items.filter(item => item.itemType === "readyMade");
 
-        if (productVariants.length !== productVariantIds.length) {
-            const foundIds = productVariants.map(v => v.id);
-            const missingIds = productVariantIds.filter(id => !foundIds.includes(id));
-            return sendResponse(res, 404, `One or more product variants not found: ${missingIds.join(", ")}`);
+        // Validate custom items (product variants)
+        let productVariants = [];
+        if (customItems.length > 0) {
+            const productVariantIds = customItems.map(item => item.productVariantId.trim());
+            productVariants = await prisma.productVariant.findMany({
+                where: {
+                    id: { in: productVariantIds }
+                },
+                include: {
+                    product: true,
+                    productItems: true
+                }
+            });
+
+            if (productVariants.length !== productVariantIds.length) {
+                const foundIds = productVariants.map(v => v.id);
+                const missingIds = productVariantIds.filter(id => !foundIds.includes(id));
+                return sendResponse(res, 404, `One or more product variants not found: ${missingIds.join(", ")}`);
+            }
+
+            // Validate that each productId matches the variant's product
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if ((item.itemType || "custom") === "custom") {
+                    const variant = productVariants.find(v => v.id === item.productVariantId.trim());
+                    if (variant && variant.productId !== item.productId.trim()) {
+                        return sendResponse(res, 400, `Item at index ${i}: productId does not match the product variant's product`);
+                    }
+                }
+            }
+
+            // Validate that all variants have product items
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if ((item.itemType || "custom") === "custom") {
+                    const variant = productVariants.find(v => v.id === item.productVariantId.trim());
+                    if (!variant.productItems || variant.productItems.length === 0) {
+                        return sendResponse(res, 400, `Item at index ${i}: Product variant has no product items associated. Please add product items to the variant first.`);
+                    }
+                }
+            }
         }
 
-        // Validate that each productId matches the variant's product
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const variant = productVariants.find(v => v.id === item.productVariantId.trim());
-            if (variant && variant.productId !== item.productId.trim()) {
-                return sendResponse(res, 400, `Item at index ${i}: productId does not match the product variant's product`);
-            }
-        }
+        // Validate ready-made items (inventory)
+        let readyMadeInventories = [];
+        if (readyMadeItems.length > 0) {
+            const readyMadeIds = readyMadeItems.map(item => item.readyMadeInventoryId.trim());
+            readyMadeInventories = await prisma.inventory.findMany({
+                where: {
+                    id: { in: readyMadeIds },
+                    type: 'readyMade',
+                    isDeleted: false
+                },
+                include: {
+                    readyMade: true
+                }
+            });
 
-        // Validate that all variants have product items
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const variant = productVariants.find(v => v.id === item.productVariantId.trim());
-            if (!variant.productItems || variant.productItems.length === 0) {
-                return sendResponse(res, 400, `Item at index ${i}: Product variant has no product items associated. Please add product items to the variant first.`);
+            if (readyMadeInventories.length !== readyMadeIds.length) {
+                const foundIds = readyMadeInventories.map(inv => inv.id);
+                const missingIds = readyMadeIds.filter(id => !foundIds.includes(id));
+                return sendResponse(res, 404, `One or more ready-made items not found: ${missingIds.join(", ")}`);
+            }
+
+            // Validate stock availability for ready-made items
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.itemType === "readyMade") {
+                    const inventory = readyMadeInventories.find(inv => inv.id === item.readyMadeInventoryId.trim());
+                    if (inventory && inventory.readyMade) {
+                        if (inventory.readyMade.quantity < item.quantity) {
+                            return sendResponse(res, 400, `Item at index ${i}: Insufficient stock. Available: ${inventory.readyMade.quantity}, Requested: ${item.quantity}`);
+                        }
+                    }
+                }
             }
         }
 
@@ -118,63 +182,88 @@ export const bookOrder = async (req, res) => {
             // Create all order items and their item statuses
             const orderItems = await Promise.all(
                 items.map(async (item) => {
-                    const variant = productVariants.find(v => v.id === item.productVariantId.trim());
+                    const itemType = item.itemType || "custom";
 
-                    // Create the order item
-                    const orderItem = await tx.orderItem.create({
-                        data: {
-                            productOrderId: productOrder.id,
-                            productVariantId: item.productVariantId.trim(),
-                            quantity: item.quantity,
+                    if (itemType === "custom") {
+                        // Handle custom items (product variants)
+                        const variant = productVariants.find(v => v.id === item.productVariantId.trim());
+
+                        // Create the order item
+                        const orderItem = await tx.orderItem.create({
+                            data: {
+                                productOrderId: productOrder.id,
+                                itemType: 'custom',
+                                productVariantId: item.productVariantId.trim(),
+                                quantity: item.quantity,
+                            }
+                        });
+
+                        // Create OrderWorkPiece entries for each ProductItem × quantity
+                        const workPiecesToCreate = [];
+                        for (const productItem of variant.productItems) {
+                            for (let qty = 0; qty < item.quantity; qty++) {
+                                workPiecesToCreate.push({
+                                    orderItemId: orderItem.id,
+                                    productItemId: productItem.id,
+                                    currentStatus: 'pending',
+                                    assignedToId: null,
+                                    remarks: null,
+                                });
+                            }
                         }
-                    });
 
-                    // Create OrderWorkPiece entries for each ProductItem × quantity
-                    // Each ProductItem in the variant needs to be tracked individually as a work piece
-                    const workPiecesToCreate = [];
-                    for (const productItem of variant.productItems) {
-                        // For each unit (quantity), create an OrderWorkPiece entry
-                        for (let qty = 0; qty < item.quantity; qty++) {
-                            workPiecesToCreate.push({
-                                orderItemId: orderItem.id,
-                                productItemId: productItem.id,
-                                currentStatus: 'pending', // Start with cutting stage
-                                assignedToId: null, // Can be assigned later
-                                remarks: null,
+                        if (workPiecesToCreate.length > 0) {
+                            await tx.orderWorkPiece.createMany({
+                                data: workPiecesToCreate
                             });
                         }
-                    }
 
-                    // Create all work pieces for this order item
-                    if (workPiecesToCreate.length > 0) {
-                        await tx.orderWorkPiece.createMany({
-                            data: workPiecesToCreate
-                        });
-                    }
+                        // Create ItemStatus entries for each ProductItem × quantity
+                        const itemStatusesToCreate = [];
+                        for (const productItem of variant.productItems) {
+                            for (let qty = 0; qty < item.quantity; qty++) {
+                                itemStatusesToCreate.push({
+                                    orderItemId: orderItem.id,
+                                    productItemId: productItem.id,
+                                    status: 'cutting',
+                                    updatedById: req.user?.userId || null,
+                                });
+                            }
+                        }
 
-                    // Create ItemStatus entries for each ProductItem × quantity
-                    // Each ProductItem in the variant needs to be tracked individually
-                    const itemStatusesToCreate = [];
-                    for (const productItem of variant.productItems) {
-                        // For each unit (quantity), create an ItemStatus entry
-                        for (let qty = 0; qty < item.quantity; qty++) {
-                            itemStatusesToCreate.push({
-                                orderItemId: orderItem.id,
-                                productItemId: productItem.id,
-                                status: 'cutting', // Start with cutting stage
-                                updatedById: req.user?.userId || null,
+                        if (itemStatusesToCreate.length > 0) {
+                            await tx.itemStatus.createMany({
+                                data: itemStatusesToCreate
                             });
                         }
-                    }
 
-                    // Create all item statuses for this order item
-                    if (itemStatusesToCreate.length > 0) {
-                        await tx.itemStatus.createMany({
-                            data: itemStatusesToCreate
+                        return orderItem;
+                    } else {
+                        // Handle ready-made items
+                        const inventory = readyMadeInventories.find(inv => inv.id === item.readyMadeInventoryId.trim());
+
+                        // Create the order item for ready-made
+                        const orderItem = await tx.orderItem.create({
+                            data: {
+                                productOrderId: productOrder.id,
+                                itemType: 'readyMade',
+                                readyMadeInventoryId: item.readyMadeInventoryId.trim(),
+                                quantity: item.quantity,
+                            }
                         });
-                    }
 
-                    return orderItem;
+                        // Update inventory quantity (deduct stock)
+                        await tx.readyMadeInventory.update({
+                            where: { inventoryId: inventory.id },
+                            data: {
+                                quantity: {
+                                    decrement: item.quantity
+                                }
+                            }
+                        });
+
+                        return orderItem;
+                    }
                 })
             );
 
@@ -189,6 +278,11 @@ export const bookOrder = async (req, res) => {
                                 include: {
                                     product: true,
                                     productItems: true
+                                }
+                            },
+                            readyMadeInventory: {
+                                include: {
+                                    readyMade: true
                                 }
                             },
                             itemStatuses: {
@@ -316,7 +410,7 @@ export const getBookedOrders = async (req, res) => {
 };
 
 /**
- * Get Order Details - Retrieve detailed information about a specific order including all work pieces
+ * Get Order Details - Retrieve detailed information about a specific order including all work pieces and order items
  * GET /api/productOrders/:id
  * 
  * @param id - Order ID from URL parameters
@@ -329,7 +423,7 @@ export const getOrderDetails = async (req, res) => {
             return sendResponse(res, 400, "Order ID is required");
         }
 
-        // Fetch order with all related data including work pieces
+        // Fetch order with all related data including work pieces and order items
         const order = await prisma.productOrder.findUnique({
             where: {
                 id: id.trim(),
@@ -351,8 +445,111 @@ export const getOrderDetails = async (req, res) => {
                 orderItems: {
                     select: {
                         id: true,
+                        itemType: true,
                         quantity: true,
+                        notes: true,
+                        productVariant: {
+                            select: {
+                                id: true,
+                                name: true,
+                                imageUrl: true,
+                                product: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    }
+                                }
+                            }
+                        },
+                        readyMadeInventory: {
+                            select: {
+                                id: true,
+                                name: true,
+                                readyMade: {
+                                    select: {
+                                        id: true,
+                                        color: true,
+                                        imageUrl: true,
+                                        price: true,
+                                        sizeLabel: true,
+                                        sizeNumber: true,
+                                    }
+                                }
+                            }
+                        },
+                    }
+                }
+            }
+        });
 
+        if (!order) {
+            return sendResponse(res, 404, "Order not found");
+        }
+
+        // Format the response
+        const formattedOrder = {
+            id: order.id,
+            customerId: order.customerId,
+            orderDate: order.orderDate,
+            deliveryDate: order.deliveryDate,
+            status: order.status,
+            customerName: order.customer?.fullName || null,
+            notes: order.notes,
+            totalAmount: order.totalAmount,
+            orderItems: order.orderItems.map(item => ({
+                id: item.id,
+                itemType: item.itemType,
+                quantity: item.quantity,
+                notes: item.notes,
+                productVariant: item.productVariant ? {
+                    id: item.productVariant.id,
+                    name: item.productVariant.name,
+                    imageUrl: item.productVariant.imageUrl,
+                    product: item.productVariant.product,
+                } : null,
+                readyMadeInventory: item.readyMadeInventory ? {
+                    id: item.readyMadeInventory.id,
+                    name: item.readyMadeInventory.name,
+                    readyMade: item.readyMadeInventory.readyMade,
+                } : null,
+            })),
+        };
+
+        return sendResponse(res, 200, "Order details fetched successfully", formattedOrder);
+    } catch (error) {
+        console.error("getOrderDetails error:", error);
+        return sendResponse(res, 500, "Failed to fetch order details", { error: error.message });
+    }
+};
+
+/**
+ * Get Order Work Pieces - Retrieve all work pieces for a specific order
+ * GET /api/productOrders/:id/workpieces
+ * 
+ * @param id - Order ID from URL parameters
+ */
+export const getOrderWorkPieces = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id || typeof id !== "string" || id.trim() === "") {
+            return sendResponse(res, 400, "Order ID is required");
+        }
+
+        // Fetch order with work pieces
+        const order = await prisma.productOrder.findUnique({
+            where: {
+                id: id.trim(),
+                isDeleted: false
+            },
+            select: {
+                id: true,
+                orderItems: {
+                    where: {
+                        itemType: 'custom' // Only get custom items as they have work pieces
+                    },
+                    select: {
+                        id: true,
                         workPieces: {
                             select: {
                                 id: true,
@@ -373,7 +570,6 @@ export const getOrderDetails = async (req, res) => {
                                         emailId: true,
                                     }
                                 },
-
                             },
                             orderBy: {
                                 createdAt: 'asc'
@@ -388,40 +584,184 @@ export const getOrderDetails = async (req, res) => {
             return sendResponse(res, 404, "Order not found");
         }
 
-        // Format the response
-        const formattedOrder = {
-            id: order.id,
-            customerId: order.customerId,
-            orderDate: order.orderDate,
-            deliveryDate: order.deliveryDate,
-            status: order.status,
-            customerName: order.customer?.fullName || null,
-            notes: order.notes,
-            totalAmount: order.totalAmount,
-            workPieces: order.orderItems.flatMap(orderItem =>
-                orderItem.workPieces.map(workPiece => ({
-                    id: workPiece.id,
-                    productItem: {
-                        id: workPiece.productItem.id,
-                        name: workPiece.productItem.name,
-                        imageUrl: workPiece.productItem.imageUrl,
+        // Flatten work pieces from all order items
+        const workPieces = order.orderItems.flatMap(orderItem =>
+            orderItem.workPieces.map(workPiece => ({
+                id: workPiece.id,
+                productItem: {
+                    id: workPiece.productItem.id,
+                    name: workPiece.productItem.name,
+                    imageUrl: workPiece.productItem.imageUrl,
+                },
+                currentStatus: workPiece.currentStatus,
+                assignedTo: workPiece.assignedTo ? {
+                    userId: workPiece.assignedTo.userId,
+                    fullName: workPiece.assignedTo.fullName,
+                    emailId: workPiece.assignedTo.emailId,
+                } : null,
+                remarks: workPiece.remarks,
+                createdAt: workPiece.createdAt,
+            }))
+        );
+
+        return sendResponse(res, 200, "Order work pieces fetched successfully", {
+            orderId: order.id,
+            workPieces: workPieces
+        });
+    } catch (error) {
+        console.error("getOrderWorkPieces error:", error);
+        return sendResponse(res, 500, "Failed to fetch order work pieces", { error: error.message });
+    }
+};
+
+/**
+ * Get Order Item Work Pieces - Retrieve work pieces for a specific order item
+ * GET /api/productOrders/:id/items/:itemId/workpieces
+ * 
+ * @param id - Order ID from URL parameters
+ * @param itemId - Order Item ID from URL parameters
+ */
+export const getOrderItemWorkPieces = async (req, res) => {
+    try {
+        const { id, itemId } = req.params;
+
+        if (!id || typeof id !== "string" || id.trim() === "") {
+            return sendResponse(res, 400, "Order ID is required");
+        }
+
+        if (!itemId || typeof itemId !== "string" || itemId.trim() === "") {
+            return sendResponse(res, 400, "Order Item ID is required");
+        }
+
+        // Fetch order item with work pieces
+        const orderItem = await prisma.orderItem.findFirst({
+            where: {
+                id: itemId.trim(),
+                productOrderId: id.trim(),
+                itemType: 'custom' // Only custom items have work pieces
+            },
+            select: {
+                id: true,
+                itemType: true,
+                quantity: true,
+                notes: true,
+                productVariant: {
+                    select: {
+                        id: true,
+                        name: true,
+                        imageUrl: true,
+                        product: {
+                            select: {
+                                id: true,
+                                name: true,
+                            }
+                        }
+                    }
+                },
+                workPieces: {
+                    select: {
+                        id: true,
+                        currentStatus: true,
+                        remarks: true,
+                        createdAt: true,
+                        productItem: {
+                            select: {
+                                id: true,
+                                name: true,
+                                imageUrl: true,
+                            }
+                        },
+                        assignedTo: {
+                            select: {
+                                userId: true,
+                                fullName: true,
+                                emailId: true,
+                            }
+                        },
                     },
-                    currentStatus: workPiece.currentStatus,
-                    assignedTo: workPiece.assignedTo ? {
-                        userId: workPiece.assignedTo.userId,
-                        fullName: workPiece.assignedTo.fullName,
-                        emailId: workPiece.assignedTo.emailId,
-                    } : null,
-                    remarks: workPiece.remarks,
-                    createdAt: workPiece.createdAt,
-                }))
-            )
+                    orderBy: {
+                        createdAt: 'asc'
+                    }
+                }
+            }
+        });
+
+        if (!orderItem) {
+            return sendResponse(res, 404, "Order item not found");
+        }
+
+        // Format the response
+        const formattedOrderItem = {
+            id: orderItem.id,
+            itemType: orderItem.itemType,
+            quantity: orderItem.quantity,
+            notes: orderItem.notes,
+            productVariant: orderItem.productVariant ? {
+                id: orderItem.productVariant.id,
+                name: orderItem.productVariant.name,
+                imageUrl: orderItem.productVariant.imageUrl,
+                product: orderItem.productVariant.product,
+            } : null,
         };
 
-        return sendResponse(res, 200, "Order details fetched successfully", formattedOrder);
+        const workPieces = orderItem.workPieces.map(workPiece => ({
+            id: workPiece.id,
+            productItem: {
+                id: workPiece.productItem.id,
+                name: workPiece.productItem.name,
+                imageUrl: workPiece.productItem.imageUrl,
+            },
+            currentStatus: workPiece.currentStatus,
+            assignedTo: workPiece.assignedTo ? {
+                userId: workPiece.assignedTo.userId,
+                fullName: workPiece.assignedTo.fullName,
+                emailId: workPiece.assignedTo.emailId,
+            } : null,
+            remarks: workPiece.remarks,
+            createdAt: workPiece.createdAt,
+        }));
+
+        return sendResponse(res, 200, "Order item work pieces fetched successfully", {
+            orderId: id.trim(),
+            orderItem: formattedOrderItem,
+            workPieces: workPieces
+        });
     } catch (error) {
-        console.error("getOrderDetails error:", error);
-        return sendResponse(res, 500, "Failed to fetch order details", { error: error.message });
+        console.error("getOrderItemWorkPieces error:", error);
+        return sendResponse(res, 500, "Failed to fetch order item work pieces", { error: error.message });
+    }
+};
+
+/**
+ * Get Available Ready-Made Items - Retrieve ready-made items with stock > 0
+ * GET /api/productOrders/ready-made-items
+ */
+export const getAvailableReadyMadeItems = async (req, res) => {
+    try {
+        const readyMadeItems = await prisma.inventory.findMany({
+            where: {
+                type: 'readyMade',
+                isDeleted: false,
+                readyMade: {
+                    quantity: {
+                        gt: 0
+                    }
+                }
+            },
+            include: {
+                readyMade: true
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+
+        return sendResponse(res, 200, "Available ready-made items fetched successfully", {
+            items: readyMadeItems
+        });
+    } catch (error) {
+        console.error("getAvailableReadyMadeItems error:", error);
+        return sendResponse(res, 500, "Failed to fetch ready-made items", { error: error.message });
     }
 };
 

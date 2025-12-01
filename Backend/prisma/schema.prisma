@@ -51,6 +51,11 @@ enum InventoryType {
   accessory
 }
 
+enum OrderItemType {
+  custom
+  readyMade
+}
+
 /////////////////////////////
 // USER MANAGEMENT
 /////////////////////////////
@@ -235,17 +240,20 @@ model ProductOrder {
   orderItems OrderItem[]
 }
 
-// 7️⃣ ORDER ITEMS — Each product variant in an order
+// 7️⃣ ORDER ITEMS — Each product variant or ready-made item in an order
 model OrderItem {
-  id               String   @id @default(uuid())
-  productOrderId   String
-  productVariantId String
-  quantity         Int      @default(1)
-  notes            String?
-  createdAt        DateTime @default(now())
+  id                   String        @id @default(uuid())
+  productOrderId       String
+  itemType             OrderItemType @default(custom)
+  productVariantId     String?
+  readyMadeInventoryId String?
+  quantity             Int           @default(1)
+  notes                String?
+  createdAt            DateTime      @default(now())
 
-  productOrder   ProductOrder   @relation(fields: [productOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productOrder       ProductOrder    @relation(fields: [productOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  readyMadeInventory Inventory?      @relation(fields: [readyMadeInventoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   workPieces   OrderWorkPiece[]
   itemStatuses ItemStatus[]
@@ -318,6 +326,7 @@ model Inventory {
   fabric      FabricInventory?
   readyMade   ReadyMadeInventory?
   accessory   AccessoryInventory?
+  orderItems  OrderItem[]
 }
 
 model FabricInventory {
