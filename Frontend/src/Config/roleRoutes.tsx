@@ -17,6 +17,7 @@ import FinancialsPage from '../Pages/Dashboard/FinancialsPage';
 import OrdersPage from '../Pages/Order/OrdersPage';
 import BookOrderPage from '../Pages/Order/BookOrderPage';
 import OrderDetailsPage from '../Pages/Order/OrderDetailsPage';
+import OrderWorkPiecesPage from '../Pages/Order/OrderWorkPiecesPage';
 import WorkPieceDetailsPage from '../Pages/Dashboard/WorkPieceDetailsPage';
 import ProductItemsPage from '../Pages/Product/ProductItem/ProductItemsPage';
 import ProductItemDetailsPage from '../Pages/Product/ProductItem/ProductItemDetailsPage';
@@ -251,6 +252,12 @@ export const roleRoutes: RoleRoutes = {
             allowedRoles: ['admin'],
         },
         {
+            path: 'orders/:id/items/:itemId/workpieces',
+            component: () => <OrderWorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['admin'],
+        },
+        {
             path: 'orders/:id',
             component: () => <OrderDetailsPage />,
             requireAuth: true,
@@ -442,6 +449,12 @@ export const roleRoutes: RoleRoutes = {
         {
             path: 'orders/book',
             component: () => <BookOrderPage />,
+            requireAuth: true,
+            allowedRoles: ['subAdmin'],
+        },
+        {
+            path: 'orders/:id/items/:itemId/workpieces',
+            component: () => <OrderWorkPiecesPage />,
             requireAuth: true,
             allowedRoles: ['subAdmin'],
         },

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   bookOrderService,
+  getAvailableReadyMadeItemsService,
   type BookOrderRequest,
   type OrderItem,
+  type AvailableReadyMadeItem,
 } from '../../Services/ApiServices/productOrderServices';
 import { getCustomersService, createCustomerService, type Customer } from '../../Services/ApiServices/customerServices';
 import { getProductsService, getProductVariantsService, type Product, type ProductVariant } from '../../Services/ApiServices/productServices';
@@ -39,6 +41,7 @@ const BookOrderPage = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
+  const [readyMadeItems, setReadyMadeItems] = useState<AvailableReadyMadeItem[]>([]);
   const [formLoading, setFormLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const customerSelectRef = useRef<HTMLSelectElement>(null);
@@ -89,10 +92,23 @@ const BookOrderPage = () => {
     }
   }, [showError]);
 
+  const fetchReadyMadeItems = useCallback(async () => {
+    try {
+      const response = await getAvailableReadyMadeItemsService();
+      if (response.success === 200 && response.data) {
+        setReadyMadeItems(response.data.items);
+      }
+    } catch (err) {
+      console.error('Error fetching ready-made items:', err);
+      showError('Failed to load ready-made items', 'Error');
+    }
+  }, [showError]);
+
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
-  }, [fetchCustomers, fetchProducts]);
+    fetchReadyMadeItems();
+  }, [fetchCustomers, fetchProducts, fetchReadyMadeItems]);
 
   const handleAddOrderItem = () => {
     setOrderFormData((prev) => ({
@@ -100,8 +116,10 @@ const BookOrderPage = () => {
       items: [
         ...prev.items,
         {
+          itemType: 'custom',
           productId: '',
           productVariantId: '',
+          readyMadeInventoryId: '',
           quantity: 1,
         },
       ],
@@ -122,6 +140,17 @@ const BookOrderPage = () => {
         ...newItems[index],
         [field]: value,
       };
+
+      // If itemType changed, reset relevant fields
+      if (field === 'itemType' && typeof value === 'string') {
+        if (value === 'custom') {
+          newItems[index].readyMadeInventoryId = '';
+        } else if (value === 'readyMade') {
+          newItems[index].productId = '';
+          newItems[index].productVariantId = '';
+          setProductVariants([]);
+        }
+      }
 
       // If productId changed, reset productVariantId and fetch variants
       if (field === 'productId' && typeof value === 'string') {
@@ -612,48 +641,98 @@ const BookOrderPage = () => {
                 }}
               >
                 <Box sx={{ display: 'flex', gap: 1.5, flex: 1, flexWrap: 'wrap' }}>
+                  {/* Item Type Selector */}
                   <Box sx={{ flex: 1, minWidth: 150 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                      {t('orders.product')} *
+                      Item Type *
                     </Typography>
                     <TextField
                       fullWidth
                       select
-                      value={item.productId}
-                      onChange={(e) => handleOrderItemChange(index, 'productId', e.target.value)}
+                      value={item.itemType || 'custom'}
+                      onChange={(e) => handleOrderItemChange(index, 'itemType', e.target.value)}
                       required
                       disabled={formLoading}
                     >
-                      <MenuItem value="">{t('orders.product')} {t('common.select') || 'Select'}</MenuItem>
-                      {products.map((product) => (
-                        <MenuItem key={product.id} value={product.id}>
-                          {product.name}
-                        </MenuItem>
-                      ))}
+                      <MenuItem value="custom">Custom (Tailored)</MenuItem>
+                      <MenuItem value="readyMade">Ready-Made</MenuItem>
                     </TextField>
                   </Box>
-                  <Box sx={{ flex: 1, minWidth: 150 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                      {t('orders.variant')} *
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      select
-                      value={item.productVariantId}
-                      onChange={(e) => handleOrderItemChange(index, 'productVariantId', e.target.value)}
-                      required
-                      disabled={formLoading || !item.productId}
-                    >
-                      <MenuItem value="">{t('orders.variant')} {t('common.select') || 'Select'}</MenuItem>
-                      {productVariants
-                        .filter((variant) => variant.productId === item.productId)
-                        .map((variant) => (
-                          <MenuItem key={variant.id} value={variant.id}>
-                            {variant.name}
+
+                  {/* Conditional Fields Based on Item Type */}
+                  {(item.itemType || 'custom') === 'custom' ? (
+                    <>
+                      <Box sx={{ flex: 1, minWidth: 150 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                          {t('orders.product')} *
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          select
+                          value={item.productId || ''}
+                          onChange={(e) => handleOrderItemChange(index, 'productId', e.target.value)}
+                          required
+                          disabled={formLoading}
+                        >
+                          <MenuItem value="">{t('orders.product')} {t('common.select') || 'Select'}</MenuItem>
+                          {products.map((product) => (
+                            <MenuItem key={product.id} value={product.id}>
+                              {product.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 150 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                          {t('orders.variant')} *
+                        </Typography>
+                        <TextField
+                          fullWidth
+                          select
+                          value={item.productVariantId || ''}
+                          onChange={(e) => handleOrderItemChange(index, 'productVariantId', e.target.value)}
+                          required
+                          disabled={formLoading || !item.productId}
+                        >
+                          <MenuItem value="">{t('orders.variant')} {t('common.select') || 'Select'}</MenuItem>
+                          {productVariants
+                            .filter((variant) => variant.productId === item.productId)
+                            .map((variant) => (
+                              <MenuItem key={variant.id} value={variant.id}>
+                                {variant.name}
+                              </MenuItem>
+                            ))}
+                        </TextField>
+                      </Box>
+                    </>
+                  ) : (
+                    <Box sx={{ flex: 2, minWidth: 300 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        Ready-Made Item *
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        select
+                        value={item.readyMadeInventoryId || ''}
+                        onChange={(e) => handleOrderItemChange(index, 'readyMadeInventoryId', e.target.value)}
+                        required
+                        disabled={formLoading}
+                      >
+                        <MenuItem value="">Select Ready-Made Item</MenuItem>
+                        {readyMadeItems.map((readyMade) => (
+                          <MenuItem key={readyMade.id} value={readyMade.id}>
+                            {readyMade.name} - {readyMade.readyMade?.color || 'N/A'}
+                            {readyMade.readyMade?.sizeLabel && ` (${readyMade.readyMade.sizeLabel})`}
+                            {readyMade.readyMade?.sizeNumber && ` (${readyMade.readyMade.sizeNumber})`}
+                            {' - Stock: '}{readyMade.readyMade?.quantity || 0}
+                            {readyMade.readyMade?.price && ` - ₹${Number(readyMade.readyMade.price).toFixed(2)}`}
                           </MenuItem>
                         ))}
-                    </TextField>
-                  </Box>
+                      </TextField>
+                    </Box>
+                  )}
+
+                  {/* Quantity Field */}
                   <Box sx={{ flex: 1, minWidth: 150 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                       {t('orders.quantity')} *
@@ -661,7 +740,12 @@ const BookOrderPage = () => {
                     <TextField
                       fullWidth
                       type="number"
-                      inputProps={{ min: 1 }}
+                      inputProps={{
+                        min: 1,
+                        max: item.itemType === 'readyMade'
+                          ? readyMadeItems.find(rm => rm.id === item.readyMadeInventoryId)?.readyMade?.quantity
+                          : undefined
+                      }}
                       value={item.quantity}
                       onChange={(e) => handleOrderItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
                       required

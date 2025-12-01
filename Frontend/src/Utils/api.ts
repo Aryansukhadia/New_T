@@ -364,6 +364,21 @@ export const API_CONFIG: ApiConfig = {
             method: 'GET',
             baseUrl: NODEJS_BASE_URL,
         },
+        getAvailableReadyMadeItems: {
+            path: '/productOrders/ready-made-items',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getOrderWorkPieces: {
+            path: '/productOrders/{id}/workpieces',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getOrderItemWorkPieces: {
+            path: '/productOrders/{id}/items/{itemId}/workpieces',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
 
         // ============================================
         // ITEM STATUS ENDPOINTS
