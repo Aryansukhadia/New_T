@@ -2,6 +2,80 @@ import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
 
 /**
+ * Get All Work Pieces with Pagination
+ * GET /api/workPieces
+ * 
+ * @query page - Page number (default: 1)
+ * @query limit - Number of items per page (default: 10)
+ * @query status - Filter by currentStatus (optional)
+ * Returns paginated list of work pieces
+ */
+export const getAllWorkPieces = async (req, res) => {
+    try {
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+        const status = req.query.status;
+
+        const skip = (page - 1) * limit;
+
+        // Build where clause
+        const whereClause = {};
+        if (status) {
+            whereClause.currentStatus = status;
+        }
+
+        // Get total count and work pieces in parallel
+        const [totalCount, workPieces] = await Promise.all([
+            prisma.orderWorkPiece.count({ where: whereClause }),
+            prisma.orderWorkPiece.findMany({
+                where: whereClause,
+                skip,
+                take: limit,
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                select: {
+                    id: true,
+                    currentStatus: true,
+                    remarks: true,
+                    createdAt: true,
+                    productItem: {
+                        select: {
+                            id: true,
+                            name: true,
+                            imageUrl: true
+                        }
+                    },
+                    assignedTo: {
+                        select: {
+                            userId: true,
+                            fullName: true
+                        }
+                    }
+                }
+            })
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return sendResponse(res, 200, "Work pieces fetched successfully", {
+            workPieces,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalCount,
+                limit,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1
+            }
+        });
+    } catch (error) {
+        console.error("getAllWorkPieces error:", error);
+        return sendResponse(res, 500, "Failed to fetch work pieces", { error: error.message });
+    }
+};
+
+/**
  * Convert Work Piece Status from Pending to Cutting
  * PATCH /api/workPieces/:workpieceId/convert-pending-to-cutting
  * 
