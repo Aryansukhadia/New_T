@@ -11,7 +11,8 @@ import {
   FaChartLine,
   FaDollarSign,
   FaUserCircle,
-  FaWarehouse
+  FaWarehouse,
+  FaCut
 } from "react-icons/fa";
 import type { ComponentType } from "react";
 
@@ -66,6 +67,7 @@ export const sidebarItems: SidebarItems = {
       ],
     },
     { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
     { label: "Reports", icon: FaChartLine, path: "/dashboard/reports" },
     { label: "Financials", icon: FaDollarSign, path: "/dashboard/financials" },
   ],
@@ -94,6 +96,7 @@ export const sidebarItems: SidebarItems = {
       ],
     },
     { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   cutter: [

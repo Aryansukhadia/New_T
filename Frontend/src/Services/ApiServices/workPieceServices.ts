@@ -1,6 +1,45 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
+
+// WorkPiece list item interface
+export interface WorkPieceListItem {
+  id: string;
+  currentStatus: string;
+  remarks: string | null;
+  createdAt: string;
+  productItem: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+  } | null;
+  assignedTo: {
+    userId: string;
+    fullName: string;
+  } | null;
+}
+
+// Response interface for paginated workpieces
+export interface WorkPiecesResponse {
+  workPieces: WorkPieceListItem[];
+  pagination: PaginationMeta;
+}
+
+// Get all workpieces with pagination
+export const getAllWorkPiecesService = async (
+  page: number = 1,
+  limit: number = 10,
+  status?: string
+): Promise<ApiResponse<WorkPiecesResponse>> => {
+  const url = getApiUrl('getWorkPieces');
+  const params: Record<string, string | number> = { page, limit };
+  if (status) {
+    params.status = status;
+  }
+  const response = await apiInstance.get<ApiResponse<WorkPiecesResponse>>(url, { params });
+  return response.data;
+};
 
 export const convertWorkPiecePendingToCuttingService = async (
   workpieceId: string
@@ -35,5 +74,3 @@ export const getWorkPieceByIdService = async (
   const response = await apiInstance.get<ApiResponse<WorkPieceSummary>>(url);
   return response.data;
 };
-
-

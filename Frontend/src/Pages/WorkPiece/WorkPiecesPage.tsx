@@ -8,76 +8,121 @@ import {
   TextField,
   Chip,
   CircularProgress,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  type SelectChangeEvent,
 } from '@mui/material';
 import MUICustomBtn from '../../Components/Common/MUICustomBtn';
 import {
-  ShoppingCart as ShoppingCartIcon,
-  Add as AddIcon,
+  Build as BuildIcon,
   Visibility as VisibilityIcon,
   FilterList as FilterListIcon,
   ViewModule as ViewModuleIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import {
-  getBookedOrdersService,
-  type ProductOrder,
-} from '../../Services/ApiServices/productOrderServices';
+  getAllWorkPiecesService,
+  type WorkPieceListItem,
+} from '../../Services/ApiServices/workPieceServices';
 import { useToast } from '../../Utils/ToastContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import DataTable, { type Column } from '../../Components/Common/DataTable';
 import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 import type { PaginationMeta } from '../../Services/ApiServices';
 
-const getStatusColor = (status: string): 'warning' | 'info' | 'success' | 'error' | 'default' => {
+const getStatusColor = (status: string): 'warning' | 'info' | 'success' | 'error' | 'default' | 'secondary' | 'primary' => {
   switch (status.toLowerCase()) {
     case 'pending':
       return 'warning';
-    case 'in_progress':
+    case 'cutting':
       return 'info';
-    case 'completed':
+    case 'redaytoStich':
+    case 'readytostich':
+      return 'secondary';
+    case 'stitching':
+      return 'primary';
+    case 'readytofinishing':
+      return 'secondary';
+    case 'finishing':
+      return 'info';
+    case 'readytodeliver':
       return 'success';
-    case 'cancelled':
-      return 'error';
     default:
       return 'default';
   }
 };
 
-const OrdersPage = () => {
+const formatStatus = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'Pending';
+    case 'cutting':
+      return 'Cutting';
+    case 'redaytostich':
+    case 'readytostich':
+      return 'Ready to Stitch';
+    case 'stitching':
+      return 'Stitching';
+    case 'readytofinishing':
+      return 'Ready to Finish';
+    case 'finishing':
+      return 'Finishing';
+    case 'readytodeliver':
+      return 'Ready to Deliver';
+    default:
+      return status;
+  }
+};
+
+const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'cutting', label: 'Cutting' },
+  { value: 'redayToStich', label: 'Ready to Stitch' },
+  { value: 'stitching', label: 'Stitching' },
+  { value: 'readyToFinishing', label: 'Ready to Finish' },
+  { value: 'finishing', label: 'Finishing' },
+  { value: 'readyToDeliver', label: 'Ready to Deliver' },
+];
+
+const WorkPiecesPage = () => {
   const navigate = useNavigate();
   const { showError } = useToast();
   const { t } = useTranslation();
 
-  const [orders, setOrders] = useState<ProductOrder[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<ProductOrder[]>([]);
+  const [workPieces, setWorkPieces] = useState<WorkPieceListItem[]>([]);
+  const [filteredWorkPieces, setFilteredWorkPieces] = useState<WorkPieceListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showFilter, setShowFilter] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [currentPage, setCurrentPage] = useState(0); // 0-based for MUI TablePagination
   const [pageSize, setPageSize] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
-  const fetchOrders = useCallback(async (page: number = 0) => {
+  const fetchWorkPieces = useCallback(async (page: number = 0, status?: string) => {
     try {
       setLoading(true);
       const apiPage = page + 1; // Convert 0-based to 1-based for API
-      const response = await getBookedOrdersService(apiPage, pageSize);
+      const response = await getAllWorkPiecesService(apiPage, pageSize, status || undefined);
       if (response.success === 200 && response.data) {
-        const { orders: ordersData, pagination } = response.data;
-        setOrders(ordersData);
+        const { workPieces: workPiecesData, pagination } = response.data;
+        setWorkPieces(workPiecesData);
         setPaginationMeta(pagination);
         setCurrentPage(page);
       } else {
-        showError(response.message || 'Failed to load orders', 'Error');
+        showError(response.message || 'Failed to load work pieces', 'Error');
       }
     } catch (err: unknown) {
-      console.error('Error fetching orders:', err);
+      console.error('Error fetching work pieces:', err);
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { data?: { message?: string } } };
-        showError(axiosError.response?.data?.message || 'Failed to load orders', 'Error');
+        showError(axiosError.response?.data?.message || 'Failed to load work pieces', 'Error');
       } else {
-        showError('Failed to load orders. Please try again.', 'Error');
+        showError('Failed to load work pieces. Please try again.', 'Error');
       }
     } finally {
       setLoading(false);
@@ -85,31 +130,33 @@ const OrdersPage = () => {
   }, [showError, pageSize]);
 
   useEffect(() => {
-    fetchOrders(currentPage);
-  }, [fetchOrders, currentPage]);
+    fetchWorkPieces(currentPage, statusFilter);
+  }, [fetchWorkPieces, currentPage, statusFilter]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
-      setFilteredOrders(orders);
+      setFilteredWorkPieces(workPieces);
       return;
     }
 
     const term = searchTerm.toLowerCase();
-    const filtered = orders.filter(
-      (order) =>
-        order.id.toLowerCase().includes(term) ||
-        (order.customerName && order.customerName.toLowerCase().includes(term)) ||
-        order.status.toLowerCase().includes(term)
+    const filtered = workPieces.filter(
+      (wp) =>
+        wp.id.toLowerCase().includes(term) ||
+        (wp.productItem?.name && wp.productItem.name.toLowerCase().includes(term)) ||
+        (wp.assignedTo?.fullName && wp.assignedTo.fullName.toLowerCase().includes(term)) ||
+        wp.currentStatus.toLowerCase().includes(term)
     );
-    setFilteredOrders(filtered);
-  }, [searchTerm, orders]);
+    setFilteredWorkPieces(filtered);
+  }, [searchTerm, workPieces]);
 
-  const handleBookOrder = () => {
-    navigate('/dashboard/orders/book');
+  const handleViewWorkPieceDetails = (workpieceId: string) => {
+    navigate(`/dashboard/workpiece/${workpieceId}`);
   };
 
-  const handleViewOrderDetails = (orderId: string) => {
-    navigate(`/dashboard/orders/${orderId}`);
+  const handleStatusFilterChange = (event: SelectChangeEvent<string>) => {
+    setStatusFilter(event.target.value);
+    setCurrentPage(0);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -122,52 +169,47 @@ const OrdersPage = () => {
   };
 
   // Table columns configuration
-  const columns: Column<ProductOrder>[] = [
+  const columns: Column<WorkPieceListItem>[] = [
     {
-      id: 'orderId',
-      label: t('orders.orderId'),
-      render: (order) => order.id.substring(0, 8) + '...',
+      id: 'workpieceId',
+      label: 'Workpiece ID',
+      render: (wp) => wp.id.substring(0, 8) + '...',
     },
     {
-      id: 'customer',
-      label: t('orders.customer'),
-      render: (order) => order.customerName || '—',
-    },
-    {
-      id: 'orderDate',
-      label: t('orders.orderDate'),
-      render: (order) => formatDate(order.orderDate),
-    },
-    {
-      id: 'deliveryDate',
-      label: t('orders.deliveryDate'),
-      render: (order) => formatDate(order.deliveryDate),
+      id: 'productItem',
+      label: 'Product Item',
+      render: (wp) => wp.productItem?.name || '—',
     },
     {
       id: 'status',
-      label: t('orders.status'),
-      render: (order) => (
+      label: t('common.status'),
+      render: (wp) => (
         <Chip
-          label={order.status}
-          color={getStatusColor(order.status)}
+          label={formatStatus(wp.currentStatus)}
+          color={getStatusColor(wp.currentStatus)}
           size="small"
-          sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+          sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem' }}
         />
       ),
     },
     {
-      id: 'totalAmount',
-      label: t('orders.totalAmount'),
-      render: (order) => order.totalAmount ? `$${order.totalAmount.toFixed(2)}` : '—',
+      id: 'assignedTo',
+      label: 'Assigned To',
+      render: (wp) => wp.assignedTo?.fullName || '—',
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (wp) => formatDate(wp.createdAt),
     },
     {
       id: 'actions',
       label: t('common.actions'),
-      render: (order) => (
+      render: (wp) => (
         <MUICustomBtn
           size="small"
-          onClick={() => handleViewOrderDetails(order.id)}
-          tooltip={t('orders.viewDetails')}
+          onClick={() => handleViewWorkPieceDetails(wp.id)}
+          tooltip="View Details"
           variant="contained"
           sx={{
             bgcolor: '#e3f2fd',
@@ -190,62 +232,53 @@ const OrdersPage = () => {
   ];
 
   // Card fields configuration
-  const cardFields: CardField<ProductOrder>[] = [
+  const cardFields: CardField<WorkPieceListItem>[] = [
     {
-      id: 'customer',
-      label: t('orders.customer'),
-      render: (order) => <Typography variant="body2">{order.customerName || '—'}</Typography>,
-    },
-    {
-      id: 'orderDate',
-      label: t('orders.orderDate'),
-      render: (order) => (
-        <Typography variant="body2" color="text.secondary">
-          {formatDate(order.orderDate)}
-        </Typography>
-      ),
-    },
-    {
-      id: 'deliveryDate',
-      label: t('orders.deliveryDate'),
-      render: (order) => (
-        <Typography variant="body2" color="text.secondary">
-          {formatDate(order.deliveryDate)}
-        </Typography>
-      ),
+      id: 'productItem',
+      label: 'Product Item',
+      render: (wp) => <Typography variant="body2">{wp.productItem?.name || '—'}</Typography>,
     },
     {
       id: 'status',
-      label: t('orders.status'),
-      render: (order) => (
+      label: t('common.status'),
+      render: (wp) => (
         <Chip
-          label={order.status}
-          color={getStatusColor(order.status)}
+          label={formatStatus(wp.currentStatus)}
+          color={getStatusColor(wp.currentStatus)}
           size="small"
-          sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+          sx={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem' }}
         />
       ),
     },
     {
-      id: 'totalAmount',
-      label: t('orders.totalAmount'),
-      render: (order) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {order.totalAmount ? `$${order.totalAmount.toFixed(2)}` : '—'}
+      id: 'assignedTo',
+      label: 'Assigned To',
+      render: (wp) => (
+        <Typography variant="body2" color="text.secondary">
+          {wp.assignedTo?.fullName || '—'}
+        </Typography>
+      ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (wp) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(wp.createdAt)}
         </Typography>
       ),
     },
   ];
 
   // Card actions configuration
-  const cardActions: CardAction<ProductOrder>[] = [
+  const cardActions: CardAction<WorkPieceListItem>[] = [
     {
       id: 'view',
-      render: (order) => (
+      render: (wp) => (
         <MUICustomBtn
           size="small"
-          onClick={() => handleViewOrderDetails(order.id)}
-          tooltip={t('orders.viewDetails')}
+          onClick={() => handleViewWorkPieceDetails(wp.id)}
+          tooltip="View Details"
           variant="contained"
           sx={{
             bgcolor: '#e3f2fd',
@@ -281,7 +314,7 @@ const OrdersPage = () => {
           fontWeight: 700,
           fontSize: { xs: '1.25rem', sm: '1.5rem' }
         }}>
-          {t('orders.title')}
+          Work Pieces
         </Typography>
         <Box sx={{
           display: 'flex',
@@ -335,47 +368,40 @@ const OrdersPage = () => {
           >
             {viewMode === 'table' ? 'Card View' : 'Table View'}
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleBookOrder}
-            sx={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-              },
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              px: 2.5,
-              py: 1,
-              borderRadius: 1.5,
-              whiteSpace: 'nowrap',
-              minWidth: { xs: 'auto', sm: 140 },
-            }}
-          >
-            {t('orders.bookNewOrder')}
-          </Button>
         </Box>
       </Box>
 
       {showFilter && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <TextField
-            fullWidth
-            placeholder="Search orders by order ID, customer name, or status..."
+            placeholder="Search by ID, product item, or assigned user..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             variant="outlined"
             sx={{
-              maxWidth: { xs: '100%', sm: 500 },
+              flex: 1,
+              minWidth: { xs: '100%', sm: 300 },
+              maxWidth: { xs: '100%', sm: 400 },
               '& .MuiInputBase-input': {
                 fontSize: { xs: '0.9rem', sm: '1rem' }
               }
             }}
           />
+          <FormControl sx={{ minWidth: 180 }}>
+            <InputLabel id="status-filter-label">Status</InputLabel>
+            <Select
+              labelId="status-filter-label"
+              value={statusFilter}
+              onChange={handleStatusFilterChange}
+              label="Status"
+            >
+              {statusOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       )}
 
@@ -383,11 +409,11 @@ const OrdersPage = () => {
         <Box sx={{ textAlign: 'center', py: 5 }}>
           <CircularProgress />
         </Box>
-      ) : filteredOrders.length === 0 ? (
+      ) : filteredWorkPieces.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 8, color: 'text.secondary' }}>
-          <ShoppingCartIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
+          <BuildIcon sx={{ fontSize: 48, color: '#ccc', mb: 2 }} />
           <Typography variant="body1">
-            {searchTerm ? 'No orders found matching your search' : t('orders.noOrders')}
+            {searchTerm || statusFilter ? 'No work pieces found matching your filters' : 'No work pieces available'}
           </Typography>
         </Box>
       ) : (
@@ -397,8 +423,8 @@ const OrdersPage = () => {
             {viewMode === 'table' ? (
               <DataTable
                 columns={columns}
-                data={filteredOrders}
-                getRowKey={(order) => order.id}
+                data={filteredWorkPieces}
+                getRowKey={(wp) => wp.id}
                 paginationMeta={paginationMeta}
                 currentPage={currentPage}
                 pageSize={pageSize}
@@ -413,12 +439,12 @@ const OrdersPage = () => {
               />
             ) : (
               <DataCardGrid
-                data={filteredOrders}
-                getCardTitle={(order) => `Order ${order.id.substring(0, 8)}...`}
-                getCardSubtitle={(order) => order.customerName || 'No customer name'}
+                data={filteredWorkPieces}
+                getCardTitle={(wp) => `${wp.productItem?.name || 'Work Piece'}`}
+                getCardSubtitle={(wp) => wp.id.substring(0, 12) + '...'}
                 fields={cardFields}
                 actions={cardActions}
-                getRowKey={(order) => order.id}
+                getRowKey={(wp) => wp.id}
                 paginationMeta={paginationMeta}
                 currentPage={currentPage}
                 pageSize={pageSize}
@@ -438,12 +464,12 @@ const OrdersPage = () => {
           {/* Mobile/Tablet view - always show card view on screens < 1024px */}
           <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
             <DataCardGrid
-              data={filteredOrders}
-              getCardTitle={(order) => `Order ${order.id.substring(0, 8)}...`}
-              getCardSubtitle={(order) => order.customerName || 'No customer name'}
+              data={filteredWorkPieces}
+              getCardTitle={(wp) => `${wp.productItem?.name || 'Work Piece'}`}
+              getCardSubtitle={(wp) => wp.id.substring(0, 12) + '...'}
               fields={cardFields}
               actions={cardActions}
-              getRowKey={(order) => order.id}
+              getRowKey={(wp) => wp.id}
               paginationMeta={paginationMeta}
               currentPage={currentPage}
               pageSize={pageSize}
@@ -464,4 +490,5 @@ const OrdersPage = () => {
   );
 };
 
-export default OrdersPage;
+export default WorkPiecesPage;
+
