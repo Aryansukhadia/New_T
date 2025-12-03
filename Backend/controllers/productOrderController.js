@@ -199,23 +199,34 @@ export const bookOrder = async (req, res) => {
                         });
 
                         // Create OrderWorkPiece entries for each ProductItem × quantity
-                        const workPiecesToCreate = [];
+                        // and also create initial WorkStage with 'pending' status
+                        const createdWorkPieces = [];
                         for (const productItem of variant.productItems) {
                             for (let qty = 0; qty < item.quantity; qty++) {
-                                workPiecesToCreate.push({
-                                    orderItemId: orderItem.id,
-                                    productItemId: productItem.id,
-                                    currentStatus: 'pending',
-                                    assignedToId: null,
-                                    remarks: null,
+                                // Create WorkPiece
+                                const workPiece = await tx.orderWorkPiece.create({
+                                    data: {
+                                        orderItemId: orderItem.id,
+                                        productItemId: productItem.id,
+                                        currentStatus: 'pending',
+                                        assignedToId: null,
+                                        remarks: null,
+                                    }
+                                });
+                                
+                                createdWorkPieces.push(workPiece);
+                                
+                                // Create initial WorkStage with 'pending' status
+                                await tx.workStage.create({
+                                    data: {
+                                        orderWorkPieceId: workPiece.id,
+                                        stage: 'pending',
+                                        startedAt: new Date(),
+                                        updatedById: req.user?.userId || null,
+                                        remarks: null,
+                                    }
                                 });
                             }
-                        }
-
-                        if (workPiecesToCreate.length > 0) {
-                            await tx.orderWorkPiece.createMany({
-                                data: workPiecesToCreate
-                            });
                         }
 
                         // Create ItemStatus entries for each ProductItem × quantity
