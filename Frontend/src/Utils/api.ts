@@ -407,6 +407,11 @@ export const API_CONFIG: ApiConfig = {
             method: 'GET',
             baseUrl: NODEJS_BASE_URL,
         },
+        getWorkPieceStatusHistory: {
+            path: '/workPieces/{workpieceId}/status-history',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
     },
 };
 

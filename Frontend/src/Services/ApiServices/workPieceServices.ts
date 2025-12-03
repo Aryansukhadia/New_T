@@ -74,3 +74,44 @@ export const getWorkPieceByIdService = async (
   const response = await apiInstance.get<ApiResponse<WorkPieceSummary>>(url);
   return response.data;
 };
+
+// WorkPiece Status History interfaces
+export interface WorkStageHistory {
+  id: string;
+  stage: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  remarks: string | null;
+  updatedBy: {
+    userId: string;
+    fullName: string;
+    emailId: string;
+  } | null;
+  duration: number | null; // Duration in hours
+  isCompleted: boolean;
+  isActive: boolean;
+}
+
+export interface WorkPieceStatusHistory {
+  workPiece: {
+    id: string;
+    currentStatus: string;
+    productItem: {
+      id: string;
+      name: string;
+    };
+  };
+  statusHistory: WorkStageHistory[];
+  totalStages: number;
+  completedStages: number;
+  activeStages: number;
+}
+
+// Get work piece status history
+export const getWorkPieceStatusHistoryService = async (
+  workpieceId: string
+): Promise<ApiResponse<WorkPieceStatusHistory>> => {
+  const url = getApiUrl('getWorkPieceStatusHistory', { workpieceId });
+  const response = await apiInstance.get<ApiResponse<WorkPieceStatusHistory>>(url);
+  return response.data;
+};
