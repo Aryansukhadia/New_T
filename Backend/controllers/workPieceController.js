@@ -1,5 +1,6 @@
 import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
+import { getAvailableWorkPieceStatus } from "../utils/roles.js";
 
 /**
  * Get All Work Pieces with Pagination
@@ -18,10 +19,20 @@ export const getAllWorkPieces = async (req, res) => {
 
         const skip = (page - 1) * limit;
 
+        const currentStatusAsPerRole = getAvailableWorkPieceStatus(req.user.role);
+
         // Build where clause
         const whereClause = {};
-        if (status) {
+        if (status && currentStatusAsPerRole.includes(status)) {
             whereClause.currentStatus = status;
+        }
+        else if (!status) {
+            whereClause.currentStatus = {
+                in: currentStatusAsPerRole
+            };
+        }
+        else {
+            return sendResponse(res, 400, "You are not authorized to view this status");
         }
 
         // Get total count and work pieces in parallel
