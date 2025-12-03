@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -31,66 +31,15 @@ import { useTranslation } from '../../hooks/useTranslation';
 import DataTable, { type Column } from '../../Components/Common/DataTable';
 import DataCardGrid, { type CardField, type CardAction } from '../../Components/Common/DataCardGrid';
 import type { PaginationMeta } from '../../Services/ApiServices';
-
-const getStatusColor = (status: string): 'warning' | 'info' | 'success' | 'error' | 'default' | 'secondary' | 'primary' => {
-  switch (status.toLowerCase()) {
-    case 'pending':
-      return 'warning';
-    case 'cutting':
-      return 'info';
-    case 'redaytoStich':
-    case 'readytostich':
-      return 'secondary';
-    case 'stitching':
-      return 'primary';
-    case 'readytofinishing':
-      return 'secondary';
-    case 'finishing':
-      return 'info';
-    case 'readytodeliver':
-      return 'success';
-    default:
-      return 'default';
-  }
-};
-
-const formatStatus = (status: string): string => {
-  switch (status.toLowerCase()) {
-    case 'pending':
-      return 'Pending';
-    case 'cutting':
-      return 'Cutting';
-    case 'redaytostich':
-    case 'readytostich':
-      return 'Ready to Stitch';
-    case 'stitching':
-      return 'Stitching';
-    case 'readytofinishing':
-      return 'Ready to Finish';
-    case 'finishing':
-      return 'Finishing';
-    case 'readytodeliver':
-      return 'Ready to Deliver';
-    default:
-      return status;
-  }
-};
-
-const statusOptions = [
-  { value: '', label: 'All Statuses' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'cutting', label: 'Cutting' },
-  { value: 'redayToStich', label: 'Ready to Stitch' },
-  { value: 'stitching', label: 'Stitching' },
-  { value: 'readyToFinishing', label: 'Ready to Finish' },
-  { value: 'finishing', label: 'Finishing' },
-  { value: 'readyToDeliver', label: 'Ready to Deliver' },
-];
+import { getAvailableWorkPieceStatus, getStatusColor, formatStatus } from '../../Utils/WorkPiece';
+import { getUserInfo } from '../../Services/ApiServices';
 
 const WorkPiecesPage = () => {
   const navigate = useNavigate();
   const { showError } = useToast();
   const { t } = useTranslation();
+  const userInfo = getUserInfo();
+  const userRole = userInfo?.role || '';
 
   const [workPieces, setWorkPieces] = useState<WorkPieceListItem[]>([]);
   const [filteredWorkPieces, setFilteredWorkPieces] = useState<WorkPieceListItem[]>([]);
@@ -102,6 +51,21 @@ const WorkPiecesPage = () => {
   const [currentPage, setCurrentPage] = useState(0); // 0-based for MUI TablePagination
   const [pageSize, setPageSize] = useState(10);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
+  // Generate status options based on user role
+  const statusOptions = useMemo(() => {
+    const availableStatuses = getAvailableWorkPieceStatus(userRole);
+    const options = [{ value: '', label: 'All Statuses' }];
+
+    availableStatuses.forEach((status) => {
+      options.push({
+        value: status,
+        label: formatStatus(status)
+      });
+    });
+
+    return options;
+  }, [userRole]);
 
   const fetchWorkPieces = useCallback(async (page: number = 0, status?: string) => {
     try {

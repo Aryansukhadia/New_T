@@ -75,6 +75,18 @@ export const roleRoutes: RoleRoutes = {
             requireAuth: true,
             allowedRoles: ['superAdmin'],
         },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['superAdmin'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['superAdmin'],
+        },
     ],
 
     admin: [
@@ -497,7 +509,19 @@ export const roleRoutes: RoleRoutes = {
             component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['cutter'],
-        }
+        },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['cutter'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['cutter'],
+        },
     ],
 
     stitcher: [
@@ -512,7 +536,19 @@ export const roleRoutes: RoleRoutes = {
             component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['stitcher'],
-        }
+        },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['stitcher'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['stitcher'],
+        },
     ],
 
     finisher: [
@@ -527,7 +563,19 @@ export const roleRoutes: RoleRoutes = {
             component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['finisher'],
-        }
+        },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['finisher'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['finisher'],
+        },
     ],
 
     deliveryBoy: [
@@ -542,7 +590,19 @@ export const roleRoutes: RoleRoutes = {
             component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['deliveryBoy'],
-        }
+        },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['deliveryBoy'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['deliveryBoy'],
+        },
     ],
 
     accountant: [
@@ -557,7 +617,19 @@ export const roleRoutes: RoleRoutes = {
             component: () => <ProfilePage />,
             requireAuth: true,
             allowedRoles: ['accountant'],
-        }
+        },
+        {
+            path: 'workpieces',
+            component: () => <WorkPiecesPage />,
+            requireAuth: true,
+            allowedRoles: ['accountant'],
+        },
+        {
+            path: 'workpiece/:workpieceId',
+            component: () => <WorkPieceDetailsPage />,
+            requireAuth: true,
+            allowedRoles: ['accountant'],
+        },
     ],
 };
 

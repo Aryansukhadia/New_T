@@ -39,6 +39,7 @@ export const sidebarItems: SidebarItems = {
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
     { label: "Create Admin", icon: FaUserLock, path: "/dashboard/create-admin" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   admin: [
@@ -102,31 +103,31 @@ export const sidebarItems: SidebarItems = {
   cutter: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   stitcher: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   finisher: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   deliveryBoy: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 
   accountant: [
     { label: "Dashboard", icon: FaChartBar, path: "/dashboard" },
     { label: "Profile", icon: FaUserCircle, path: "/dashboard/profile" },
-    { label: "Orders", icon: FaShoppingCart, path: "/dashboard/orders" },
+    { label: "Work Pieces", icon: FaCut, path: "/dashboard/workpieces" },
   ],
 };
 
