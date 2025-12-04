@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getMeService, getUserByIdService, changePasswordService, resetPasswordService, getUserInfo, type UserResponse } from '../../Services/ApiServices';
+import { getMeService, getUserByIdService, resetPasswordService, getUserInfo, type UserResponse } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
 import { validatePassword } from '../../Utils/passwordValidation';
+import ChangePasswordDialog from '../../Components/Dialogs/ChangePasswordDialog';
 import {
     Box,
     Card,
     Typography,
-    TextField,
     CircularProgress,
     Avatar,
     Divider,
@@ -16,8 +16,10 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    TextField,
     IconButton,
     InputAdornment,
+    Alert,
 } from '@mui/material';
 import {
     Person as PersonIcon,
@@ -36,13 +38,11 @@ const ProfilePage = () => {
 
     const [user, setUser] = useState<UserResponse | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-    const [passwordFormLoading, setPasswordFormLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-
-    const [passwordData, setPasswordData] = useState({
-        password: '',
-    });
+    const [isChangePasswordDialogOpen, setIsChangePasswordDialogOpen] = useState(false);
+    const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+    const [resetPassword, setResetPassword] = useState('');
+    const [showResetPassword, setShowResetPassword] = useState(false);
+    const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
     // Check if viewing own profile or another user's profile
     const isViewingOwnProfile = !urlUserId || urlUserId === currentUser?.userId;
@@ -83,67 +83,61 @@ const ProfilePage = () => {
         }
     };
 
-    const handleOpenChangePasswordModal = () => {
-        setPasswordData({ password: '' });
-        setShowPassword(false);
-        setIsChangePasswordModalOpen(true);
+    const handleOpenChangePasswordDialog = () => {
+        if (isViewingOwnProfile) {
+            setIsChangePasswordDialogOpen(true);
+        } else {
+            setResetPassword('');
+            setShowResetPassword(false);
+            setIsResetPasswordDialogOpen(true);
+        }
     };
 
-    const handleCloseChangePasswordModal = () => {
-        setIsChangePasswordModalOpen(false);
-        setPasswordData({ password: '' });
+    const handleCloseChangePasswordDialog = () => {
+        setIsChangePasswordDialogOpen(false);
     };
 
-    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPasswordData({ password: e.target.value });
+    const handleCloseResetPasswordDialog = () => {
+        setIsResetPasswordDialogOpen(false);
+        setResetPassword('');
     };
 
-    const handleChangePassword = async (e: React.FormEvent) => {
+    const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const passwordToValidate = passwordData.password;
+        if (!urlUserId) {
+            showError('User ID is missing', 'Error');
+            return;
+        }
+
         // Validate password
-        const validation = validatePassword(passwordToValidate);
+        const validation = validatePassword(resetPassword);
         if (!validation.isValid) {
             showError(validation.message, 'Validation Error');
             return;
         }
 
-        setPasswordFormLoading(true);
+        setResetPasswordLoading(true);
 
         try {
-            let response;
-
-            if (isViewingOwnProfile) {
-                // Use changePasswordService for own profile
-                response = await changePasswordService({ password: passwordToValidate });
-            } else if (urlUserId) {
-                // Use resetPasswordService for other users
-                response = await resetPasswordService(urlUserId, { newPassword: passwordToValidate });
-            } else {
-                throw new Error('Invalid state: no userId available');
-            }
+            const response = await resetPasswordService(urlUserId, { newPassword: resetPassword });
 
             if (response.success === 200) {
-                showSuccess(response.message || 'Password changed successfully!', 'Success');
-                setTimeout(() => {
-                    handleCloseChangePasswordModal();
-                }, 1000);
+                showSuccess(response.message || 'Password reset successfully! User will be prompted to change it on next login.', 'Success');
+                handleCloseResetPasswordDialog();
             } else {
-                const errorMsg = response.message || 'Failed to change password';
-                showError(errorMsg, 'Change Password Failed');
+                showError(response.message || 'Failed to reset password', 'Error');
             }
         } catch (err: unknown) {
+            console.error('Error resetting password:', err);
             if (err && typeof err === 'object' && 'response' in err) {
                 const axiosError = err as { response?: { data?: { message?: string } } };
-                const errorMsg = axiosError.response?.data?.message || 'An error occurred';
-                showError(errorMsg, 'Change Password Failed');
+                showError(axiosError.response?.data?.message || 'Failed to reset password', 'Error');
             } else {
-                const errorMsg = 'An unexpected error occurred';
-                showError(errorMsg, 'Change Password Failed');
+                showError('Failed to reset password. Please try again.', 'Error');
             }
         } finally {
-            setPasswordFormLoading(false);
+            setResetPasswordLoading(false);
         }
     };
 
@@ -225,8 +219,8 @@ const ProfilePage = () => {
                         >
                             {getInitials(user.fullName)}
                         </Avatar>
-                        <Typography variant="h5" sx={{ 
-                            fontWeight: 700, 
+                        <Typography variant="h5" sx={{
+                            fontWeight: 700,
                             mb: 1,
                             fontSize: { xs: '1.25rem', sm: '1.5rem' }
                         }}>
@@ -251,7 +245,7 @@ const ProfilePage = () => {
                         <Button
                             variant="contained"
                             startIcon={<LockIcon />}
-                            onClick={handleOpenChangePasswordModal}
+                            onClick={handleOpenChangePasswordDialog}
                             fullWidth
                             sx={{
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -272,8 +266,8 @@ const ProfilePage = () => {
 
                     {/* Right Side - Profile Information */}
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ 
-                            fontWeight: 700, 
+                        <Typography variant="h6" sx={{
+                            fontWeight: 700,
                             mb: 3,
                             fontSize: { xs: '1.1rem', sm: '1.25rem' }
                         }}>
@@ -281,10 +275,10 @@ const ProfilePage = () => {
                         </Typography>
 
                         {/* User ID */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            mb: 3, 
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: 3,
                             gap: { xs: 1.5, sm: 2 },
                             flexWrap: { xs: 'wrap', sm: 'nowrap' }
                         }}>
@@ -306,9 +300,9 @@ const ProfilePage = () => {
                                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     User ID
                                 </Typography>
-                                <Typography variant="body1" sx={{ 
-                                    fontWeight: 600, 
-                                    fontFamily: 'monospace', 
+                                <Typography variant="body1" sx={{
+                                    fontWeight: 600,
+                                    fontFamily: 'monospace',
                                     fontSize: { xs: 14, sm: 16 },
                                     wordBreak: 'break-all'
                                 }}>
@@ -318,10 +312,10 @@ const ProfilePage = () => {
                         </Box>
 
                         {/* Email */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            mb: 3, 
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: 3,
                             gap: { xs: 1.5, sm: 2 },
                             flexWrap: { xs: 'wrap', sm: 'nowrap' }
                         }}>
@@ -343,8 +337,8 @@ const ProfilePage = () => {
                                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Email Address
                                 </Typography>
-                                <Typography variant="body1" sx={{ 
-                                    fontWeight: 600, 
+                                <Typography variant="body1" sx={{
+                                    fontWeight: 600,
                                     fontSize: { xs: 14, sm: 16 },
                                     wordBreak: 'break-word'
                                 }}>
@@ -354,10 +348,10 @@ const ProfilePage = () => {
                         </Box>
 
                         {/* Role */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            mb: 3, 
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: 3,
                             gap: { xs: 1.5, sm: 2 },
                             flexWrap: { xs: 'wrap', sm: 'nowrap' }
                         }}>
@@ -379,9 +373,9 @@ const ProfilePage = () => {
                                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Role
                                 </Typography>
-                                <Typography variant="body1" sx={{ 
-                                    fontWeight: 600, 
-                                    textTransform: 'capitalize', 
+                                <Typography variant="body1" sx={{
+                                    fontWeight: 600,
+                                    textTransform: 'capitalize',
                                     fontSize: { xs: 14, sm: 16 }
                                 }}>
                                     {user.role}
@@ -390,9 +384,9 @@ const ProfilePage = () => {
                         </Box>
 
                         {/* Created At */}
-                        <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: { xs: 1.5, sm: 2 },
                             flexWrap: { xs: 'wrap', sm: 'nowrap' }
                         }}>
@@ -414,8 +408,8 @@ const ProfilePage = () => {
                                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                                     Member Since
                                 </Typography>
-                                <Typography variant="body1" sx={{ 
-                                    fontWeight: 600, 
+                                <Typography variant="body1" sx={{
+                                    fontWeight: 600,
                                     fontSize: { xs: 14, sm: 16 }
                                 }}>
                                     {formatDate(user.createdAt)}
@@ -426,99 +420,101 @@ const ProfilePage = () => {
                 </Box>
             </Card>
 
-            {/* Change Password Dialog */}
-            <Dialog 
-                open={isChangePasswordModalOpen} 
-                onClose={handleCloseChangePasswordModal} 
-                maxWidth="sm" 
-                fullWidth
-                fullScreen={false}
-                sx={{
-                    '& .MuiDialog-paper': {
-                        m: { xs: 2, sm: 3 },
-                        width: { xs: 'calc(100% - 32px)', sm: '100%' }
-                    }
-                }}
-            >
-                <DialogTitle sx={{ 
-                    fontSize: { xs: '1.1rem', sm: '1.25rem' },
-                    pb: 1
-                }}>
-                    {isViewingOwnProfile ? 'Change Password' : 'Reset Password'}
-                </DialogTitle>
-                <DialogContent>
-                    <Box component="form" onSubmit={handleChangePassword} sx={{ pt: 2 }}>
-                        <TextField
-                            fullWidth
-                            label="New Password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={passwordData.password}
-                            onChange={handlePasswordChange}
-                            required
-                            disabled={passwordFormLoading}
-                            helperText="Password must be 6-12 characters with at least one capital letter, number, and special character"
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            edge="end"
-                                            disabled={passwordFormLoading}
-                                        >
-                                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            sx={{
-                                '& .MuiInputBase-input': {
-                                    fontSize: { xs: '0.9rem', sm: '1rem' }
-                                },
-                                '& .MuiFormHelperText-root': {
-                                    fontSize: { xs: '0.7rem', sm: '0.75rem' }
-                                }
-                            }}
-                        />
+            {/* Change Password Dialog - For own profile */}
+            {isViewingOwnProfile && (
+                <ChangePasswordDialog
+                    open={isChangePasswordDialogOpen}
+                    onClose={handleCloseChangePasswordDialog}
+                    isForced={false}
+                />
+            )}
+
+            {/* Reset Password Dialog - For admins resetting other users' passwords */}
+            {!isViewingOwnProfile && (
+                <Dialog
+                    open={isResetPasswordDialogOpen}
+                    onClose={handleCloseResetPasswordDialog}
+                    maxWidth="sm"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 2,
+                            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{ pb: 1 }}>
+                        <Typography variant="h5" component="div" fontWeight={600}>
+                            Reset Password for {user?.fullName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            Set a new password for this user. They will be required to change it on their next login.
+                        </Typography>
+                    </DialogTitle>
+
+                    <Box component="form" onSubmit={handleResetPassword}>
+                        <DialogContent sx={{ pt: 2 }}>
+                            <Alert severity="info" sx={{ mb: 3 }}>
+                                The user will receive a <strong>needToResetPassword</strong> flag and must change this password on their next login.
+                            </Alert>
+
+                            <TextField
+                                fullWidth
+                                type={showResetPassword ? 'text' : 'password'}
+                                label="New Password"
+                                value={resetPassword}
+                                onChange={(e) => setResetPassword(e.target.value)}
+                                helperText="Must be at least 8 characters with uppercase, lowercase, number, and special character"
+                                required
+                                disabled={resetPasswordLoading}
+                                margin="normal"
+                                variant="outlined"
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowResetPassword(!showResetPassword)}
+                                                disabled={resetPasswordLoading}
+                                                edge="end"
+                                                aria-label={showResetPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showResetPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        </DialogContent>
+
+                        <DialogActions sx={{ px: 3, pb: 3 }}>
+                            <Button
+                                onClick={handleCloseResetPasswordDialog}
+                                disabled={resetPasswordLoading}
+                                variant="outlined"
+                                color="inherit"
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={resetPasswordLoading}
+                                variant="contained"
+                                sx={{
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    '&:hover': {
+                                        background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                                    },
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {resetPasswordLoading ? <CircularProgress size={20} color="inherit" /> : 'Reset Password'}
+                            </Button>
+                        </DialogActions>
                     </Box>
-                </DialogContent>
-                <DialogActions sx={{ 
-                    p: { xs: 2, sm: 2 },
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: { xs: 1, sm: 0 }
-                }}>
-                    <Button
-                        onClick={handleCloseChangePasswordModal}
-                        variant="outlined"
-                        disabled={passwordFormLoading}
-                        fullWidth={window.innerWidth < 600}
-                        sx={{ 
-                            textTransform: 'none', 
-                            fontWeight: 600,
-                            order: { xs: 2, sm: 1 }
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleChangePassword}
-                        disabled={passwordFormLoading}
-                        variant="contained"
-                        fullWidth={window.innerWidth < 600}
-                        sx={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            '&:hover': {
-                                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                            },
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            minWidth: { sm: 140 },
-                            order: { xs: 1, sm: 2 }
-                        }}
-                    >
-                        {passwordFormLoading ? <CircularProgress size={20} /> : (isViewingOwnProfile ? 'Change Password' : 'Reset Password')}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                </Dialog>
+            )}
         </Box>
     );
 };

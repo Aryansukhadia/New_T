@@ -56,7 +56,7 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    
+
     // Clear error when user starts typing
     if (errors.password) {
       setErrors(prev => ({ ...prev, password: undefined }));
@@ -66,7 +66,7 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setConfirmPassword(value);
-    
+
     // Clear error when user starts typing
     if (errors.confirmPassword) {
       setErrors(prev => ({ ...prev, confirmPassword: undefined }));
@@ -75,7 +75,7 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate password
     const passwordError = validatePassword(password);
     if (passwordError) {
@@ -92,10 +92,10 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
     setLoading(true);
     try {
       const response = await changePasswordService({ password });
-      
+
       if (response.success === 200) {
         showSuccess('Password changed successfully!', 'Success');
-        
+
         // Update userInfo in localStorage to set needToResetPassword to false
         const userInfo = localStorage.getItem('userInfo');
         if (userInfo) {
@@ -103,12 +103,12 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
           parsedUserInfo.needToResetPassword = false;
           localStorage.setItem('userInfo', JSON.stringify(parsedUserInfo));
         }
-        
+
         // Reset form
         setPassword('');
         setConfirmPassword('');
         setErrors({});
-        
+
         // Close dialog
         onClose();
       } else {
@@ -132,8 +132,8 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       disableEscapeKeyDown={isForced}
       maxWidth="sm"
@@ -227,7 +227,7 @@ const ChangePasswordDialog = ({ open, onClose, isForced = false }: ChangePasswor
               onClick={handleClose}
               disabled={loading}
               variant="outlined"
-              color="inherit"
+              color="secondary"
               tooltip="Cancel"
             >
               Cancel
