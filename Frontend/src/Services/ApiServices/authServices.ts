@@ -18,6 +18,7 @@ export interface LoginResponse {
   emailId: string;
   role: string;
   token: string;
+  needToResetPassword?: boolean;
 }
 
 export interface RegisterRequest {

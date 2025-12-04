@@ -3,11 +3,22 @@ import { Outlet } from 'react-router-dom';
 import { Box, useMediaQuery, useTheme, IconButton } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import Sidebar from './Sidebar';
+import ChangePasswordDialog from '../Dialogs/ChangePasswordDialog';
+import { getUserInfo } from '../../Services/ApiServices';
 
 const DashboardLayout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg')); // lg = 1024px
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+
+  // Check if user needs to reset password on mount
+  useEffect(() => {
+    const userInfo = getUserInfo();
+    if (userInfo?.needToResetPassword === true) {
+      setShowPasswordDialog(true);
+    }
+  }, []);
 
   // Close sidebar on mobile by default when screen size changes
   useEffect(() => {
@@ -16,6 +27,10 @@ const DashboardLayout = () => {
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handlePasswordDialogClose = () => {
+    setShowPasswordDialog(false);
   };
 
   return (
@@ -55,6 +70,13 @@ const DashboardLayout = () => {
         )}
         <Outlet />
       </Box>
+
+      {/* Password Change Dialog - Forced if needToResetPassword is true */}
+      <ChangePasswordDialog
+        open={showPasswordDialog}
+        onClose={handlePasswordDialogClose}
+        isForced={true}
+      />
     </Box>
   );
 };
