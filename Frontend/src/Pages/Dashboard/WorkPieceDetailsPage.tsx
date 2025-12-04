@@ -20,12 +20,12 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../Utils/ToastContext';
 import { 
-  convertWorkPiecePendingToCuttingService,
-  convertWorkPieceCuttingToReadyToStitchService,
-  convertWorkPieceReadyToStitchToStitchingService,
-  convertWorkPieceStitchingToReadyToFinishingService,
-  convertWorkPieceReadyToFinishingToFinishingService,
-  convertWorkPieceFinishingToReadyToDeliverService,
+  convertWorkPiecePendingToUnderCuttingService,
+  convertWorkPieceUnderCuttingToReadyToStitchService,
+  convertWorkPieceReadyToStitchToUnderStitchingService,
+  convertWorkPieceUnderStitchingToReadyToFinishingService,
+  convertWorkPieceReadyToFinishingToUnderFinishingService,
+  convertWorkPieceUnderFinishingToReadyToDeliverService,
   getWorkPieceByIdService, 
   getWorkPieceStatusHistoryService,
   type WorkPieceSummary,
@@ -153,23 +153,23 @@ const WorkPieceDetailsPage = () => {
 
       // Call the appropriate service based on the transition
       switch (`${currentStatus}->${nextStatus}`) {
-        case 'pending->cutting':
-          response = await convertWorkPiecePendingToCuttingService(workpieceId);
+        case 'pending->underCutting':
+          response = await convertWorkPiecePendingToUnderCuttingService(workpieceId);
           break;
-        case 'cutting->redayToStich':
-          response = await convertWorkPieceCuttingToReadyToStitchService(workpieceId);
+        case 'underCutting->redayToStich':
+          response = await convertWorkPieceUnderCuttingToReadyToStitchService(workpieceId);
           break;
-        case 'redayToStich->stitching':
-          response = await convertWorkPieceReadyToStitchToStitchingService(workpieceId);
+        case 'redayToStich->underStitching':
+          response = await convertWorkPieceReadyToStitchToUnderStitchingService(workpieceId);
           break;
-        case 'stitching->readyToFinishing':
-          response = await convertWorkPieceStitchingToReadyToFinishingService(workpieceId);
+        case 'underStitching->readyToFinishing':
+          response = await convertWorkPieceUnderStitchingToReadyToFinishingService(workpieceId);
           break;
-        case 'readyToFinishing->finishing':
-          response = await convertWorkPieceReadyToFinishingToFinishingService(workpieceId);
+        case 'readyToFinishing->underFinishing':
+          response = await convertWorkPieceReadyToFinishingToUnderFinishingService(workpieceId);
           break;
-        case 'finishing->readyToDeliver':
-          response = await convertWorkPieceFinishingToReadyToDeliverService(workpieceId);
+        case 'underFinishing->readyToDeliver':
+          response = await convertWorkPieceUnderFinishingToReadyToDeliverService(workpieceId);
           break;
         default:
           showError('Invalid status transition', 'Error');

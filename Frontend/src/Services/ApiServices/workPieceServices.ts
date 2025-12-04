@@ -42,56 +42,56 @@ export const getAllWorkPiecesService = async (
 };
 
 // Status transition services
-export const convertWorkPiecePendingToCuttingService = async (
+export const convertWorkPiecePendingToUnderCuttingService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPiecePendingToCutting', { workpieceId });
+  const url = getApiUrl('convertWorkPiecePendingToUnderCutting', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 
-export const convertWorkPieceCuttingToReadyToStitchService = async (
+export const convertWorkPieceUnderCuttingToReadyToStitchService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPieceCuttingToReadyToStitch', { workpieceId });
+  const url = getApiUrl('convertWorkPieceUnderCuttingToReadyToStitch', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 
-export const convertWorkPieceReadyToStitchToStitchingService = async (
+export const convertWorkPieceReadyToStitchToUnderStitchingService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPieceReadyToStitchToStitching', { workpieceId });
+  const url = getApiUrl('convertWorkPieceReadyToStitchToUnderStitching', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 
-export const convertWorkPieceStitchingToReadyToFinishingService = async (
+export const convertWorkPieceUnderStitchingToReadyToFinishingService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPieceStitchingToReadyToFinishing', { workpieceId });
+  const url = getApiUrl('convertWorkPieceUnderStitchingToReadyToFinishing', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 
-export const convertWorkPieceReadyToFinishingToFinishingService = async (
+export const convertWorkPieceReadyToFinishingToUnderFinishingService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPieceReadyToFinishingToFinishing', { workpieceId });
+  const url = getApiUrl('convertWorkPieceReadyToFinishingToUnderFinishing', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 
-export const convertWorkPieceFinishingToReadyToDeliverService = async (
+export const convertWorkPieceUnderFinishingToReadyToDeliverService = async (
   workpieceId: string,
   remarks?: string
 ): Promise<ApiResponse<unknown>> => {
-  const url = getApiUrl('convertWorkPieceFinishingToReadyToDeliver', { workpieceId });
+  const url = getApiUrl('convertWorkPieceUnderFinishingToReadyToDeliver', { workpieceId });
   const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };

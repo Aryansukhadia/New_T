@@ -1,16 +1,16 @@
 export const getAvailableWorkPieceStatus = (role: string) => {
     if (role == 'superAdmin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'admin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'subAdmin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'cutter') {
-        return ['pending', 'cutting'];
+        return ['pending', 'underCutting'];
     } else if (role == 'stitcher') {
-        return ['redayToStich', 'stitching'];
+        return ['redayToStich', 'underStitching'];
     } else if (role == 'finisher') {
-        return ['readyToFinishing', 'finishing'];
+        return ['readyToFinishing', 'underFinishing'];
     } else if (role == 'deliveryBoy') {
         return ['readyToDeliver'];
     } else if (role == 'accountant') {
@@ -23,16 +23,16 @@ export const formatStatus = (status: string): string => {
     switch (status.toLowerCase()) {
         case 'pending':
             return 'Pending';
-        case 'cutting':
-            return 'Cutting';
+        case 'undercutting':
+            return 'Under Cutting';
         case 'redaytostich':
             return 'Ready to Stitch';
-        case 'stitching':
-            return 'Stitching';
+        case 'understitching':
+            return 'Under Stitching';
         case 'readytofinishing':
             return 'Ready to Finish';
-        case 'finishing':
-            return 'Finishing';
+        case 'underfinishing':
+            return 'Under Finishing';
         case 'readytodeliver':
             return 'Ready to Deliver';
         case 'in_progress':
@@ -48,28 +48,28 @@ export const formatStatus = (status: string): string => {
 export const getAllowedStatusTransitions = (role: string): Record<string, string[]> => {
     if (role == 'superAdmin' || role == 'admin' || role == 'subAdmin') {
         return {
-            'pending': ['cutting'],
-            'cutting': ['redayToStich'],
-            'redayToStich': ['stitching'],
-            'stitching': ['readyToFinishing'],
-            'readyToFinishing': ['finishing'],
-            'finishing': ['readyToDeliver'],
+            'pending': ['underCutting'],
+            'underCutting': ['redayToStich'],
+            'redayToStich': ['underStitching'],
+            'underStitching': ['readyToFinishing'],
+            'readyToFinishing': ['underFinishing'],
+            'underFinishing': ['readyToDeliver'],
             'readyToDeliver': []
         };
     } else if (role == 'cutter') {
         return {
-            'pending': ['cutting'],
-            'cutting': ['redayToStich']
+            'pending': ['underCutting'],
+            'underCutting': ['redayToStich']
         };
     } else if (role == 'stitcher') {
         return {
-            'redayToStich': ['stitching'],
-            'stitching': ['readyToFinishing']
+            'redayToStich': ['underStitching'],
+            'underStitching': ['readyToFinishing']
         };
     } else if (role == 'finisher') {
         return {
-            'readyToFinishing': ['finishing'],
-            'finishing': ['readyToDeliver']
+            'readyToFinishing': ['underFinishing'],
+            'underFinishing': ['readyToDeliver']
         };
     } else if (role == 'deliveryBoy') {
         return {
@@ -96,16 +96,16 @@ export const getStatusColor = (status: string): 'default' | 'primary' | 'seconda
     switch (status.toLowerCase()) {
         case 'pending':
             return 'warning';
-        case 'cutting':
+        case 'undercutting':
         case 'in_progress':
             return 'info';
         case 'redaytostich':
             return 'secondary';
-        case 'stitching':
+        case 'understitching':
             return 'primary';
         case 'readytofinishing':
             return 'secondary';
-        case 'finishing':
+        case 'underfinishing':
             return 'info';
         case 'readytodeliver':
         case 'completed':

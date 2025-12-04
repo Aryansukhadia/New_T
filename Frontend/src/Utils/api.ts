@@ -397,33 +397,33 @@ export const API_CONFIG: ApiConfig = {
             method: 'GET',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPiecePendingToCutting: {
-            path: '/workPieces/{workpieceId}/convert-pending-to-cutting',
+        convertWorkPiecePendingToUnderCutting: {
+            path: '/workPieces/{workpieceId}/convert-pending-to-under-cutting',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPieceCuttingToReadyToStitch: {
-            path: '/workPieces/{workpieceId}/convert-cutting-to-ready-to-stitch',
+        convertWorkPieceUnderCuttingToReadyToStitch: {
+            path: '/workPieces/{workpieceId}/convert-under-cutting-to-ready-to-stitch',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPieceReadyToStitchToStitching: {
-            path: '/workPieces/{workpieceId}/convert-ready-to-stitch-to-stitching',
+        convertWorkPieceReadyToStitchToUnderStitching: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-stitch-to-under-stitching',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPieceStitchingToReadyToFinishing: {
-            path: '/workPieces/{workpieceId}/convert-stitching-to-ready-to-finishing',
+        convertWorkPieceUnderStitchingToReadyToFinishing: {
+            path: '/workPieces/{workpieceId}/convert-under-stitching-to-ready-to-finishing',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPieceReadyToFinishingToFinishing: {
-            path: '/workPieces/{workpieceId}/convert-ready-to-finishing-to-finishing',
+        convertWorkPieceReadyToFinishingToUnderFinishing: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-finishing-to-under-finishing',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
-        convertWorkPieceFinishingToReadyToDeliver: {
-            path: '/workPieces/{workpieceId}/convert-finishing-to-ready-to-deliver',
+        convertWorkPieceUnderFinishingToReadyToDeliver: {
+            path: '/workPieces/{workpieceId}/convert-under-finishing-to-ready-to-deliver',
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
