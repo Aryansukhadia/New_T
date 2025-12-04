@@ -1,6 +1,6 @@
 import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
-import { getAvailableWorkPieceStatus } from "../utils/roles.js";
+import { getAvailableWorkPieceStatus } from "../utils/workPiece.js";
 
 /**
  * Get All Work Pieces with Pagination
@@ -217,6 +217,415 @@ export const convertPendingToCutting = async (req, res) => {
         );
     } catch (error) {
         console.error("convertPendingToCutting error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Ready to Stitch to Stitching
+ * PATCH /api/workPieces/:workpieceId/convert-ready-to-stitch-to-stitching
+ * Allowed Roles: stitcher, admin, subAdmin, superAdmin
+ */
+export const convertReadyToStitchToStitching = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        const allowedRoles = ['stitcher', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'redaytostich') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to stitch work pieces can be converted to stitching.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'stitching' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'redayToStich', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'stitching',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to stitching.");
+    } catch (error) {
+        console.error("convertReadyToStitchToStitching error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Cutting to Ready to Stitch
+ * PATCH /api/workPieces/:workpieceId/convert-cutting-to-ready-to-stitch
+ * Allowed Roles: cutter, admin, subAdmin, superAdmin
+ */
+export const convertCuttingToReadyToStitch = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        // Check role permission
+        const allowedRoles = ['cutter', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'cutting') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only cutting work pieces can be converted to ready to stitch.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'redayToStich' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'cutting', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'redayToStich',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from cutting to ready to stitch.");
+    } catch (error) {
+        console.error("convertCuttingToReadyToStitch error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Ready to Stitch to Stitching
+ * PATCH /api/workPieces/:workpieceId/convert-ready-to-stitch-to-stitching
+ * Allowed Roles: stitcher, admin, subAdmin, superAdmin
+ */
+// export const convertReadyToStitchToStitching = async (req, res) => {
+//     try {
+//         const { workpieceId } = req.params;
+//         const { remarks } = req.body;
+//         const userRole = req.user?.role;
+
+//         const allowedRoles = ['stitcher', 'admin', 'subAdmin', 'superAdmin'];
+//         if (!allowedRoles.includes(userRole)) {
+//             return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+//         }
+
+//         if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+//             return sendResponse(res, 400, "Workpiece ID is required");
+//         }
+
+//         const workPiece = await prisma.orderWorkPiece.findUnique({
+//             where: { id: workpieceId.trim() }
+//         });
+
+//         if (!workPiece) {
+//             return sendResponse(res, 404, "Work piece not found");
+//         }
+
+//         if (workPiece.currentStatus.toLowerCase() !== 'redaytostich') {
+//             return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to stitch work pieces can be converted to stitching.`);
+//         }
+
+//         await prisma.$transaction(async (tx) => {
+//             await tx.orderWorkPiece.update({
+//                 where: { id: workpieceId.trim() },
+//                 data: { currentStatus: 'stitching' }
+//             });
+
+//             const previousStage = await tx.workStage.findFirst({
+//                 where: { orderWorkPieceId: workpieceId.trim(), stage: 'redayToStich', completedAt: null },
+//                 orderBy: { startedAt: 'desc' }
+//             });
+
+//             if (previousStage) {
+//                 await tx.workStage.update({
+//                     where: { id: previousStage.id },
+//                     data: { completedAt: new Date() }
+//                 });
+//             }
+
+//             await tx.workStage.create({
+//                 data: {
+//                     orderWorkPieceId: workpieceId.trim(),
+//                     stage: 'stitching',
+//                     startedAt: new Date(),
+//                     updatedById: req.user?.userId || null,
+//                     remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+//                 }
+//             });
+//         });
+
+//         return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to stitching.");
+//     } catch (error) {
+//         console.error("convertReadyToStitchToStitching error:", error);
+//         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+//     }
+// };
+
+/**
+ * Convert Work Piece Status from Stitching to Ready to Finishing
+ * PATCH /api/workPieces/:workpieceId/convert-stitching-to-ready-to-finishing
+ * Allowed Roles: stitcher, admin, subAdmin, superAdmin
+ */
+export const convertStitchingToReadyToFinishing = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        const allowedRoles = ['stitcher', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'stitching') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only stitching work pieces can be converted to ready to finishing.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'readyToFinishing' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'stitching', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'readyToFinishing',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from stitching to ready to finishing.");
+    } catch (error) {
+        console.error("convertStitchingToReadyToFinishing error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Ready to Finishing to Finishing
+ * PATCH /api/workPieces/:workpieceId/convert-ready-to-finishing-to-finishing
+ * Allowed Roles: finisher, admin, subAdmin, superAdmin
+ */
+export const convertReadyToFinishingToFinishing = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        const allowedRoles = ['finisher', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'readytofinishing') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to finishing work pieces can be converted to finishing.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'finishing' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'readyToFinishing', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'finishing',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from ready to finishing to finishing.");
+    } catch (error) {
+        console.error("convertReadyToFinishingToFinishing error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Finishing to Ready to Deliver
+ * PATCH /api/workPieces/:workpieceId/convert-finishing-to-ready-to-deliver
+ * Allowed Roles: finisher, admin, subAdmin, superAdmin
+ */
+export const convertFinishingToReadyToDeliver = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        const allowedRoles = ['finisher', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'finishing') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only finishing work pieces can be converted to ready to deliver.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'readyToDeliver' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'finishing', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'readyToDeliver',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from finishing to ready to deliver.");
+    } catch (error) {
+        console.error("convertFinishingToReadyToDeliver error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
