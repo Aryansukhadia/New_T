@@ -313,7 +313,8 @@ export const login = async (req, res) => {
             fullName: user.fullName,
             emailId: user.emailId,
             role: user.role,
-            token: token
+            token: token,
+            needToResetPassword: user.needToResetPassword
         };
 
         return sendResponse(res, 200, "Login successful", userData);
