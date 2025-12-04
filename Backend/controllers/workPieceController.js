@@ -96,7 +96,7 @@ export const getAllWorkPieces = async (req, res) => {
  * 2. Creates a WorkStage record to track the status change
  * Only updates the specified work piece and its own work stages
  */
-export const convertPendingToCutting = async (req, res) => {
+export const convertPendingToUnderCutting = async (req, res) => {
     try {
         const { workpieceId } = req.params;
 
@@ -149,7 +149,7 @@ export const convertPendingToCutting = async (req, res) => {
             const updatedWorkPiece = await tx.orderWorkPiece.update({
                 where: { id: workpieceId.trim() },
                 data: {
-                    currentStatus: 'cutting'
+                    currentStatus: 'underCutting'
                 },
                 include: {
                     orderItem: {
@@ -196,7 +196,7 @@ export const convertPendingToCutting = async (req, res) => {
             const newWorkStage = await tx.workStage.create({
                 data: {
                     orderWorkPieceId: workpieceId.trim(),
-                    stage: 'cutting',
+                    stage: 'underCutting',
                     startedAt: new Date(),
                     updatedById: req.user?.userId,
                     remarks: null
@@ -213,10 +213,10 @@ export const convertPendingToCutting = async (req, res) => {
         return sendResponse(
             res,
             200,
-            `Successfully converted work piece from pending to cutting.`
+            `Successfully converted work piece from pending to under cutting.`
         );
     } catch (error) {
-        console.error("convertPendingToCutting error:", error);
+        console.error("convertPendingToUnderCutting error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
@@ -256,7 +256,7 @@ export const convertReadyToStitchToStitching = async (req, res) => {
         await prisma.$transaction(async (tx) => {
             await tx.orderWorkPiece.update({
                 where: { id: workpieceId.trim() },
-                data: { currentStatus: 'stitching' }
+                data: { currentStatus: 'underStitching' }
             });
 
             const previousStage = await tx.workStage.findFirst({
@@ -274,7 +274,7 @@ export const convertReadyToStitchToStitching = async (req, res) => {
             await tx.workStage.create({
                 data: {
                     orderWorkPieceId: workpieceId.trim(),
-                    stage: 'stitching',
+                    stage: 'underStitching',
                     startedAt: new Date(),
                     updatedById: req.user?.userId || null,
                     remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
@@ -282,7 +282,7 @@ export const convertReadyToStitchToStitching = async (req, res) => {
             });
         });
 
-        return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to stitching.");
+        return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to under stitching.");
     } catch (error) {
         console.error("convertReadyToStitchToStitching error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
@@ -294,7 +294,7 @@ export const convertReadyToStitchToStitching = async (req, res) => {
  * PATCH /api/workPieces/:workpieceId/convert-cutting-to-ready-to-stitch
  * Allowed Roles: cutter, admin, subAdmin, superAdmin
  */
-export const convertCuttingToReadyToStitch = async (req, res) => {
+export const convertUnderCuttingToReadyToStitch = async (req, res) => {
     try {
         const { workpieceId } = req.params;
         const { remarks } = req.body;
@@ -318,8 +318,8 @@ export const convertCuttingToReadyToStitch = async (req, res) => {
             return sendResponse(res, 404, "Work piece not found");
         }
 
-        if (workPiece.currentStatus.toLowerCase() !== 'cutting') {
-            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only cutting work pieces can be converted to ready to stitch.`);
+        if (workPiece.currentStatus.toLowerCase() !== 'undercutting') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only under cutting work pieces can be converted to ready to stitch.`);
         }
 
         await prisma.$transaction(async (tx) => {
@@ -329,7 +329,7 @@ export const convertCuttingToReadyToStitch = async (req, res) => {
             });
 
             const previousStage = await tx.workStage.findFirst({
-                where: { orderWorkPieceId: workpieceId.trim(), stage: 'cutting', completedAt: null },
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'underCutting', completedAt: null },
                 orderBy: { startedAt: 'desc' }
             });
 
@@ -351,9 +351,9 @@ export const convertCuttingToReadyToStitch = async (req, res) => {
             });
         });
 
-        return sendResponse(res, 200, "Successfully converted work piece from cutting to ready to stitch.");
+        return sendResponse(res, 200, "Successfully converted work piece from under cutting to ready to stitch.");
     } catch (error) {
-        console.error("convertCuttingToReadyToStitch error:", error);
+        console.error("convertUnderCuttingToReadyToStitch error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
@@ -363,75 +363,7 @@ export const convertCuttingToReadyToStitch = async (req, res) => {
  * PATCH /api/workPieces/:workpieceId/convert-ready-to-stitch-to-stitching
  * Allowed Roles: stitcher, admin, subAdmin, superAdmin
  */
-// export const convertReadyToStitchToStitching = async (req, res) => {
-//     try {
-//         const { workpieceId } = req.params;
-//         const { remarks } = req.body;
-//         const userRole = req.user?.role;
-
-//         const allowedRoles = ['stitcher', 'admin', 'subAdmin', 'superAdmin'];
-//         if (!allowedRoles.includes(userRole)) {
-//             return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
-//         }
-
-//         if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
-//             return sendResponse(res, 400, "Workpiece ID is required");
-//         }
-
-//         const workPiece = await prisma.orderWorkPiece.findUnique({
-//             where: { id: workpieceId.trim() }
-//         });
-
-//         if (!workPiece) {
-//             return sendResponse(res, 404, "Work piece not found");
-//         }
-
-//         if (workPiece.currentStatus.toLowerCase() !== 'redaytostich') {
-//             return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to stitch work pieces can be converted to stitching.`);
-//         }
-
-//         await prisma.$transaction(async (tx) => {
-//             await tx.orderWorkPiece.update({
-//                 where: { id: workpieceId.trim() },
-//                 data: { currentStatus: 'stitching' }
-//             });
-
-//             const previousStage = await tx.workStage.findFirst({
-//                 where: { orderWorkPieceId: workpieceId.trim(), stage: 'redayToStich', completedAt: null },
-//                 orderBy: { startedAt: 'desc' }
-//             });
-
-//             if (previousStage) {
-//                 await tx.workStage.update({
-//                     where: { id: previousStage.id },
-//                     data: { completedAt: new Date() }
-//                 });
-//             }
-
-//             await tx.workStage.create({
-//                 data: {
-//                     orderWorkPieceId: workpieceId.trim(),
-//                     stage: 'stitching',
-//                     startedAt: new Date(),
-//                     updatedById: req.user?.userId || null,
-//                     remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
-//                 }
-//             });
-//         });
-
-//         return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to stitching.");
-//     } catch (error) {
-//         console.error("convertReadyToStitchToStitching error:", error);
-//         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
-//     }
-// };
-
-/**
- * Convert Work Piece Status from Stitching to Ready to Finishing
- * PATCH /api/workPieces/:workpieceId/convert-stitching-to-ready-to-finishing
- * Allowed Roles: stitcher, admin, subAdmin, superAdmin
- */
-export const convertStitchingToReadyToFinishing = async (req, res) => {
+export const convertReadyToStitchToUnderStitching = async (req, res) => {
     try {
         const { workpieceId } = req.params;
         const { remarks } = req.body;
@@ -454,8 +386,76 @@ export const convertStitchingToReadyToFinishing = async (req, res) => {
             return sendResponse(res, 404, "Work piece not found");
         }
 
-        if (workPiece.currentStatus.toLowerCase() !== 'stitching') {
-            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only stitching work pieces can be converted to ready to finishing.`);
+        if (workPiece.currentStatus.toLowerCase() !== 'redaytostich') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to stitch work pieces can be converted to stitching.`);
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.orderWorkPiece.update({
+                where: { id: workpieceId.trim() },
+                data: { currentStatus: 'underStitching' }
+            });
+
+            const previousStage = await tx.workStage.findFirst({
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'redayToStich', completedAt: null },
+                orderBy: { startedAt: 'desc' }
+            });
+
+            if (previousStage) {
+                await tx.workStage.update({
+                    where: { id: previousStage.id },
+                    data: { completedAt: new Date() }
+                });
+            }
+
+            await tx.workStage.create({
+                data: {
+                    orderWorkPieceId: workpieceId.trim(),
+                    stage: 'underStitching',
+                    startedAt: new Date(),
+                    updatedById: req.user?.userId || null,
+                    remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
+                }
+            });
+        });
+
+        return sendResponse(res, 200, "Successfully converted work piece from ready to stitch to under stitching.");
+    } catch (error) {
+        console.error("convertReadyToStitchToStitching error:", error);
+        return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
+    }
+};
+
+/**
+ * Convert Work Piece Status from Stitching to Ready to Finishing
+ * PATCH /api/workPieces/:workpieceId/convert-stitching-to-ready-to-finishing
+ * Allowed Roles: stitcher, admin, subAdmin, superAdmin
+ */
+export const convertUnderStitchingToReadyToFinishing = async (req, res) => {
+    try {
+        const { workpieceId } = req.params;
+        const { remarks } = req.body;
+        const userRole = req.user?.role;
+
+        const allowedRoles = ['stitcher', 'admin', 'subAdmin', 'superAdmin'];
+        if (!allowedRoles.includes(userRole)) {
+            return sendResponse(res, 403, `Your role (${userRole}) is not authorized to perform this action.`);
+        }
+
+        if (!workpieceId || typeof workpieceId !== "string" || workpieceId.trim() === "") {
+            return sendResponse(res, 400, "Workpiece ID is required");
+        }
+
+        const workPiece = await prisma.orderWorkPiece.findUnique({
+            where: { id: workpieceId.trim() }
+        });
+
+        if (!workPiece) {
+            return sendResponse(res, 404, "Work piece not found");
+        }
+
+        if (workPiece.currentStatus.toLowerCase() !== 'understitching') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only under stitching work pieces can be converted to ready to finishing.`);
         }
 
         await prisma.$transaction(async (tx) => {
@@ -465,7 +465,7 @@ export const convertStitchingToReadyToFinishing = async (req, res) => {
             });
 
             const previousStage = await tx.workStage.findFirst({
-                where: { orderWorkPieceId: workpieceId.trim(), stage: 'stitching', completedAt: null },
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'underStitching', completedAt: null },
                 orderBy: { startedAt: 'desc' }
             });
 
@@ -487,9 +487,9 @@ export const convertStitchingToReadyToFinishing = async (req, res) => {
             });
         });
 
-        return sendResponse(res, 200, "Successfully converted work piece from stitching to ready to finishing.");
+        return sendResponse(res, 200, "Successfully converted work piece from under stitching to ready to finishing.");
     } catch (error) {
-        console.error("convertStitchingToReadyToFinishing error:", error);
+        console.error("convertUnderStitchingToReadyToFinishing error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
@@ -499,7 +499,7 @@ export const convertStitchingToReadyToFinishing = async (req, res) => {
  * PATCH /api/workPieces/:workpieceId/convert-ready-to-finishing-to-finishing
  * Allowed Roles: finisher, admin, subAdmin, superAdmin
  */
-export const convertReadyToFinishingToFinishing = async (req, res) => {
+export const convertReadyToFinishingToUnderFinishing = async (req, res) => {
     try {
         const { workpieceId } = req.params;
         const { remarks } = req.body;
@@ -523,13 +523,13 @@ export const convertReadyToFinishingToFinishing = async (req, res) => {
         }
 
         if (workPiece.currentStatus.toLowerCase() !== 'readytofinishing') {
-            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to finishing work pieces can be converted to finishing.`);
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only ready to under finishing work pieces can be converted to finishing.`);
         }
 
         await prisma.$transaction(async (tx) => {
             await tx.orderWorkPiece.update({
                 where: { id: workpieceId.trim() },
-                data: { currentStatus: 'finishing' }
+                data: { currentStatus: 'underFinishing' }
             });
 
             const previousStage = await tx.workStage.findFirst({
@@ -547,7 +547,7 @@ export const convertReadyToFinishingToFinishing = async (req, res) => {
             await tx.workStage.create({
                 data: {
                     orderWorkPieceId: workpieceId.trim(),
-                    stage: 'finishing',
+                    stage: 'underFinishing',
                     startedAt: new Date(),
                     updatedById: req.user?.userId || null,
                     remarks: remarks && typeof remarks === "string" ? remarks.trim() : null
@@ -555,9 +555,9 @@ export const convertReadyToFinishingToFinishing = async (req, res) => {
             });
         });
 
-        return sendResponse(res, 200, "Successfully converted work piece from ready to finishing to finishing.");
+        return sendResponse(res, 200, "Successfully converted work piece from ready to finishing to under finishing.");
     } catch (error) {
-        console.error("convertReadyToFinishingToFinishing error:", error);
+        console.error("convertReadyToFinishingToUnderFinishing error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
@@ -567,7 +567,7 @@ export const convertReadyToFinishingToFinishing = async (req, res) => {
  * PATCH /api/workPieces/:workpieceId/convert-finishing-to-ready-to-deliver
  * Allowed Roles: finisher, admin, subAdmin, superAdmin
  */
-export const convertFinishingToReadyToDeliver = async (req, res) => {
+export const convertUnderFinishingToReadyToDeliver = async (req, res) => {
     try {
         const { workpieceId } = req.params;
         const { remarks } = req.body;
@@ -590,8 +590,8 @@ export const convertFinishingToReadyToDeliver = async (req, res) => {
             return sendResponse(res, 404, "Work piece not found");
         }
 
-        if (workPiece.currentStatus.toLowerCase() !== 'finishing') {
-            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only finishing work pieces can be converted to ready to deliver.`);
+        if (workPiece.currentStatus.toLowerCase() !== 'underfinishing') {
+            return sendResponse(res, 400, `Work piece status is ${workPiece.currentStatus}. Only under finishing work pieces can be converted to ready to deliver.`);
         }
 
         await prisma.$transaction(async (tx) => {
@@ -601,7 +601,7 @@ export const convertFinishingToReadyToDeliver = async (req, res) => {
             });
 
             const previousStage = await tx.workStage.findFirst({
-                where: { orderWorkPieceId: workpieceId.trim(), stage: 'finishing', completedAt: null },
+                where: { orderWorkPieceId: workpieceId.trim(), stage: 'underFinishing', completedAt: null },
                 orderBy: { startedAt: 'desc' }
             });
 
@@ -623,9 +623,9 @@ export const convertFinishingToReadyToDeliver = async (req, res) => {
             });
         });
 
-        return sendResponse(res, 200, "Successfully converted work piece from finishing to ready to deliver.");
+        return sendResponse(res, 200, "Successfully converted work piece from under finishing to ready to deliver.");
     } catch (error) {
-        console.error("convertFinishingToReadyToDeliver error:", error);
+        console.error("convertUnderFinishingToReadyToDeliver error:", error);
         return sendResponse(res, 500, "Failed to convert work piece status", { error: error.message });
     }
 };
@@ -798,4 +798,3 @@ export const getWorkPieceStatusHistory = async (req, res) => {
         return sendResponse(res, 500, "Failed to fetch work piece status history", { error: error.message });
     }
 };
-

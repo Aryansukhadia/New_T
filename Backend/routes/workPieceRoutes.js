@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
     getAllWorkPieces,
-    convertPendingToCutting,
-    convertCuttingToReadyToStitch,
-    convertReadyToStitchToStitching,
-    convertStitchingToReadyToFinishing,
-    convertReadyToFinishingToFinishing,
-    convertFinishingToReadyToDeliver,
+    convertPendingToUnderCutting,
+    convertUnderCuttingToReadyToStitch,
+    convertReadyToStitchToUnderStitching,
+    convertUnderStitchingToReadyToFinishing,
+    convertReadyToFinishingToUnderFinishing,
+    convertUnderFinishingToReadyToDeliver,
     getWorkPieceById,
     getWorkPieceStatusHistory,
 } from "../controllers/workPieceController.js";
@@ -20,12 +20,12 @@ router.use(authenticate);
 router.get("/", getAllWorkPieces); // GET /api/workPieces?page=1&limit=10&status=pending
 
 // Status transition endpoints (role-based)
-router.patch("/:workpieceId/convert-pending-to-cutting", convertPendingToCutting); // Cutter, Admin
-router.patch("/:workpieceId/convert-cutting-to-ready-to-stitch", convertCuttingToReadyToStitch); // Cutter, Admin
-router.patch("/:workpieceId/convert-ready-to-stitch-to-stitching", convertReadyToStitchToStitching); // Stitcher, Admin
-router.patch("/:workpieceId/convert-stitching-to-ready-to-finishing", convertStitchingToReadyToFinishing); // Stitcher, Admin
-router.patch("/:workpieceId/convert-ready-to-finishing-to-finishing", convertReadyToFinishingToFinishing); // Finisher, Admin
-router.patch("/:workpieceId/convert-finishing-to-ready-to-deliver", convertFinishingToReadyToDeliver); // Finisher, Admin
+router.patch("/:workpieceId/convert-pending-to-under-cutting", convertPendingToUnderCutting); // Cutter, Admin
+router.patch("/:workpieceId/convert-under-cutting-to-ready-to-stitch", convertUnderCuttingToReadyToStitch); // Cutter, Admin
+router.patch("/:workpieceId/convert-ready-to-stitch-to-under-stitching", convertReadyToStitchToUnderStitching); // Stitcher, Admin
+router.patch("/:workpieceId/convert-under-stitching-to-ready-to-finishing", convertUnderStitchingToReadyToFinishing); // Stitcher, Admin
+router.patch("/:workpieceId/convert-ready-to-finishing-to-under-finishing", convertReadyToFinishingToUnderFinishing); // Finisher, Admin
+router.patch("/:workpieceId/convert-under-finishing-to-ready-to-deliver", convertUnderFinishingToReadyToDeliver); // Finisher, Admin
 
 // Get workpiece details and history
 router.get("/:workpieceId/status-history", getWorkPieceStatusHistory); // GET /api/workPieces/:workpieceId/status-history

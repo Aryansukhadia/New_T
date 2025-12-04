@@ -236,7 +236,7 @@ export const bookOrder = async (req, res) => {
                                 itemStatusesToCreate.push({
                                     orderItemId: orderItem.id,
                                     productItemId: productItem.id,
-                                    status: 'cutting',
+                                    status: 'underCutting',
                                     updatedById: req.user?.userId || null,
                                 });
                             }

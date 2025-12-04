@@ -1,17 +1,17 @@
 
 export const getAvailableWorkPieceStatus = (role) => {
     if (role == 'superAdmin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'admin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'subAdmin') {
-        return ['pending', 'cutting', 'redayToStich', 'stitching', 'readyToFinishing', 'finishing', 'readyToDeliver'];
+        return ['pending', 'underCutting', 'redayToStich', 'underStitching', 'readyToFinishing', 'underFinishing', 'readyToDeliver'];
     } else if (role == 'cutter') {
-        return ['pending', 'cutting'];
+        return ['pending', 'underCutting'];
     } else if (role == 'stitcher') {
-        return ['redayToStich', 'stitching'];
+        return ['redayToStich', 'underStitching'];
     } else if (role == 'finisher') {
-        return ['readyToFinishing', 'finishing'];
+        return ['readyToFinishing', 'underFinishing'];
     } else if (role == 'deliveryBoy') {
         return ['readyToDeliver'];
     } else if (role == 'accountant') {
@@ -26,28 +26,28 @@ export const getAllowedStatusTransitions = (role) => {
     if (role == 'superAdmin' || role == 'admin' || role == 'subAdmin') {
         // Admins can perform all transitions
         return {
-            'pending': ['cutting'],
-            'cutting': ['redayToStich'],
-            'redayToStich': ['stitching'],
-            'stitching': ['readyToFinishing'],
-            'readyToFinishing': ['finishing'],
-            'finishing': ['readyToDeliver'],
+            'pending': ['underCutting'],
+            'underCutting': ['redayToStich'],
+            'redayToStich': ['underStitching'],
+            'underStitching': ['readyToFinishing'],
+            'readyToFinishing': ['underFinishing'],
+            'underFinishing': ['readyToDeliver'],
             'readyToDeliver': []
         };
     } else if (role == 'cutter') {
         return {
-            'pending': ['cutting'],
-            'cutting': ['redayToStich']
+            'pending': ['underCutting'],
+            'underCutting': ['redayToStich']
         };
     } else if (role == 'stitcher') {
         return {
-            'redayToStich': ['stitching'],
-            'stitching': ['readyToFinishing']
+            'redayToStich': ['underStitching'],
+            'underStitching': ['readyToFinishing']
         };
     } else if (role == 'finisher') {
         return {
-            'readyToFinishing': ['finishing'],
-            'finishing': ['readyToDeliver']
+            'readyToFinishing': ['underFinishing'],
+            'underFinishing': ['readyToDeliver']
         };
     } else if (role == 'deliveryBoy') {
         return {

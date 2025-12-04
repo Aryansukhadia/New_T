@@ -26,11 +26,11 @@ enum OrderStatus {
 
 enum ItemStatusType {
   pending
-  cutting
+  underCutting
   redayToStich
-  stitching
+  underStitching
   readyToFinishing
-  finishing
+  underFinishing
   readyToDeliver
 }
 
@@ -265,7 +265,7 @@ model OrderWorkPiece {
   orderItemId   String
   productItemId String
   assignedToId  String?
-  currentStatus ItemStatusType @default(cutting)
+  currentStatus ItemStatusType @default(pending)
   remarks       String?
   createdAt     DateTime       @default(now())
 

@@ -13,8 +13,8 @@ export const addItemStatus = async (req, res) => {
             return sendResponse(res, 400, "productItemId is required");
         }
 
-        if (!status || !['cutting', 'stitching', 'finishing', 'ready_to_deliver'].includes(status)) {
-            return sendResponse(res, 400, "status must be one of: cutting, stitching, finishing, ready_to_deliver");
+        if (!status || !['underCutting', 'underStitching', 'underFinishing', 'readyToDeliver'].includes(status)) {
+            return sendResponse(res, 400, "status must be one of: underCutting, underStitching, underFinishing, readyToDeliver");
         }
 
         // Check if order item exists
@@ -246,8 +246,8 @@ export const updateItemStatus = async (req, res) => {
         }
 
         // Validate status if provided
-        if (status && !['cutting', 'stitching', 'finishing', 'ready_to_deliver'].includes(status)) {
-            return sendResponse(res, 400, "status must be one of: cutting, stitching, finishing, ready_to_deliver");
+        if (status && !['underCutting', 'underStitching', 'underFinishing', 'readyToDeliver'].includes(status)) {
+            return sendResponse(res, 400, "status must be one of: underCutting, underStitching, underFinishing, readyToDeliver");
         }
 
         const updateData = {
