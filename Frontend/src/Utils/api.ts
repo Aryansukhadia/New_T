@@ -402,6 +402,31 @@ export const API_CONFIG: ApiConfig = {
             method: 'PATCH',
             baseUrl: NODEJS_BASE_URL,
         },
+        convertWorkPieceCuttingToReadyToStitch: {
+            path: '/workPieces/{workpieceId}/convert-cutting-to-ready-to-stitch',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceReadyToStitchToStitching: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-stitch-to-stitching',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceStitchingToReadyToFinishing: {
+            path: '/workPieces/{workpieceId}/convert-stitching-to-ready-to-finishing',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceReadyToFinishingToFinishing: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-finishing-to-finishing',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceFinishingToReadyToDeliver: {
+            path: '/workPieces/{workpieceId}/convert-finishing-to-ready-to-deliver',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
         getWorkPieceById: {
             path: '/workPieces/{workpieceId}',
             method: 'GET',

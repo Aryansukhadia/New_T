@@ -41,11 +41,58 @@ export const getAllWorkPiecesService = async (
   return response.data;
 };
 
+// Status transition services
 export const convertWorkPiecePendingToCuttingService = async (
-  workpieceId: string
+  workpieceId: string,
+  remarks?: string
 ): Promise<ApiResponse<unknown>> => {
   const url = getApiUrl('convertWorkPiecePendingToCutting', { workpieceId });
-  const response = await apiInstance.patch<ApiResponse<unknown>>(url);
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceCuttingToReadyToStitchService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceCuttingToReadyToStitch', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceReadyToStitchToStitchingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceReadyToStitchToStitching', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceStitchingToReadyToFinishingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceStitchingToReadyToFinishing', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceReadyToFinishingToFinishingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceReadyToFinishingToFinishing', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceFinishingToReadyToDeliverService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceFinishingToReadyToDeliver', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
   return response.data;
 };
 

@@ -44,6 +44,54 @@ export const formatStatus = (status: string): string => {
     }
 };
 
+// Get allowed status transitions for a role
+export const getAllowedStatusTransitions = (role: string): Record<string, string[]> => {
+    if (role == 'superAdmin' || role == 'admin' || role == 'subAdmin') {
+        return {
+            'pending': ['cutting'],
+            'cutting': ['redayToStich'],
+            'redayToStich': ['stitching'],
+            'stitching': ['readyToFinishing'],
+            'readyToFinishing': ['finishing'],
+            'finishing': ['readyToDeliver'],
+            'readyToDeliver': []
+        };
+    } else if (role == 'cutter') {
+        return {
+            'pending': ['cutting'],
+            'cutting': ['redayToStich']
+        };
+    } else if (role == 'stitcher') {
+        return {
+            'redayToStich': ['stitching'],
+            'stitching': ['readyToFinishing']
+        };
+    } else if (role == 'finisher') {
+        return {
+            'readyToFinishing': ['finishing'],
+            'finishing': ['readyToDeliver']
+        };
+    } else if (role == 'deliveryBoy') {
+        return {
+            'readyToDeliver': []
+        };
+    }
+    return {};
+}
+
+// Check if a status transition is allowed for a role
+export const canTransitionStatus = (role: string, currentStatus: string, newStatus: string): boolean => {
+    const transitions = getAllowedStatusTransitions(role);
+    return transitions[currentStatus]?.includes(newStatus) || false;
+}
+
+// Get the next allowed status for current status based on role
+export const getNextAllowedStatus = (role: string, currentStatus: string): string | null => {
+    const transitions = getAllowedStatusTransitions(role);
+    const allowedTransitions = transitions[currentStatus] || [];
+    return allowedTransitions.length > 0 ? allowedTransitions[0] : null;
+}
+
 export const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
     switch (status.toLowerCase()) {
         case 'pending':

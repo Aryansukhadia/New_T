@@ -20,13 +20,19 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../Utils/ToastContext';
 import { 
-  convertWorkPiecePendingToCuttingService, 
+  convertWorkPiecePendingToCuttingService,
+  convertWorkPieceCuttingToReadyToStitchService,
+  convertWorkPieceReadyToStitchToStitchingService,
+  convertWorkPieceStitchingToReadyToFinishingService,
+  convertWorkPieceReadyToFinishingToFinishingService,
+  convertWorkPieceFinishingToReadyToDeliverService,
   getWorkPieceByIdService, 
   getWorkPieceStatusHistoryService,
   type WorkPieceSummary,
   type WorkPieceStatusHistory 
 } from '../../Services/ApiServices/workPieceServices';
-import { formatStatus } from '../../Utils/WorkPiece';
+import { formatStatus, getNextAllowedStatus, canTransitionStatus } from '../../Utils/WorkPiece';
+import { getUserInfo } from '../../Services/ApiServices';
 
 const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
   switch (status.toLowerCase()) {
@@ -51,6 +57,8 @@ const WorkPieceDetailsPage = () => {
   const navigate = useNavigate();
   const { showError, showSuccess } = useToast();
   const { t } = useTranslation();
+  const userInfo = getUserInfo();
+  const userRole = userInfo?.role || '';
 
   const [summary, setSummary] = useState<WorkPieceSummary | null>(null);
   const [history, setHistory] = useState<WorkPieceStatusHistory | null>(null);
@@ -136,21 +144,52 @@ const WorkPieceDetailsPage = () => {
     });
   };
 
-  const handleConvertPendingToCutting = async () => {
+  const handleStatusTransition = async (currentStatus: string, nextStatus: string) => {
     if (!workpieceId) return;
 
     try {
       setConvertingStatus(true);
-      const response = await convertWorkPiecePendingToCuttingService(workpieceId);
+      let response;
+
+      // Call the appropriate service based on the transition
+      switch (`${currentStatus}->${nextStatus}`) {
+        case 'pending->cutting':
+          response = await convertWorkPiecePendingToCuttingService(workpieceId);
+          break;
+        case 'cutting->redayToStich':
+          response = await convertWorkPieceCuttingToReadyToStitchService(workpieceId);
+          break;
+        case 'redayToStich->stitching':
+          response = await convertWorkPieceReadyToStitchToStitchingService(workpieceId);
+          break;
+        case 'stitching->readyToFinishing':
+          response = await convertWorkPieceStitchingToReadyToFinishingService(workpieceId);
+          break;
+        case 'readyToFinishing->finishing':
+          response = await convertWorkPieceReadyToFinishingToFinishingService(workpieceId);
+          break;
+        case 'finishing->readyToDeliver':
+          response = await convertWorkPieceFinishingToReadyToDeliverService(workpieceId);
+          break;
+        default:
+          showError('Invalid status transition', 'Error');
+          return;
+      }
+
       if (response.success === 200) {
         await Promise.all([fetchWorkpieceDetails(), fetchWorkpieceHistory()]);
-        showSuccess(response.message || 'Converted to Cutting', 'Success');
+        showSuccess(response.message || 'Status updated successfully', 'Success');
       } else {
-        showError(response.message || 'Failed to convert', 'Error');
+        showError(response.message || 'Failed to update status', 'Error');
       }
     } catch (err: unknown) {
-      console.error('Error converting workpiece to cutting:', err);
-      showError('Failed to convert. Please try again.', 'Error');
+      console.error('Error updating workpiece status:', err);
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        showError(axiosError.response?.data?.message || 'Failed to update status', 'Error');
+      } else {
+        showError('Failed to update status. Please try again.', 'Error');
+      }
     } finally {
       setConvertingStatus(false);
     }
@@ -324,28 +363,40 @@ const WorkPieceDetailsPage = () => {
                   </Typography>
                 </Box>
 
-                {summary.workPieceStage?.stage?.toLowerCase() === 'pending' && (
-                  <Button
-                    variant="contained"
-                    startIcon={<ContentCutIcon />}
-                    onClick={handleConvertPendingToCutting}
-                    disabled={convertingStatus}
-                    sx={{
-                      mt: 1,
-                      maxWidth: 300,
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
-                      },
-                      textTransform: 'none',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {convertingStatus ? t('common.loading') : t('orders.convertPendingToCutting')}
-                  </Button>
-                )}
+                {(() => {
+                  const currentStatus = summary.workPieceStage?.stage || '';
+                  const nextStatus = getNextAllowedStatus(userRole, currentStatus);
+                  
+                  if (!nextStatus || !canTransitionStatus(userRole, currentStatus, nextStatus)) {
+                    return null;
+                  }
+
+                  return (
+                    <Button
+                      variant="contained"
+                      startIcon={<ContentCutIcon />}
+                      onClick={() => handleStatusTransition(currentStatus, nextStatus)}
+                      disabled={convertingStatus}
+                      sx={{
+                        mt: 1,
+                        maxWidth: 300,
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {convertingStatus 
+                        ? t('common.loading') 
+                        : `Move to ${formatStatus(nextStatus)}`
+                      }
+                    </Button>
+                  );
+                })()}
               </Box>
             </Box>
           </Card>
