@@ -19,17 +19,17 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useToast } from '../../Utils/ToastContext';
-import { 
+import {
   convertWorkPiecePendingToUnderCuttingService,
   convertWorkPieceUnderCuttingToReadyToStitchService,
   convertWorkPieceReadyToStitchToUnderStitchingService,
   convertWorkPieceUnderStitchingToReadyToFinishingService,
   convertWorkPieceReadyToFinishingToUnderFinishingService,
   convertWorkPieceUnderFinishingToReadyToDeliverService,
-  getWorkPieceByIdService, 
+  getWorkPieceByIdService,
   getWorkPieceStatusHistoryService,
   type WorkPieceSummary,
-  type WorkPieceStatusHistory 
+  type WorkPieceStatusHistory
 } from '../../Services/ApiServices/workPieceServices';
 import { formatStatus, getNextAllowedStatus, canTransitionStatus } from '../../Utils/WorkPiece';
 import { getUserInfo } from '../../Services/ApiServices';
@@ -283,8 +283,8 @@ const WorkPieceDetailsPage = () => {
             </Box>
 
             {/* Image on left, text on right */}
-            <Box sx={{ 
-              display: 'flex', 
+            <Box sx={{
+              display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               gap: 3,
               alignItems: { xs: 'center', md: 'flex-start' }
@@ -308,9 +308,9 @@ const WorkPieceDetailsPage = () => {
               )}
 
               {/* Details Section */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 2,
                 flex: 1,
                 width: '100%'
@@ -329,8 +329,8 @@ const WorkPieceDetailsPage = () => {
                     {t('orders.status')}
                   </Typography>
                   <Chip
-                    label={summary.workPieceStage?.stage ? (t(`status.${summary.workPieceStage.stage.toLowerCase()}`) || summary.workPieceStage.stage) : '—'}
-                    color={getStatusColor(summary.workPieceStage?.stage || 'pending')}
+                    label={summary.workPieceStage ? (t(`status.${summary.workPieceStage}`) || summary.workPieceStage) : '—'}
+                    color={getStatusColor(summary.workPieceStage || 'pending')}
                     size="small"
                     sx={{ fontWeight: 600, textTransform: 'uppercase' }}
                   />
@@ -364,9 +364,9 @@ const WorkPieceDetailsPage = () => {
                 </Box>
 
                 {(() => {
-                  const currentStatus = summary.workPieceStage?.stage || '';
+                  const currentStatus = summary.workPieceStage;
                   const nextStatus = getNextAllowedStatus(userRole, currentStatus);
-                  
+
                   if (!nextStatus || !canTransitionStatus(userRole, currentStatus, nextStatus)) {
                     return null;
                   }
@@ -390,8 +390,8 @@ const WorkPieceDetailsPage = () => {
                         fontWeight: 600,
                       }}
                     >
-                      {convertingStatus 
-                        ? t('common.loading') 
+                      {convertingStatus
+                        ? t('common.loading')
                         : `Move to ${formatStatus(nextStatus)}`
                       }
                     </Button>
@@ -420,38 +420,38 @@ const WorkPieceDetailsPage = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {/* Summary Stats */}
                 <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-                  <Chip 
-                    label={`Total: ${history.totalStages}`} 
-                    size="small" 
+                  <Chip
+                    label={`Total: ${history.totalStages}`}
+                    size="small"
                     sx={{ fontWeight: 600 }}
                   />
-                  <Chip 
-                    label={`Completed: ${history.completedStages}`} 
-                    size="small" 
+                  <Chip
+                    label={`Completed: ${history.completedStages}`}
+                    size="small"
                     color="success"
                     sx={{ fontWeight: 600 }}
                   />
-                  <Chip 
-                    label={`Active: ${history.activeStages}`} 
-                    size="small" 
+                  <Chip
+                    label={`Active: ${history.activeStages}`}
+                    size="small"
                     color="info"
                     sx={{ fontWeight: 600 }}
                   />
                 </Box>
 
                 {/* Timeline */}
-                <Box sx={{ 
-                  position: 'relative', 
+                <Box sx={{
+                  position: 'relative',
                   pl: 3,
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
                   gap: 3,
                   alignItems: 'start',
                 }}>
-                  {history.statusHistory.map((stage, index) => (
-                    <Box 
+                  {history.statusHistory.map((stage) => (
+                    <Box
                       key={stage.id}
-                      sx={{ 
+                      sx={{
                         position: 'relative',
                         minHeight: 'fit-content',
                       }}
@@ -474,9 +474,9 @@ const WorkPieceDetailsPage = () => {
                       </Box>
 
                       {/* Stage Content */}
-                      <Card 
-                        sx={{ 
-                          p: 2, 
+                      <Card
+                        sx={{
+                          p: 2,
                           bgcolor: stage.isActive ? 'rgba(33, 150, 243, 0.05)' : 'white',
                           border: stage.isActive ? '2px solid #2196f3' : '1px solid #e0e0e0',
                           display: 'flex',

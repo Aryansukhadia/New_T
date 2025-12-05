@@ -97,13 +97,7 @@ export const convertWorkPieceUnderFinishingToReadyToDeliverService = async (
 };
 
 export interface WorkPieceSummary {
-  workPieceStage: {
-    id: string;
-    stage: string;
-    startedAt: string | null;
-    completedAt: string | null;
-    remarks: string | null;
-  } | null;
+  workPieceStage: string;
   orderDate: string | null;
   productItem: {
     id: string;

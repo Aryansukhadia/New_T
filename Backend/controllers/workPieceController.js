@@ -649,6 +649,8 @@ export const getWorkPieceById = async (req, res) => {
             select: {
                 id: true,
                 createdAt: true,
+                currentStatus: true,
+                updatedAt: true,
                 orderItem: {
                     select: {
                         productOrder: {
@@ -666,19 +668,6 @@ export const getWorkPieceById = async (req, res) => {
                         createdAt: true
                     }
                 },
-                workStages: {
-                    orderBy: {
-                        startedAt: 'desc'
-                    },
-                    take: 1,
-                    select: {
-                        id: true,
-                        stage: true,
-                        startedAt: true,
-                        completedAt: true,
-                        remarks: true
-                    }
-                }
             }
         });
 
@@ -686,20 +675,13 @@ export const getWorkPieceById = async (req, res) => {
             return sendResponse(res, 404, "Work piece not found");
         }
 
-        const latestStage = Array.isArray(workPiece.workStages) && workPiece.workStages.length > 0
-            ? workPiece.workStages[0]
-            : null;
-
-        const lastUpdated =
-            (latestStage && (latestStage.completedAt || latestStage.startedAt)) ||
-            workPiece.createdAt ||
-            null;
+        console.log(workPiece);
 
         return sendResponse(res, 200, "Work piece fetched successfully", {
-            workPieceStage: latestStage,
+            workPieceStage: workPiece.currentStatus,
             orderDate: workPiece.orderItem?.productOrder?.orderDate ?? null,
             productItem: workPiece.productItem,
-            lastUpdated
+            lastUpdated: workPiece.updatedAt,
         });
     } catch (error) {
         console.error("getWorkPieceById error:", error);
