@@ -213,9 +213,9 @@ export const bookOrder = async (req, res) => {
                                         remarks: null,
                                     }
                                 });
-                                
+
                                 createdWorkPieces.push(workPiece);
-                                
+
                                 // Create initial WorkStage with 'pending' status
                                 await tx.workStage.create({
                                     data: {
@@ -236,7 +236,7 @@ export const bookOrder = async (req, res) => {
                                 itemStatusesToCreate.push({
                                     orderItemId: orderItem.id,
                                     productItemId: productItem.id,
-                                    status: 'underCutting',
+                                    status: 'pending',
                                     updatedById: req.user?.userId || null,
                                 });
                             }
