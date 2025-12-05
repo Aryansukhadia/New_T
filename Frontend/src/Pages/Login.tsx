@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useToast } from '../Utils/ToastContext';
-import { loginService, setAuthToken, setUserInfo } from '../Services/ApiServices';
+import { loginService, setAuthToken, setUserInfo, isAuthenticated } from '../Services/ApiServices';
 import axios from 'axios';
 import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
@@ -26,6 +26,13 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

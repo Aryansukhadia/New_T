@@ -343,7 +343,7 @@ export const getMe = async (req, res) => {
             fullName: req.user.fullName,
             emailId: req.user.emailId,
             role: req.user.role,
-            createdAt: req.user.createdAt
+            needToResetPassword: req.user.needToResetPassword
         }
 
         return sendResponse(res, 200, "User details fetched successfully", user);
