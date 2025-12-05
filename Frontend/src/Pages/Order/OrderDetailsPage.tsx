@@ -145,31 +145,31 @@ const OrderDetailsPage = () => {
       </Box>
 
       <Grid container spacing={2} sx={{ p: 2.5, bgcolor: '#f8f9fa', borderRadius: 1, mb: 3 }}>
-        <Grid xs={12} sm={6} md={4}>
+        <Box sx={{ xs: 12, sm: 6, md: 4 }}>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
             {t('orders.customer')}
           </Typography>
           <Typography variant="body1" sx={{ fontWeight: 500 }}>
             {order.customerName || '—'}
           </Typography>
-        </Grid>
-        <Grid xs={12} sm={6} md={4}>
+        </Box>
+        <Box sx={{ xs: 12, sm: 6, md: 4 }}>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
             {t('orders.orderDate')}
           </Typography>
           <Typography variant="body1" sx={{ fontWeight: 500 }}>
             {formatDate(order.orderDate)}
           </Typography>
-        </Grid>
-        <Grid xs={12} sm={6} md={4}>
+        </Box>
+        <Box sx={{ xs: 12, sm: 6, md: 4 }}>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
             {t('orders.deliveryDate')}
           </Typography>
           <Typography variant="body1" sx={{ fontWeight: 500 }}>
             {formatDate(order.deliveryDate)}
           </Typography>
-        </Grid>
-        <Grid xs={12} sm={6} md={4}>
+        </Box>
+        <Box sx={{ xs: 12, sm: 6, md: 4 }}>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
             {t('orders.status')}
           </Typography>
@@ -179,16 +179,16 @@ const OrderDetailsPage = () => {
             size="small"
             sx={{ fontWeight: 600, textTransform: 'uppercase' }}
           />
-        </Grid>
+        </Box>
         {order.notes && (
-          <Grid xs={12}>
+          <Box sx={{ xs: 12 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
               {t('orders.notes')}
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
               {order.notes}
             </Typography>
-          </Grid>
+          </Box>
         )}
       </Grid>
 
@@ -208,22 +208,22 @@ const OrderDetailsPage = () => {
       ) : (
         <Grid container spacing={2} sx={{ mb: 4 }}>
           {order.orderItems.map((item) => (
-            <Grid xs={12} sm={6} md={4} key={item.id}>
-              <Card 
-                sx={{ 
-                  p: 2, 
-                  bgcolor: item.itemType === 'readyMade' ? '#e8f5e9' : '#e3f2fd', 
-                  border: '2px solid', 
+            <Box sx={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
+              <Card
+                sx={{
+                  p: 2,
+                  bgcolor: item.itemType === 'readyMade' ? '#e8f5e9' : '#e3f2fd',
+                  border: '2px solid',
                   borderColor: item.itemType === 'readyMade' ? '#4caf50' : '#2196f3',
-                  transition: 'all 0.2s ease', 
-                  '&:hover': { 
-                    borderColor: item.itemType === 'readyMade' ? '#2e7d32' : '#1565c0', 
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)' 
-                  } 
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    borderColor: item.itemType === 'readyMade' ? '#2e7d32' : '#1565c0',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)'
+                  }
                 }}
               >
                 {/* Item Type Badge */}
-                <Chip 
+                <Chip
                   label={item.itemType === 'readyMade' ? 'Ready-Made' : 'Custom Tailored'}
                   color={item.itemType === 'readyMade' ? 'success' : 'primary'}
                   size="small"
@@ -232,11 +232,11 @@ const OrderDetailsPage = () => {
 
                 {/* Item Image */}
                 {(() => {
-                  const imageUrl = item.itemType === 'custom' 
-                    ? item.productVariant?.imageUrl 
+                  const imageUrl = item.itemType === 'custom'
+                    ? item.productVariant?.imageUrl
                     : (item.readyMadeInventory?.readyMade?.imageUrl ? parseImages(item.readyMadeInventory.readyMade.imageUrl)[0] : null);
                   const altText = item.itemType === 'custom' ? item.productVariant?.name : item.readyMadeInventory?.name;
-                  
+
                   return imageUrl ? (
                     <Box
                       component="img"
@@ -322,7 +322,7 @@ const OrderDetailsPage = () => {
                   ) : null}
                 </Box>
               </Card>
-            </Grid>
+            </Box>
           ))}
         </Grid>
       )}

@@ -9,8 +9,8 @@ import {
     CircularProgress,
     Chip,
 } from '@mui/material';
-import { 
-    ArrowBack as ArrowBackIcon, 
+import {
+    ArrowBack as ArrowBackIcon,
     Edit as EditIcon,
     Person as PersonIcon,
     Email as EmailIcon,
@@ -310,17 +310,6 @@ const UpdateUserForm = () => {
                             minute: '2-digit',
                         })}
                     </Typography>
-                    {userDetails.updatedAt && (
-                        <Typography variant="body2" color="text.secondary">
-                            <strong>Last Updated:</strong> {new Date(userDetails.updatedAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            })}
-                        </Typography>
-                    )}
                 </Box>
 
                 <Box

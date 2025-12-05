@@ -316,7 +316,7 @@ const CreateUserForm = () => {
                         id="role"
                         name="role"
                         value={formData.role || ''}
-                        onChange={handleSelectChange}
+                        onChange={(e) => handleSelectChange(e as SelectChangeEvent<string>)}
                         required
                         disabled={submitting || loadingRoles}
                         fullWidth

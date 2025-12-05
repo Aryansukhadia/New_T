@@ -9,7 +9,7 @@ import { isAuthenticated } from './Services/ApiServices';
 import { getAllRoutes } from './Config/roleRoutes';
 import { RoleBasedRoute } from './Components/Common/RoleBasedRoute';
 import { AuthProvider } from './Context/AuthContext';
-import { Box, CircularProgress } from '@mui/material';
+// import { Box, CircularProgress } from '@mui/material';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -17,19 +17,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Loading component
-const LoadingScreen = () => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    }}
-  >
-    <CircularProgress size={60} sx={{ color: 'white' }} />
-  </Box>
-);
+// const LoadingScreen = () => (
+//   <Box
+//     sx={{
+//       display: 'flex',
+//       justifyContent: 'center',
+//       alignItems: 'center',
+//       minHeight: '100vh',
+//       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+//     }}
+//   >
+//     <CircularProgress size={60} sx={{ color: 'white' }} />
+//   </Box>
+// );
 
 function App() {
   return (

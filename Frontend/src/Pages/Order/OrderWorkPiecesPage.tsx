@@ -7,8 +7,8 @@ import {
   Button,
   CircularProgress,
   Chip,
+  Grid,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
 import {
   ArrowBack as ArrowBackIcon,
   Visibility as VisibilityIcon,
@@ -173,7 +173,7 @@ const OrderWorkPiecesPage = () => {
       ) : (
         <Grid container spacing={2}>
           {workPieces.map((workPiece) => (
-            <Grid xs={12} sm={6} md={4} key={workPiece.id}>
+            <Box key={workPiece.id}>
               <Card
                 sx={{
                   p: 2,
@@ -241,7 +241,7 @@ const OrderWorkPiecesPage = () => {
                   </Box>
                 </Box>
               </Card>
-            </Grid>
+            </Box>
           ))}
         </Grid>
       )}
