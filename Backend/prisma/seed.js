@@ -26,7 +26,7 @@ async function main() {
             emailId: emailId,
             password: hashedPassword,
             role: 'superAdmin',
-            resetPassword: true
+            needToResetPassword: true  // ✅ CHANGED FROM resetPassword
         }
     });
 
