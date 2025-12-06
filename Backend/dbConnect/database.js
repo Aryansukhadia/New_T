@@ -5,12 +5,22 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Read CA certificate if provided
+let sslConfig = {
+    rejectUnauthorized: false, // Set to false for Aiven and other cloud providers with self-signed CAs
+};
+
 const pool = new Pool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    ssl: sslConfig,
+    // Connection timeout
+    connectionTimeoutMillis: 10000,
+    // Idle timeout
+    idleTimeoutMillis: 30000,
 });
 
 pool.on('error', (err) => {
