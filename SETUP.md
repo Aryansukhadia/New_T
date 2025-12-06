@@ -35,24 +35,18 @@ Before you begin, ensure you have the following installed:
 2. Create a new PostgreSQL service
 3. Wait for the service to be ready (usually 2-5 minutes)
 
-### Step 2: Get Connection Details
+### Step 2: Get Connection String
 
 From the Aiven Console → Your Service → Overview:
 
-- **Host**: `your-service.aivencloud.com`
-- **Port**: `12345` (example)
-- **Database**: `defaultdb`
-- **User**: `avnadmin`
-- **Password**: `AVNS_xxxxx...`
+Find the **Service URI** which looks like:
+```
+postgres://avnadmin:PASSWORD@your-service.aivencloud.com:12345/defaultdb?sslmode=require
+```
 
-### Step 3: Download CA Certificate
+**Copy this entire connection string** - you'll need it for the `.env` file.
 
-1. In Aiven Console → Your Service → Overview
-2. Scroll to "Connection information"
-3. Click **"Download CA cert"** button
-4. Save as `Backend/dbConnect/ca.pem`
-
-### Step 4: Whitelist Your IP (if needed)
+### Step 3: Whitelist Your IP (if needed)
 
 1. Go to "Allowed IP Addresses" in Aiven Console
 2. Add your public IP or use `0.0.0.0/0` for testing (not recommended for production)
@@ -82,51 +76,31 @@ Create a `.env` file in the `Backend` directory:
 PORT=3000
 NODE_ENV=development
 
-# Aiven PostgreSQL Database Configuration
-DB_HOST=your-service.aivencloud.com
-DB_PORT=12345
-DB_NAME=defaultdb
-DB_USER=avnadmin
-DB_PASSWORD=your-password-here
-
-# Prisma Database URL (use the complete connection string)
-DATABASE_URL="postgresql://avnadmin:your-password@your-service.aivencloud.com:12345/defaultdb?sslmode=require"
+# Database Configuration
+# Paste your complete Service URI from Aiven Console here
+DATABASE_URL="postgresql://avnadmin:YOUR_PASSWORD@your-service.aivencloud.com:12345/defaultdb?sslmode=require"
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
 JWT_EXPIRES_IN=7d
 
-# File Upload Configuration
-MAX_FILE_SIZE=5242880
-UPLOAD_DIR=uploads
+# Frontend URLs (comma-separated, no spaces)
+FRONTEND_URLS=http://localhost:5173,http://localhost:3000,https://yourdomain.com
 ```
 
 **Important Notes:**
-- Replace `your-service.aivencloud.com`, `12345`, `your-password` with your actual Aiven credentials
-- Keep `JWT_SECRET` secure and random (use a password generator)
-- The `DATABASE_URL` must include `?sslmode=require` at the end
+- **DATABASE_URL**: Copy the complete Service URI from Aiven Console (Step 2)
+- Make sure `?sslmode=require` is at the end of DATABASE_URL
+- **JWT_SECRET**: Use a strong, random string (generate with a password manager)
+- **FRONTEND_URLS**: Add all domains that should access your API (comma-separated)
 
-### Step 4: Verify CA Certificate
-
-Ensure the CA certificate is in place:
-
-```bash
-# Windows (PowerShell)
-dir dbConnect\ca.pem
-
-# macOS/Linux
-ls -l dbConnect/ca.pem
-```
-
-If not present, download it from Aiven Console as described in [Database Setup](#step-3-download-ca-certificate).
-
-### Step 5: Generate Prisma Client
+### Step 4: Generate Prisma Client
 
 ```bash
 npx prisma generate
 ```
 
-### Step 6: Run Database Migrations
+### Step 5: Run Database Migrations
 
 ```bash
 npx prisma migrate dev
@@ -136,7 +110,7 @@ This will:
 - Create all tables in your database
 - Apply the schema from `prisma/schema.prisma`
 
-### Step 7: Seed the Database (Create SuperAdmin)
+### Step 6: Seed the Database (Create SuperAdmin)
 
 ```bash
 npx prisma db seed
@@ -262,27 +236,31 @@ The seed script creates a SuperAdmin user:
 
 ### Database Connection Issues
 
-#### Error: "Failed to connect to PostgreSQL database: self-signed certificate"
+#### Error: "DATABASE_URL environment variable is required"
 
-**Solution**: The code is already configured to handle this. If you still see this error:
+**Solution**: Add DATABASE_URL to your `.env` file:
 
-1. Verify `ca.pem` exists in `Backend/dbConnect/`
-2. Check that `rejectUnauthorized: false` is set in `database.js`
+```env
+DATABASE_URL="postgresql://avnadmin:PASSWORD@host:port/defaultdb?sslmode=require"
+```
+
+Copy the complete Service URI from Aiven Console.
 
 #### Error: "Connection refused" or "Connection timeout"
 
 **Solutions**:
-- ✅ Verify your Aiven service is running (not paused)
-- ✅ Check if your IP is whitelisted in Aiven Console
-- ✅ Verify credentials in `.env` are correct (no extra spaces)
-- ✅ Ensure the database URL includes `?sslmode=require`
+- ✅ Verify your Aiven service is running (not paused in Aiven Console)
+- ✅ Check if your IP is whitelisted in Aiven Console → Allowed IP Addresses
+- ✅ Verify DATABASE_URL is correct (copy from Aiven Console Service URI)
+- ✅ Ensure DATABASE_URL includes `?sslmode=require` at the end
 
 #### Error: "password authentication failed"
 
 **Solutions**:
-- ✅ Double-check password in `.env` (copy directly from Aiven)
-- ✅ Ensure no trailing spaces in environment variables
-- ✅ Try resetting password in Aiven Console
+- ✅ Copy the complete Service URI directly from Aiven Console
+- ✅ Ensure no extra spaces in DATABASE_URL
+- ✅ Check that password in DATABASE_URL matches Aiven
+- ✅ If password contains special characters (@, :, /, etc.), they should be URL-encoded
 
 ### Prisma Issues
 
@@ -455,8 +433,8 @@ If you encounter any issues not covered in this guide:
 New_T/
 ├── Backend/
 │   ├── dbConnect/
-│   │   ├── database.js       # PostgreSQL connection with SSL
-│   │   └── ca.pem            # Aiven CA certificate
+│   │   ├── database.js       # PostgreSQL connection (uses DATABASE_URL)
+│   │   └── prismaClient.js   # Prisma client instance
 │   ├── prisma/
 │   │   ├── schema.prisma     # Database schema
 │   │   └── seed.js           # Database seeder
@@ -480,7 +458,9 @@ New_T/
 │   ├── package.json
 │   └── vite.config.ts
 │
-└── README.md
+├── SETUP.md                  # This file - complete setup guide
+├── README.md                 # Project overview
+└── QUICK_START.md            # Quick reference guide
 ```
 
 ---

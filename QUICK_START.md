@@ -15,15 +15,14 @@ cd ../Frontend && npm install
 Create `Backend/.env`:
 ```env
 PORT=3000
-DB_HOST=your-aiven-host.aivencloud.com
-DB_PORT=12345
-DB_NAME=defaultdb
-DB_USER=avnadmin
-DB_PASSWORD=your-password
-DATABASE_URL="postgresql://avnadmin:password@host:port/defaultdb?sslmode=require"
-JWT_SECRET=your-secret-key
+NODE_ENV=development
+DATABASE_URL="postgresql://avnadmin:PASSWORD@your-host.aivencloud.com:12345/defaultdb?sslmode=require"
+JWT_SECRET=your-secret-key-change-this
 JWT_EXPIRES_IN=7d
+FRONTEND_URLS=http://localhost:5173,http://localhost:3000
 ```
+
+**Note:** Copy DATABASE_URL from Aiven Console → Service URI
 
 ### 3. Setup Database
 ```bash
@@ -101,11 +100,14 @@ Password: SuperAdmin@123
 
 ### "Cannot connect to database"
 ```bash
-# Check CA certificate exists
-ls Backend/dbConnect/ca.pem
+# Verify DATABASE_URL is set
+cat Backend/.env | grep DATABASE_URL
 
-# Verify .env credentials
-cat Backend/.env
+# Check if it includes ?sslmode=require
+echo $DATABASE_URL
+
+# Regenerate Prisma Client
+cd Backend && npx prisma generate
 ```
 
 ### "Prisma Client not generated"

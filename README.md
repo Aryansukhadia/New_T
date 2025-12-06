@@ -168,8 +168,8 @@ For common issues and solutions, refer to the [Troubleshooting section in SETUP.
 
 **Database connection issues:**
 ```bash
-# Verify CA certificate exists
-ls Backend/dbConnect/ca.pem
+# Verify DATABASE_URL is set in .env
+cat Backend/.env | grep DATABASE_URL
 
 # Regenerate Prisma Client
 cd Backend
