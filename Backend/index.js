@@ -17,8 +17,28 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Parse allowed origins from environment variable
+const allowedOrigins = process.env.FRONTEND_URLS.split(',').map(url => url.trim()) // Default fallback for development
+
+// CORS Configuration
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman, or curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.warn(`⚠️  Blocked by CORS: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true, // Allow cookies and credentials
+    optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
