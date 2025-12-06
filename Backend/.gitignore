@@ -12,6 +12,11 @@ package-lock.json
 .env.test.local
 .env.production.local
 
+# SSL/TLS Certificates (keep ca.pem.example, ignore ca.pem)
+dbConnect/ca.pem
+*.pem
+!*.pem.example
+
 # Logs
 logs
 *.log
@@ -68,3 +73,4 @@ dist/
 build/
 
 other
+uploads
