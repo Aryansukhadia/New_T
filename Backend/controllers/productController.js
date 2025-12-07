@@ -23,10 +23,8 @@ export const addProduct = async (req, res) => {
         const newProduct = await prisma.product.create({
             data: {
                 name: name.trim(),
+                createdBy: req.user.userId,
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            },
-            include: {
-                variants: true
             }
         });
 
@@ -39,16 +37,55 @@ export const addProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
+        const {
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate pagination
+        if (pageNum < 1) {
+            return sendResponse(res, 400, "Page number must be at least 1");
+        }
+        if (limitNum < 1 || limitNum > 100) {
+            return sendResponse(res, 400, "Limit must be between 1 and 100");
+        }
+
+        // Get total count for pagination
+        const totalCount = await prisma.product.count();
+
+        // Fetch products with pagination
         const products = await prisma.product.findMany({
-            include: {
-                variants: true
+            where: {
+                isDeleted: false
             },
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limitNum
         });
 
-        return sendResponse(res, 200, "Products fetched successfully", products);
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPreviousPage = pageNum > 1;
+
+        return sendResponse(res, 200, "Products fetched successfully", {
+            products,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                limit: limitNum,
+                hasNextPage,
+                hasPreviousPage,
+            }
+        });
     } catch (error) {
         console.error("getProducts error:", error);
         return sendResponse(res, 500, "Failed to fetch products", { error: error.message });
@@ -60,10 +97,7 @@ export const getProductById = async (req, res) => {
         const { id } = req.params;
 
         const product = await prisma.product.findUnique({
-            where: { id },
-            include: {
-                variants: true
-            }
+            where: { id, isDeleted: false }
         });
 
         if (!product) {
@@ -94,6 +128,9 @@ export const updateProduct = async (req, res) => {
         if (!existingProduct) {
             return sendResponse(res, 404, "Product not found");
         }
+        else if (existingProduct.isDeleted) {
+            return sendResponse(res, 400, "Product is deleted");
+        }
 
         // Check if another product with same name exists
         const duplicateProduct = await prisma.product.findFirst({
@@ -111,10 +148,8 @@ export const updateProduct = async (req, res) => {
             where: { id },
             data: {
                 name: name.trim(),
+                updatedBy: req.user.userId,
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            },
-            include: {
-                variants: true
             }
         });
 
@@ -130,11 +165,14 @@ export const deleteProduct = async (req, res) => {
         const { id } = req.params;
 
         const product = await prisma.product.findUnique({
-            where: { id }
+            where: { id, isDeleted: false },
         });
 
         if (!product) {
             return sendResponse(res, 404, "Product not found");
+        }
+        else if (product.isDeleted) {
+            return sendResponse(res, 400, "Product is deleted");
         }
 
         // Check if product has variants
@@ -146,8 +184,12 @@ export const deleteProduct = async (req, res) => {
             return sendResponse(res, 400, "Cannot delete product with existing variants. Please delete variants first.");
         }
 
-        await prisma.product.delete({
-            where: { id }
+        await prisma.product.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+                updatedBy: req.user.userId,
+            }
         });
 
         return sendResponse(res, 200, "Product deleted successfully");
@@ -156,4 +198,3 @@ export const deleteProduct = async (req, res) => {
         return sendResponse(res, 500, "Failed to delete product", { error: error.message });
     }
 };
-

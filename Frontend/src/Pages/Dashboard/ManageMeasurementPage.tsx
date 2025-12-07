@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import styled from 'styled-components';
 import {
-  FormGroup,
-  Label,
-  Input,
+  Box,
+  Card,
+  Typography,
   Button,
-  LoadingSpinner,
-} from '../../Components/Common/FormComponents';
+  TextField,
+  CircularProgress,
+} from '@mui/material';
 import {
   getCustomerMeasurementsService,
   editMeasurementService,
@@ -18,221 +18,14 @@ import {
   type AddMeasurementRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import { FaRuler, FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus, FaArrowLeft } from 'react-icons/fa';
-
-const PageContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-`;
-
-const BackButton = styled.button`
-  padding: 10px 16px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-  }
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  svg {
-    color: #667eea;
-  }
-`;
-
-const CustomerInfo = styled.div`
-  padding: 16px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  border: 2px solid #e0e0e0;
-`;
-
-const CustomerName = styled.h2`
-  font-size: 20px;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 8px 0;
-`;
-
-const CustomerEmail = styled.p`
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-`;
-
-const MeasurementsContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 32px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const MeasurementSection = styled.div`
-  padding: 24px;
-  background: #f9f9f9;
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
-  min-height: 400px;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-`;
-
-const SectionTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  svg {
-    color: #667eea;
-  }
-`;
-
-const EditButton = styled.button`
-  padding: 10px 20px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const GridContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-`;
-
-const MeasurementDisplay = styled.div`
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-`;
-
-const MeasurementRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const MeasurementLabel = styled.span`
-  font-weight: 600;
-  color: #666;
-  font-size: 15px;
-`;
-
-const MeasurementValue = styled.span`
-  color: #333;
-  font-size: 15px;
-  font-weight: 500;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
-  background: white;
-  border-radius: 8px;
-  border: 2px dashed #e0e0e0;
-`;
-
-const EmptyStateText = styled.p`
-  margin: 0;
-  font-size: 15px;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 2px solid #e0e0e0;
-`;
-
-const CancelButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-    transform: translateY(-1px);
-  }
-`;
+import {
+  Straighten as StraightenIcon,
+  Checkroom as CheckroomIcon,
+  ArrowRightAlt as ArrowRightAltIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+  ArrowBack as ArrowBackIcon,
+} from '@mui/icons-material';
 
 const ManageMeasurementPage = () => {
   const navigate = useNavigate();
@@ -271,18 +64,12 @@ const ManageMeasurementPage = () => {
     langot: 0,
   });
 
-  useEffect(() => {
-    if (customerId) {
-      fetchCustomerAndMeasurements();
-    }
-  }, [customerId]);
-
-  const fetchCustomerAndMeasurements = async () => {
+  const fetchCustomerAndMeasurements = useCallback(async () => {
     if (!customerId) return;
 
     try {
       setLoading(true);
-      
+
       // Fetch customer info
       const customerResponse = await getCustomerByIdService(customerId);
       if (customerResponse.success === 200 && customerResponse.data) {
@@ -294,7 +81,7 @@ const ManageMeasurementPage = () => {
       const response = await getCustomerMeasurementsService(customerId);
       if (response.success === 200 && response.data) {
         setMeasurements(response.data);
-        
+
         // Pre-fill form data if measurements exist
         if (response.data.topMeasurement) {
           setTopFormData({
@@ -308,7 +95,7 @@ const ManageMeasurementPage = () => {
             neck: Number(response.data.topMeasurement.neck),
           });
         }
-        
+
         if (response.data.bottomMeasurement) {
           setBottomFormData({
             length: Number(response.data.bottomMeasurement.length),
@@ -330,7 +117,13 @@ const ManageMeasurementPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId, showError]);
+
+  useEffect(() => {
+    if (customerId) {
+      fetchCustomerAndMeasurements();
+    }
+  }, [customerId, fetchCustomerAndMeasurements]);
 
   const handleTopFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -453,40 +246,213 @@ const ManageMeasurementPage = () => {
     navigate('/dashboard/customers');
   };
 
+  type FieldConfig = { name: string; label: string };
+
+  const topFieldConfigs: FieldConfig[] = [
+    { name: 'length', label: 'Length' },
+    { name: 'shoulder', label: 'Shoulder' },
+    { name: 'sleeveLength', label: 'Sleeve Length' },
+    { name: 'sleeveBottom', label: 'Sleeve Bottom' },
+    { name: 'chest', label: 'Chest' },
+    { name: 'waist', label: 'Waist' },
+    { name: 'hip', label: 'Hip' },
+    { name: 'neck', label: 'Neck' },
+  ];
+
+  const bottomFieldConfigs: FieldConfig[] = [
+    { name: 'length', label: 'Length' },
+    { name: 'waist', label: 'Waist' },
+    { name: 'hip', label: 'Hip' },
+    { name: 'thigh', label: 'Thigh' },
+    { name: 'knee', label: 'Knee' },
+    { name: 'calf', label: 'Calf' },
+    { name: 'bottom', label: 'Bottom' },
+    { name: 'langot', label: 'Langot' },
+  ];
+
+  const renderMeasurementRows = (
+    configs: FieldConfig[],
+    data?: Record<string, number | string | undefined>,
+  ) => {
+    if (!data) {
+      return null;
+    }
+
+    return (
+      <Box>
+        {configs.map((field) => (
+          <Box
+            key={field.name}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              py: 1.5,
+              borderBottom: '1px solid #f0f0f0',
+              '&:last-of-type': { borderBottom: 'none' },
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+              {field.label}:
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {renderMeasurementValue(data[field.name] ?? 0)}"
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Card sx={{ borderRadius: 1.5, p: 3 }}>
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Card>
+    );
+  }
+
+  const renderMeasurementForm = (
+    configs: FieldConfig[],
+    formData: Record<string, number>,
+    handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+    onSave: () => Promise<void> | void,
+  ) => (
+    <Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+        }}
+      >
+        {configs.map((field) => (
+          <Box key={field.name}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+              {field.label}
+            </Typography>
+            <TextField
+              fullWidth
+              type="number"
+              name={field.name}
+              value={formData[field.name] ?? 0}
+              onChange={handleChange}
+              inputProps={{ step: 0.01, min: 0 }}
+              disabled={formLoading}
+            />
+          </Box>
+        ))}
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1.5,
+          justifyContent: 'flex-end',
+          mt: 3,
+          pt: 2,
+          borderTop: '1px solid #e0e0e0',
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={handleCancelEdit}
+          disabled={formLoading}
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          onClick={onSave}
+          disabled={formLoading}
+          startIcon={formLoading ? <CircularProgress size={20} /> : undefined}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+            },
+            textTransform: 'none',
+            fontWeight: 600,
+            minWidth: 140,
+          }}
+        >
+          {formLoading ? '' : 'Save'}
+        </Button>
+      </Box>
+    </Box>
+  );
+
+  const renderEmptyState = (message: string) => (
+    <Box
+      sx={{
+        textAlign: 'center',
+        py: 6,
+        border: '2px dashed #e0e0e0',
+        borderRadius: 1,
+        bgcolor: 'white',
+        color: 'text.secondary',
+      }}
+    >
+      <Typography variant="body2">{message}</Typography>
+    </Box>
+  );
+
   return (
-    <PageContainer>
-      <PageHeader>
-        <BackButton onClick={handleBack}>
-          <FaArrowLeft />
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        gap: 2,
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' }
+      }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.875rem',
+            px: 2,
+            py: 1,
+          }}
+        >
           Back
-        </BackButton>
-        <PageTitle>
-          <FaRuler />
+        </Button>
+        <Typography variant="h5" sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
+          <StraightenIcon color="primary" />
           Manage Measurements
-        </PageTitle>
-      </PageHeader>
+        </Typography>
+      </Box>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <>
-          <CustomerInfo>
-            <CustomerName>{customerName}</CustomerName>
-            <CustomerEmail>{customerEmail}</CustomerEmail>
-          </CustomerInfo>
+      <Card sx={{ p: 2, mb: 3, bgcolor: '#f9f9f9', border: '1px solid #e0e0e0' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {customerName}
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          {customerEmail}
+        </Typography>
+      </Card>
 
-          <MeasurementsContainer>
-          {/* Top Measurements Section */}
-          <MeasurementSection>
-            <SectionHeader>
-              <SectionTitle>
-                <FaTshirt />
+      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
+        <Box>
+          <Card sx={{ p: 3, minHeight: 420, border: '1px solid #e0e0e0', bgcolor: '#f9f9f9' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CheckroomIcon color="primary" />
                 Top Measurements
-              </SectionTitle>
+              </Typography>
               {!isEditingTop && !isAddingTop && (
-                <EditButton
+                <Button
+                  variant="contained"
                   onClick={() => {
                     if (measurements?.topMeasurement) {
                       setIsEditingTop(true);
@@ -494,189 +460,51 @@ const ManageMeasurementPage = () => {
                       setIsAddingTop(true);
                     }
                   }}
+                  startIcon={measurements?.topMeasurement ? <EditIcon /> : <AddIcon />}
                   disabled={formLoading}
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                    },
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
                 >
-                  {measurements?.topMeasurement ? (
-                    <>
-                      <FaEdit /> Edit
-                    </>
-                  ) : (
-                    <>
-                      <FaPlus /> Add
-                    </>
-                  )}
-                </EditButton>
+                  {measurements?.topMeasurement ? 'Edit' : 'Add'}
+                </Button>
               )}
-            </SectionHeader>
+            </Box>
+            {isEditingTop || isAddingTop
+              ? renderMeasurementForm(
+                topFieldConfigs,
+                topFormData as Record<string, number>,
+                handleTopFormChange,
+                handleSaveTop,
+              )
+              : measurements?.topMeasurement
+                ? (
+                  <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                    {renderMeasurementRows(
+                      topFieldConfigs,
+                      measurements.topMeasurement as unknown as Record<string, number | string | undefined>,
+                    )}
+                  </Box>
+                )
+                : renderEmptyState('No top measurements found. Click "Add" to create new measurements.')}
+          </Card>
+        </Box>
 
-            {isEditingTop || isAddingTop ? (
-              <div>
-                <GridContainer>
-                  <FormGroup>
-                    <Label htmlFor="length">Length</Label>
-                    <Input
-                      type="number"
-                      id="length"
-                      name="length"
-                      value={topFormData.length}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="shoulder">Shoulder</Label>
-                    <Input
-                      type="number"
-                      id="shoulder"
-                      name="shoulder"
-                      value={topFormData.shoulder}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="sleeveLength">Sleeve Length</Label>
-                    <Input
-                      type="number"
-                      id="sleeveLength"
-                      name="sleeveLength"
-                      value={topFormData.sleeveLength}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="sleeveBottom">Sleeve Bottom</Label>
-                    <Input
-                      type="number"
-                      id="sleeveBottom"
-                      name="sleeveBottom"
-                      value={topFormData.sleeveBottom}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="chest">Chest</Label>
-                    <Input
-                      type="number"
-                      id="chest"
-                      name="chest"
-                      value={topFormData.chest}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="waist">Waist</Label>
-                    <Input
-                      type="number"
-                      id="waist"
-                      name="waist"
-                      value={topFormData.waist}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="hip">Hip</Label>
-                    <Input
-                      type="number"
-                      id="hip"
-                      name="hip"
-                      value={topFormData.hip}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="neck">Neck</Label>
-                    <Input
-                      type="number"
-                      id="neck"
-                      name="neck"
-                      value={topFormData.neck}
-                      onChange={handleTopFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                </GridContainer>
-                <ButtonContainer>
-                  <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                    Cancel
-                  </CancelButton>
-                  <Button onClick={handleSaveTop} disabled={formLoading}>
-                    {formLoading ? <LoadingSpinner /> : 'Save'}
-                  </Button>
-                </ButtonContainer>
-              </div>
-            ) : measurements?.topMeasurement ? (
-              <MeasurementDisplay>
-                <MeasurementRow>
-                  <MeasurementLabel>Length:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.length)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Shoulder:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.shoulder)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Sleeve Length:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.sleeveLength)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Sleeve Bottom:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.sleeveBottom)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Chest:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.chest)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Waist:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.waist)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Hip:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.hip)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Neck:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.neck)}"</MeasurementValue>
-                </MeasurementRow>
-              </MeasurementDisplay>
-            ) : (
-              <EmptyState>
-                <EmptyStateText>No top measurements found. Click "Add" to create new measurements.</EmptyStateText>
-              </EmptyState>
-            )}
-          </MeasurementSection>
-
-          {/* Bottom Measurements Section */}
-          <MeasurementSection>
-            <SectionHeader>
-              <SectionTitle>
-                <FaLongArrowAltRight />
+        <Box>
+          <Card sx={{ p: 3, minHeight: 420, border: '1px solid #e0e0e0', bgcolor: '#f9f9f9' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ArrowRightAltIcon color="primary" />
                 Bottom Measurements
-              </SectionTitle>
+              </Typography>
               {!isEditingBottom && !isAddingBottom && (
-                <EditButton
+                <Button
+                  variant="contained"
                   onClick={() => {
                     if (measurements?.bottomMeasurement) {
                       setIsEditingBottom(true);
@@ -684,183 +512,42 @@ const ManageMeasurementPage = () => {
                       setIsAddingBottom(true);
                     }
                   }}
+                  startIcon={measurements?.bottomMeasurement ? <EditIcon /> : <AddIcon />}
                   disabled={formLoading}
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                    },
+                    textTransform: 'none',
+                    fontWeight: 600,
+                  }}
                 >
-                  {measurements?.bottomMeasurement ? (
-                    <>
-                      <FaEdit /> Edit
-                    </>
-                  ) : (
-                    <>
-                      <FaPlus /> Add
-                    </>
-                  )}
-                </EditButton>
+                  {measurements?.bottomMeasurement ? 'Edit' : 'Add'}
+                </Button>
               )}
-            </SectionHeader>
-
-            {isEditingBottom || isAddingBottom ? (
-              <div>
-                <GridContainer>
-                  <FormGroup>
-                    <Label htmlFor="bottom_length">Length</Label>
-                    <Input
-                      type="number"
-                      id="bottom_length"
-                      name="length"
-                      value={bottomFormData.length}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_waist">Waist</Label>
-                    <Input
-                      type="number"
-                      id="bottom_waist"
-                      name="waist"
-                      value={bottomFormData.waist}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_hip">Hip</Label>
-                    <Input
-                      type="number"
-                      id="bottom_hip"
-                      name="hip"
-                      value={bottomFormData.hip}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_thigh">Thigh</Label>
-                    <Input
-                      type="number"
-                      id="bottom_thigh"
-                      name="thigh"
-                      value={bottomFormData.thigh}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_knee">Knee</Label>
-                    <Input
-                      type="number"
-                      id="bottom_knee"
-                      name="knee"
-                      value={bottomFormData.knee}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_calf">Calf</Label>
-                    <Input
-                      type="number"
-                      id="bottom_calf"
-                      name="calf"
-                      value={bottomFormData.calf}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_bottom">Bottom</Label>
-                    <Input
-                      type="number"
-                      id="bottom_bottom"
-                      name="bottom"
-                      value={bottomFormData.bottom}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                  <FormGroup>
-                    <Label htmlFor="bottom_langot">Langot</Label>
-                    <Input
-                      type="number"
-                      id="bottom_langot"
-                      name="langot"
-                      value={bottomFormData.langot}
-                      onChange={handleBottomFormChange}
-                      step="0.01"
-                      min="0"
-                      disabled={formLoading}
-                    />
-                  </FormGroup>
-                </GridContainer>
-                <ButtonContainer>
-                  <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                    Cancel
-                  </CancelButton>
-                  <Button onClick={handleSaveBottom} disabled={formLoading}>
-                    {formLoading ? <LoadingSpinner /> : 'Save'}
-                  </Button>
-                </ButtonContainer>
-              </div>
-            ) : measurements?.bottomMeasurement ? (
-              <MeasurementDisplay>
-                <MeasurementRow>
-                  <MeasurementLabel>Length:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.length)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Waist:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.waist)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Hip:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.hip)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Thigh:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.thigh)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Knee:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.knee)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Calf:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.calf)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Bottom:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.bottom)}"</MeasurementValue>
-                </MeasurementRow>
-                <MeasurementRow>
-                  <MeasurementLabel>Langot:</MeasurementLabel>
-                  <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.langot)}"</MeasurementValue>
-                </MeasurementRow>
-              </MeasurementDisplay>
-            ) : (
-              <EmptyState>
-                <EmptyStateText>No bottom measurements found. Click "Add" to create new measurements.</EmptyStateText>
-              </EmptyState>
-              )}
-          </MeasurementSection>
-          </MeasurementsContainer>
-        </>
-      )}
-    </PageContainer>
+            </Box>
+            {isEditingBottom || isAddingBottom
+              ? renderMeasurementForm(
+                bottomFieldConfigs,
+                bottomFormData as Record<string, number>,
+                handleBottomFormChange,
+                handleSaveBottom,
+              )
+              : measurements?.bottomMeasurement
+                ? (
+                  <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                    {renderMeasurementRows(
+                      bottomFieldConfigs,
+                      measurements.bottomMeasurement as unknown as Record<string, number | string | undefined>,
+                    )}
+                  </Box>
+                )
+                : renderEmptyState('No bottom measurements found. Click "Add" to create new measurements.')}
+          </Card>
+        </Box>
+      </Box>
+    </Card>
   );
 };
 

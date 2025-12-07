@@ -2,10 +2,9 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { isAuthenticated, removeAuthToken } from '../Services/ApiServices';
-import Button from '../style';
+import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const HomeContainer = styled.div`
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -63,12 +62,23 @@ const Home = () => {
         <Title>Welcome to Tailor Project</Title>
         <Subtitle>You are successfully logged in!</Subtitle>
         <ButtonGroup>
-          <Button onClick={() => navigate('/admin/create-user')}>
+          <MUICustomBtn
+            onClick={() => navigate('/admin/create-user')}
+            tooltip="Create a new user account (Admin only)"
+            variant="contained"
+            color="primary"
+          >
             Create User (Admin)
-          </Button>
-          <Button onClick={handleLogout} style={{ background: '#dc3545' }}>
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={handleLogout}
+            tooltip="Sign out of your account"
+            variant="contained"
+            color="error"
+            sx={{ backgroundColor: '#dc3545' }}
+          >
             Logout
-          </Button>
+          </MUICustomBtn>
         </ButtonGroup>
       </ContentCard>
     </HomeContainer>

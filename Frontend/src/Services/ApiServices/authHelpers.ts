@@ -53,7 +53,15 @@ export const isAuthenticated = (): boolean => {
  */
 export const getCurrentUserRole = (): string | null => {
     const userInfo = getUserInfo();
-    return userInfo?.roleName || null;
+    return userInfo?.role || null;
+};
+
+/**
+ * Check if user is SuperAdmin
+ */
+export const isSuperAdmin = (): boolean => {
+    const role = getCurrentUserRole();
+    return role?.toLowerCase() === 'superadmin';
 };
 
 /**
@@ -62,6 +70,14 @@ export const getCurrentUserRole = (): string | null => {
 export const isAdmin = (): boolean => {
     const role = getCurrentUserRole();
     return role?.toLowerCase() === 'admin';
+};
+
+/**
+ * Check if user is SubAdmin
+ */
+export const isSubAdmin = (): boolean => {
+    const role = getCurrentUserRole();
+    return role?.toLowerCase() === 'subadmin';
 };
 
 /**
@@ -78,5 +94,50 @@ export const isStaff = (): boolean => {
 export const isAccountant = (): boolean => {
     const role = getCurrentUserRole();
     return role?.toLowerCase() === 'accountant';
+};
+
+/**
+ * Auto login using existing token
+ * Calls /api/users/me to validate token and fetch user data
+ * Returns true if successful, false if token is invalid
+ */
+export const autoLogin = async (): Promise<boolean> => {
+    try {
+        const token = getAuthToken();
+        
+        // If no token exists, return false
+        if (!token) {
+            return false;
+        }
+
+        // Import the getMeService dynamically to avoid circular dependencies
+        const { getMeService } = await import('./userServices');
+        
+        // Call the /me endpoint to validate token and get user data
+        const response = await getMeService();
+        
+        if (response.success === 200 && response.data) {
+            // Update user info in localStorage with the fresh data
+            const userInfoToStore = {
+                userId: response.data.userId,
+                fullName: response.data.fullName,
+                emailId: response.data.emailId,
+                role: response.data.role,
+                token: token // Keep the existing token
+            };
+            
+            setUserInfo(userInfoToStore);
+            return true;
+        } else {
+            // Token is invalid, clear auth data
+            removeAuthToken();
+            return false;
+        }
+    } catch (error) {
+        console.error('Auto login failed:', error);
+        // If request fails (e.g., 401), clear auth data
+        removeAuthToken();
+        return false;
+    }
 };
 

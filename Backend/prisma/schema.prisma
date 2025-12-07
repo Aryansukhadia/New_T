@@ -26,45 +26,54 @@ enum OrderStatus {
 
 enum ItemStatusType {
   pending
-  cutting
+  underCutting
   redayToStich
-  stitching
+  underStitching
   readyToFinishing
-  finishing
+  underFinishing
   readyToDeliver
 }
 
-/////////////////////////////
-// ROLE & USER MANAGEMENT
-/////////////////////////////
-
-model Role {
-  roleId    String    @id
-  roleName  String
-  isDeleted Boolean   @default(false)
-  updatedBy String?
-  updatedAt DateTime? @updatedAt
-  createdAt DateTime  @default(now())
-
-  users   User[]
-  updater User?  @relation("RoleUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
+enum Role {
+  superAdmin
+  admin
+  subAdmin
+  cutter
+  stitcher
+  finisher
+  deliveryBoy
+  accountant
 }
+
+enum InventoryType {
+  fabric
+  readyMade
+  accessory
+}
+
+enum OrderItemType {
+  custom
+  readyMade
+}
+
+/////////////////////////////
+// USER MANAGEMENT
+/////////////////////////////
 
 model User {
   userId    String    @id
   fullName  String
   emailId   String    @unique
   password  String
-  roleId    String
+  role      Role
   isDeleted Boolean   @default(false)
   updatedBy String?
   updatedAt DateTime? @updatedAt
   createdAt DateTime  @default(now())
+  needToResetPassword Boolean @default(true)
 
-  role               Role                @relation(fields: [roleId], references: [roleId], onUpdate: Cascade, onDelete: Restrict)
   updater            User?               @relation("UserUpdater", fields: [updatedBy], references: [userId], onUpdate: Cascade, onDelete: SetNull)
   updatedUsers       User[]              @relation("UserUpdater")
-  updatedRoles       Role[]              @relation("RoleUpdater")
   createdCustomers   Customer[]          @relation("CustomerCreator")
   updatedCustomers   Customer[]          @relation("CustomerUpdater")
   topMeasurements    TopMeasurement[]
@@ -74,6 +83,18 @@ model User {
   updatedStages       WorkStage[]      @relation("UserStageUpdates")
   assignedWorkPieces  OrderWorkPiece[]
   updatedItemStatuses ItemStatus[]     @relation("UserItemStatusUpdates")
+
+  // Product management relations
+  createdProductItems   ProductItem[]     @relation("ProductItemCreator")
+  updatedProductItems   ProductItem[]     @relation("ProductItemUpdater")
+  createdProducts        Product[]        @relation("ProductCreator")
+  updatedProducts        Product[]        @relation("ProductUpdater")
+  createdProductVariants ProductVariant[]  @relation("ProductVariantCreator")
+  updatedProductVariants ProductVariant[]  @relation("ProductVariantUpdater")
+
+  // Inventory management relations
+  createdInventories   Inventory[]        @relation("InventoryCreator")
+  updatedInventories   Inventory[]        @relation("InventoryUpdater")
 }
 
 /////////////////////////////
@@ -151,8 +172,14 @@ model ProductItem {
   id        String   @id @default(uuid())
   name      String
   imageUrl  String?
+  createdBy String
+  updatedBy String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean @default(false)
 
+  creator       User            @relation("ProductItemCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater       User?           @relation("ProductItemUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   itemStatuses ItemStatus[]
   workPieces   OrderWorkPiece[]
   variants     ProductVariant[]
@@ -163,8 +190,14 @@ model Product {
   id          String   @id @default(uuid())
   name        String
   description String?
+  createdBy   String
+  updatedBy  String?
   createdAt   DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isDeleted   Boolean @default(false)
 
+  creator  User            @relation("ProductCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater  User?           @relation("ProductUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   variants ProductVariant[]
 }
 
@@ -174,10 +207,16 @@ model ProductVariant {
   productId   String
   name        String
   description String?
-  photoUrl    String?
+  imageUrl    String?
+  createdBy   String
+  updatedBy  String?
   createdAt   DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isDeleted   Boolean @default(false)
 
   product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  creator      User          @relation("ProductVariantCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater      User?         @relation("ProductVariantUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
   productItems ProductItem[]
   orderItems   OrderItem[]
 }
@@ -201,17 +240,20 @@ model ProductOrder {
   orderItems OrderItem[]
 }
 
-// 7️⃣ ORDER ITEMS — Each product variant in an order
+// 7️⃣ ORDER ITEMS — Each product variant or ready-made item in an order
 model OrderItem {
-  id               String   @id @default(uuid())
-  productOrderId   String
-  productVariantId String
-  quantity         Int      @default(1)
-  notes            String?
-  createdAt        DateTime @default(now())
+  id                   String        @id @default(uuid())
+  productOrderId       String
+  itemType             OrderItemType @default(custom)
+  productVariantId     String?
+  readyMadeInventoryId String?
+  quantity             Int           @default(1)
+  notes                String?
+  createdAt            DateTime      @default(now())
 
-  productOrder   ProductOrder   @relation(fields: [productOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productOrder       ProductOrder    @relation(fields: [productOrderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  readyMadeInventory Inventory?      @relation(fields: [readyMadeInventoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   workPieces   OrderWorkPiece[]
   itemStatuses ItemStatus[]
@@ -223,9 +265,10 @@ model OrderWorkPiece {
   orderItemId   String
   productItemId String
   assignedToId  String?
-  currentStatus ItemStatusType @default(cutting)
+  currentStatus ItemStatusType @default(pending)
   remarks       String?
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime?       @default(now())
 
   orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productItem ProductItem @relation(fields: [productItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -260,4 +303,64 @@ model ItemStatus {
   orderItem   OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   productItem ProductItem @relation(fields: [productItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   updatedBy   User?       @relation("UserItemStatusUpdates", fields: [updatedById], references: [userId], onDelete: SetNull, onUpdate: Cascade)
+}
+
+
+/////////////////////////////
+// INVENTORY MANAGEMENT
+/////////////////////////////
+
+model Inventory {
+  id          String         @id @default(uuid())
+  type        InventoryType
+  name        String
+  isDeleted   Boolean        @default(false)
+
+  createdBy   String
+  updatedBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  creator     User      @relation("InventoryCreator", fields: [createdBy], references: [userId], onDelete: Cascade, onUpdate: Cascade)
+  updater     User?     @relation("InventoryUpdater", fields: [updatedBy], references: [userId], onDelete: SetNull, onUpdate: Cascade)
+
+  fabric      FabricInventory?
+  readyMade   ReadyMadeInventory?
+  accessory   AccessoryInventory?
+  orderItems  OrderItem[]
+}
+
+model FabricInventory {
+  id            String   @id @default(uuid())
+  inventoryId   String   @unique
+  color         String
+  imageUrl      String       
+  price         Decimal?       @db.Decimal(10,2)
+  length        Decimal       @db.Decimal(10,2)
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+}
+
+model ReadyMadeInventory {
+  id            String   @id @default(uuid())
+  inventoryId   String   @unique
+  color         String
+  imageUrl      String       
+  quantity      Int            @default(0)
+  price         Decimal       @db.Decimal(10,2)
+  sizeLabel     String?        // M, L, XL, FreeSize
+  sizeNumber    Int?           // 30, 32, 34, 36...
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+}
+
+model AccessoryInventory {
+  id            String        @id @default(uuid())
+  inventoryId   String        @unique
+  quantity      Int
+  
+  // Dynamic fields stored as JSON
+  properties    Json?    // stores type, size, material, color, etc.
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
 }

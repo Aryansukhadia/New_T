@@ -2,8 +2,8 @@
 // API DETAILS - CENTRALIZED EXPORTS
 // ============================================
 
-// Types
-export * from '.';
+// Common Types
+export * from './commonTypes';
 
 // Services
 export * from './authServices';
@@ -13,6 +13,9 @@ export * from './customerServices';
 export * from './measurementServices';
 export * from './productServices';
 export * from './productOrderServices';
+export * from './fabricInventoryServices';
+export * from './readyMadeInventoryServices';
+export * from './accessoryInventoryServices';
 
 // Helpers
 export * from './authHelpers';

@@ -5,12 +5,25 @@ dotenv.config();
 
 const { Pool } = pg;
 
+// Check if DATABASE_URL is provided
+if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
+}
+console.log(process.env.DATABASE_URL);
+
+// SSL Configuration for cloud providers (Aiven, AWS RDS, etc.)
+const sslConfig = {
+    rejectUnauthorized: false, // Set to false for cloud providers with self-signed CAs
+};
+
+// Create connection pool using DATABASE_URL
 const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
+    connectionString: process.env.DATABASE_URL,
+    ssl: sslConfig,
+    // Connection timeout
+    connectionTimeoutMillis: 10000,
+    // Idle timeout
+    idleTimeoutMillis: 30000,
 });
 
 pool.on('error', (err) => {

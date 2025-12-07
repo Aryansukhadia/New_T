@@ -1,0 +1,893 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  getProductItemsService,
+  createProductItemService,
+  updateProductItemService,
+  deleteProductItemService,
+  type ProductItem,
+  type CreateProductItemRequest,
+  type UpdateProductItemRequest,
+  type PaginationMeta,
+} from '../../../Services/ApiServices';
+import { useToast } from '../../../Utils/ToastContext';
+import {
+  Box,
+  Card,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import MUICustomBtn from '../../../Components/Common/MUICustomBtn';
+import {
+  Inventory as BoxIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
+  Close as CloseIcon,
+  Upload as UploadIcon,
+  Visibility as VisibilityIcon,
+  FilterList as FilterListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
+} from '@mui/icons-material';
+import DataTable, { type Column } from '../../../Components/Common/DataTable';
+import DataCardGrid, { type CardField, type CardAction } from '../../../Components/Common/DataCardGrid';
+
+const ProductItemsPage = () => {
+  const navigate = useNavigate();
+  const [productItems, setProductItems] = useState<ProductItem[]>([]);
+  const [filteredProductItems, setFilteredProductItems] = useState<ProductItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedProductItem, setSelectedProductItem] = useState<ProductItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productItemToDelete, setProductItemToDelete] = useState<ProductItem | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+
+  const { showSuccess, showError } = useToast();
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+
+  const [formData, setFormData] = useState<CreateProductItemRequest>({
+    name: '',
+    imageUrl: null,
+  });
+
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  const fetchProductItems = useCallback(async (page: number = 0) => {
+    try {
+      setLoading(true);
+      const apiPage = page + 1;
+      const response = await getProductItemsService(apiPage, pageSize);
+      if (response.success === 200 && response.data) {
+        const { productItems: productItemsData, pagination } = response.data;
+        setProductItems(productItemsData);
+        setPaginationMeta(pagination);
+        setCurrentPage(page);
+      } else {
+        showError(response.message || 'Failed to load product items', 'Error');
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching product items:', err);
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        showError(axiosError.response?.data?.message || 'Failed to load product items', 'Error');
+      } else {
+        showError('Failed to load product items. Please try again.', 'Error');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [showError, pageSize]);
+
+  useEffect(() => {
+    fetchProductItems(currentPage);
+  }, [fetchProductItems, currentPage]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredProductItems(productItems);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    const filtered = productItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(term)
+    );
+    setFilteredProductItems(filtered);
+  }, [searchTerm, productItems]);
+
+  const handleOpenCreateModal = () => {
+    setIsEditMode(false);
+    setSelectedProductItem(null);
+    setFormData({
+      name: '',
+      imageUrl: null,
+    });
+    setSelectedImageFiles([]);
+    setImagePreviews([]);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (productItem: ProductItem) => {
+    setProductItemToDelete(productItem);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProductItem(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setProductItemToDelete(null);
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'imageUrl' ? (value === '' ? null : value) : value,
+    }));
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files).slice(0, 5); // Limit to 5 files
+      setSelectedImageFiles(fileArray);
+
+      // Create previews for all files
+      const previews: string[] = [];
+      let loadedCount = 0;
+
+      fileArray.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          previews.push(reader.result as string);
+          loadedCount++;
+          if (loadedCount === fileArray.length) {
+            setImagePreviews(previews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveAllImages = () => {
+    setSelectedImageFiles([]);
+    setImagePreviews([]);
+    setFormData((prev) => ({ ...prev, imageUrl: null }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+
+    try {
+      if (isEditMode && selectedProductItem) {
+        const updateData: UpdateProductItemRequest = {
+          name: formData.name,
+          imageUrl: formData.imageUrl || null,
+        };
+
+        const response = await updateProductItemService(
+          selectedProductItem.id,
+          updateData,
+          selectedImageFiles.length > 0 ? selectedImageFiles : null
+        );
+
+        if (response.success === 200) {
+          showSuccess(response.message || 'Product item updated successfully!', 'Success');
+          await fetchProductItems();
+          setTimeout(() => {
+            handleCloseModal();
+          }, 1000);
+        } else {
+          const errorMsg = response.message || 'Failed to update product item';
+          showError(errorMsg, 'Update Failed');
+        }
+      } else {
+        const createData: CreateProductItemRequest = {
+          name: formData.name,
+          imageUrl: formData.imageUrl || null,
+        };
+
+        const response = await createProductItemService(createData, selectedImageFiles.length > 0 ? selectedImageFiles : null);
+
+        if (response.success === 201) {
+          showSuccess(response.message || 'Product item created successfully!', 'Success');
+          await fetchProductItems();
+          setTimeout(() => {
+            handleCloseModal();
+          }, 1000);
+        } else {
+          const errorMsg = response.message || 'Failed to create product item';
+          showError(errorMsg, 'Create Failed');
+        }
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        const errorMsg = axiosError.response?.data?.message || 'An error occurred';
+        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
+      } else {
+        const errorMsg = 'An unexpected error occurred';
+        showError(errorMsg, isEditMode ? 'Update Failed' : 'Create Failed');
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!productItemToDelete) return;
+
+    setFormLoading(true);
+
+    try {
+      const response = await deleteProductItemService(productItemToDelete.id);
+
+      if (response.success === 200) {
+        showSuccess(response.message || 'Product item deleted successfully!', 'Success');
+        await fetchProductItems();
+        setTimeout(() => {
+          handleCloseDeleteModal();
+        }, 1000);
+      } else {
+        const errorMsg = response.message || 'Failed to delete product item';
+        showError(errorMsg, 'Delete Failed');
+      }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        const errorMsg = axiosError.response?.data?.message || 'Failed to delete product item';
+        showError(errorMsg, 'Delete Failed');
+      } else {
+        const errorMsg = 'An unexpected error occurred';
+        showError(errorMsg, 'Delete Failed');
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const parseImages = (imageUrl: string | null): string[] => {
+    if (!imageUrl) return [];
+    try {
+      const parsed = JSON.parse(imageUrl);
+      return Array.isArray(parsed) ? parsed : [imageUrl];
+    } catch {
+      return [imageUrl];
+    }
+  };
+
+  // Table columns configuration
+  const columns: Column<ProductItem>[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      render: (item) => item.name,
+    },
+    {
+      id: 'image',
+      label: 'Image',
+      render: (item) => {
+        const images = parseImages(item.imageUrl);
+        return images.length > 0 ? (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {images.slice(0, 2).map((imgUrl: string, idx: number) => (
+              <Box
+                key={idx}
+                component="img"
+                src={imgUrl}
+                alt={`${item.name} ${idx + 1}`}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  border: '2px solid #e0e0e0',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ))}
+            {images.length > 2 && (
+              <Box sx={{ fontSize: '0.65rem', display: 'flex', alignItems: 'center' }}>
+                +{images.length - 2}
+              </Box>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            —
+          </Typography>
+        );
+      },
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      render: (item) => formatDate(item.createdAt),
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      render: (item) => (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <MUICustomBtn
+            onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
+            tooltip="View Product Item Details"
+            variant="contained"
+            sx={{
+              bgcolor: '#e8f5e9',
+              color: '#2e7d32',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#c8e6c9',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+              },
+            }}
+          >
+            <VisibilityIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
+            tooltip="Edit Product Item"
+            variant="contained"
+            sx={{
+              bgcolor: '#e3f2fd',
+              color: '#1976d2',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#bbdefb',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+              },
+            }}
+          >
+            <EditIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+          <MUICustomBtn
+            onClick={() => handleOpenDeleteModal(item)}
+            tooltip="Delete Product Item"
+            variant="contained"
+            sx={{
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              minWidth: 32,
+              width: 32,
+              height: 32,
+              padding: 0,
+              '&:hover': {
+                bgcolor: '#ffcdd2',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+              },
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: 16 }} />
+          </MUICustomBtn>
+        </Box>
+      ),
+    },
+  ];
+
+  // Card fields configuration
+  const cardFields: CardField<ProductItem>[] = [
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (item) => (
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(item.createdAt)}
+        </Typography>
+      ),
+    },
+  ];
+
+  // Card actions configuration
+  const cardActions: CardAction<ProductItem>[] = [
+    {
+      id: 'view',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => navigate(`/dashboard/product-items/${item.id}`)}
+          tooltip="View Details"
+          variant="contained"
+          sx={{
+            bgcolor: '#e8f5e9',
+            color: '#2e7d32',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#c8e6c9',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(46, 125, 50, 0.2)',
+            },
+          }}
+        >
+          <VisibilityIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'edit',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => navigate(`/dashboard/product-items/${item.id}?edit=true`)}
+          tooltip="Edit"
+          variant="contained"
+          sx={{
+            bgcolor: '#e3f2fd',
+            color: '#1976d2',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#bbdefb',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(25, 118, 210, 0.2)',
+            },
+          }}
+        >
+          <EditIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+    {
+      id: 'delete',
+      render: (item) => (
+        <MUICustomBtn
+          onClick={() => handleOpenDeleteModal(item)}
+          tooltip="Delete"
+          variant="contained"
+          sx={{
+            bgcolor: '#ffebee',
+            color: '#d32f2f',
+            minWidth: 32,
+            width: 32,
+            height: 32,
+            padding: 0,
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 4px 8px rgba(211, 47, 47, 0.2)',
+            },
+          }}
+        >
+          <DeleteIcon sx={{ fontSize: 16 }} />
+        </MUICustomBtn>
+      ),
+    },
+  ];
+
+  return (
+    <Card sx={{ borderRadius: 1.5, p: { xs: 2, sm: 3 } }}>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 700,
+          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+        }}>
+          Product Items Management
+        </Typography>
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
+          flexWrap: 'wrap',
+          width: { xs: '100%', sm: 'auto' },
+          alignItems: 'center'
+        }}>
+          <Button
+            variant="outlined"
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilter(!showFilter)}
+            sx={{
+              borderColor: showFilter ? '#667eea' : '#ccc',
+              color: showFilter ? '#667eea' : '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+            }}
+          >
+            {showFilter ? 'Hide Filter' : 'Show Filter'}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={viewMode === 'table' ? <ViewModuleIcon /> : <ViewListIcon />}
+            onClick={() => setViewMode(viewMode === 'table' ? 'card' : 'table')}
+            sx={{
+              borderColor: '#ccc',
+              color: '#666',
+              '&:hover': {
+                borderColor: '#667eea',
+                bgcolor: 'rgba(102, 126, 234, 0.04)',
+                transform: 'translateY(-2px)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 1,
+              borderRadius: 1.5,
+              display: { xs: 'none', lg: 'flex' },
+            }}
+          >
+            {viewMode === 'table' ? 'Card View' : 'Table View'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenCreateModal}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              px: 2.5,
+              py: 1,
+              borderRadius: 1.5,
+              whiteSpace: 'nowrap',
+              minWidth: { xs: 'auto', sm: 140 },
+            }}
+          >
+            Add New Product Item
+          </Button>
+        </Box>
+      </Box>
+
+      {showFilter && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search product items by name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              maxWidth: { xs: '100%', sm: 400 },
+              '& .MuiInputBase-input': {
+                fontSize: { xs: '0.9rem', sm: '1rem' }
+              }
+            }}
+          />
+        </Box>
+      )}
+
+      {loading ? (
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : filteredProductItems.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 7.5, color: 'text.secondary' }}>
+          <Box sx={{ fontSize: 48, mb: 2, color: '#ccc', display: 'flex', justifyContent: 'center' }}>
+            <BoxIcon sx={{ fontSize: 48 }} />
+          </Box>
+          <Typography variant="body1">
+            {searchTerm
+              ? 'No product items found matching your search'
+              : 'No product items found. Add your first product item to get started!'}
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          {/* Desktop view - show table or card based on viewMode */}
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            {viewMode === 'table' ? (
+              <DataTable
+                columns={columns}
+                data={filteredProductItems}
+                getRowKey={(item) => item.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+              />
+            ) : (
+              <DataCardGrid
+                data={filteredProductItems}
+                getCardTitle={(item) => item.name}
+                getCardImages={(item) => parseImages(item.imageUrl)}
+                fields={cardFields}
+                actions={cardActions}
+                getRowKey={(item) => item.id}
+                paginationMeta={paginationMeta}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={(_event, page) => setCurrentPage(page)}
+                onRowsPerPageChange={(event) => {
+                  const newRowsPerPage = parseInt(event.target.value, 10);
+                  const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                  setPageSize(actualRowsPerPage);
+                  setCurrentPage(0);
+                }}
+                searchTerm={searchTerm}
+                columns={4}
+              />
+            )}
+          </Box>
+
+          {/* Mobile/Tablet view - always show card view on screens < 1024px */}
+          <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+            <DataCardGrid
+              data={filteredProductItems}
+              getCardTitle={(item) => item.name}
+              getCardImages={(item) => parseImages(item.imageUrl)}
+              fields={cardFields}
+              actions={cardActions}
+              getRowKey={(item) => item.id}
+              paginationMeta={paginationMeta}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={(_event, page) => setCurrentPage(page)}
+              onRowsPerPageChange={(event) => {
+                const newRowsPerPage = parseInt(event.target.value, 10);
+                const actualRowsPerPage = newRowsPerPage === -1 ? 10000 : newRowsPerPage;
+                setPageSize(actualRowsPerPage);
+                setCurrentPage(0);
+              }}
+              searchTerm={searchTerm}
+              columns={1}
+            />
+          </Box>
+        </>
+      )}
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+        <DialogTitle>{isEditMode ? 'Edit Product Item' : 'Create New Product Item'}</DialogTitle>
+        <DialogContent>
+          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 2 }}>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <BoxIcon sx={{ fontSize: 20 }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Product Item Name
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleFormChange}
+                placeholder="Enter product item name (e.g., Shirt, Pant, Blazer)"
+                required
+                disabled={formLoading}
+              />
+            </Box>
+
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <ImageIcon sx={{ fontSize: 20 }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Upload Images (Optional - Max 5)
+                </Typography>
+              </Box>
+              <Button
+                component="label"
+                variant="contained"
+                startIcon={<UploadIcon />}
+                disabled={formLoading || imagePreviews.length >= 5}
+                sx={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+                  },
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                Choose Image Files
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  id="imageFiles"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  onChange={handleImageFileChange}
+                  disabled={formLoading || imagePreviews.length >= 5}
+                />
+              </Button>
+              {selectedImageFiles.length > 0 && (
+                <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
+                  Selected: {selectedImageFiles.length} file(s)
+                </Typography>
+              )}
+              {imagePreviews.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Image Previews ({imagePreviews.length}/5)
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={handleRemoveAllImages}
+                      sx={{
+                        textTransform: 'none',
+                        color: '#dc3545',
+                        '&:hover': { bgcolor: '#ffebee' }
+                      }}
+                    >
+                      Remove All
+                    </Button>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                    {imagePreviews.map((preview, index) => (
+                      <Box key={index} sx={{ position: 'relative', display: 'inline-block' }}>
+                        <Box
+                          component="img"
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            borderRadius: 1,
+                            border: '2px solid #e0e0e0',
+                            objectFit: 'cover',
+                          }}
+                        />
+                        <MUICustomBtn
+                          onClick={() => handleRemoveImage(index)}
+                          tooltip="Remove image"
+                          variant="contained"
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            bgcolor: '#dc3545',
+                            color: 'white',
+                            width: 24,
+                            height: 24,
+                            minWidth: 24,
+                            padding: 0,
+                            '&:hover': {
+                              bgcolor: '#c82333',
+                              transform: 'scale(1.1)',
+                            },
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </MUICustomBtn>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={formLoading}
+            variant="contained"
+            startIcon={formLoading ? <CircularProgress size={20} /> : isEditMode ? <EditIcon /> : <AddIcon />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+              minWidth: 140,
+            }}
+          >
+            {formLoading ? '' : isEditMode ? 'Update Product Item' : 'Create Product Item'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteModalOpen} onClose={handleCloseDeleteModal} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Product Item</DialogTitle>
+        <DialogContent>
+          {productItemToDelete && (
+            <Typography variant="body1">
+              Are you sure you want to delete product item <strong>{productItemToDelete.name}</strong>?
+              This action cannot be undone.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDeleteModal} variant="outlined" sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            disabled={formLoading}
+            variant="contained"
+            sx={{
+              bgcolor: '#dc3545',
+              '&:hover': {
+                bgcolor: '#c82333',
+              },
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
+  );
+};
+
+export default ProductItemsPage;
+

@@ -2,120 +2,194 @@ import { verifyToken } from "../utils/jwt.js";
 import sendResponse from "../utils/response.js";
 import prisma from "../dbConnect/prismaClient.js";
 
-export const authenticate = async (req, res, next) => {
+/**
+ * Common helper function to verify token and get user
+ * Handles all common authentication checks
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object|null} - User object (without password) or null if authentication fails
+ */
+export const verifyAndGetUser = async (req, res) => {
     try {
+        // Check for authorization header
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return sendResponse(res, 401, "Authorization token is required");
+            sendResponse(res, 401, "Authorization token is required");
+            return null;
         }
 
+        // Extract token
         const token = authHeader.substring(7); // Remove "Bearer " prefix
 
         if (!token) {
-            return sendResponse(res, 401, "Authorization token is required");
+            sendResponse(res, 401, "Authorization token is required");
+            return null;
         }
 
         // Verify token
         const decoded = verifyToken(token);
 
         if (!decoded) {
-            return sendResponse(res, 401, "Invalid or expired token");
+            sendResponse(res, 401, "Invalid or expired token");
+            return null;
         }
 
-        // Get user from database to ensure user still exists and is active
+        // Get user from database
         const user = await prisma.user.findUnique({
-            where: { userId: decoded.userId },
-            include: {
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
-            }
+            where: { userId: decoded.userId }
         });
 
         if (!user) {
-            return sendResponse(res, 401, "User not found");
+            sendResponse(res, 401, "User not found");
+            return null;
         }
 
+        // Check if user is deleted
         if (user.isDeleted) {
-            return sendResponse(res, 401, "User account is deactivated");
+            sendResponse(res, 401, "User account is deactivated");
+            return null;
         }
 
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            roleId: user.roleId,
-            roleName: user.role.roleName
-        };
+        // Check if user needs to reset password
+        if (user.needToResetPassword) {
+            sendResponse(res, 401, "Please change your password to continue");
+            return null;
+        }
 
-        next();
+        // Return user without password
+        const { password, ...userDetails } = user;
+        return userDetails;
     } catch (error) {
-        console.error("Authentication error:", error);
-        return sendResponse(res, 500, "Authentication failed", { error: error.message });
+        console.error("Token verification error:", error);
+        sendResponse(res, 500, "Authentication failed", { error: error.message });
+        return null;
     }
+}
+
+export const loggedIn = async (req, res, next) => {
+
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        sendResponse(res, 401, "Authorization token is required");
+        return null;
+    }
+
+    // Extract token
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
+
+    if (!token) {
+        sendResponse(res, 401, "Authorization token is required");
+        return null;
+    }
+
+    // Verify token
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+        sendResponse(res, 401, "Invalid or expired token");
+        return null;
+    }
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+        where: { userId: decoded.userId }
+    });
+
+    if (!user) {
+        sendResponse(res, 401, "User not found");
+        return null;
+    }
+
+    // Check if user is deleted
+    if (user.isDeleted) {
+        sendResponse(res, 401, "User account is deactivated");
+        return null;
+    }
+
+    // Return user without password
+    const { password, ...userDetails } = user;
+    req.user = userDetails;
+    next();
+};
+
+export const authenticate = async (req, res, next) => {
+    const user = await verifyAndGetUser(req, res);
+
+    if (!user) {
+        return; // Response already sent by verifyAndGetUser
+    }
+
+    // Attach user details to request object
+    req.user = user;
+    next();
 };
 
 export const isAdmin = async (req, res, next) => {
-    try {
-        // First authenticate the user
-        const authHeader = req.headers.authorization;
+    const user = await verifyAndGetUser(req, res);
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return sendResponse(res, 401, "Authorization token is required");
-        }
-
-        const token = authHeader.substring(7);
-
-        if (!token) {
-            return sendResponse(res, 401, "Authorization token is required");
-        }
-
-        // Verify token
-        const decoded = verifyToken(token);
-
-        if (!decoded) {
-            return sendResponse(res, 401, "Invalid or expired token");
-        }
-
-        // Get user from database to check role
-        const user = await prisma.user.findUnique({
-            where: { userId: decoded.userId },
-            include: {
-                role: {
-                    select: {
-                        roleId: true,
-                        roleName: true
-                    }
-                }
-            }
-        });
-
-        if (!user) {
-            return sendResponse(res, 401, "User not found");
-        }
-
-        if (user.isDeleted) {
-            return sendResponse(res, 401, "User account is deactivated");
-        }
-
-        // Check if user is Admin
-        if (user.role.roleName !== "admin") {
-            return sendResponse(res, 403, "Access denied. Admin privileges required");
-        }
-
-        // Attach user info to request object
-        req.user = {
-            userId: user.userId,
-            roleId: user.roleId,
-            roleName: user.role.roleName
-        };
-
-        next();
-    } catch (error) {
-        console.error("Admin check error:", error);
-        return sendResponse(res, 500, "Authorization failed", { error: error.message });
+    if (!user) {
+        return; // Response already sent by verifyAndGetUser
     }
+
+    // Check if user is Admin
+    if (user.role !== "admin") {
+        return sendResponse(res, 403, "Access denied. Admin privileges required");
+    }
+
+    // Attach user details to request object
+    req.user = user;
+    next();
+};
+
+export const isSuperAdmin = async (req, res, next) => {
+    const user = await verifyAndGetUser(req, res);
+
+    if (!user) {
+        return; // Response already sent by verifyAndGetUser
+    }
+
+    // Check if user is SuperAdmin
+    if (user.role !== "superAdmin") {
+        return sendResponse(res, 403, "Access denied. SuperAdmin privileges required");
+    }
+
+    // Attach user details to request object
+    req.user = user;
+    next();
+};
+
+export const isSubAdmin = async (req, res, next) => {
+    const user = await verifyAndGetUser(req, res);
+
+    if (!user) {
+        return; // Response already sent by verifyAndGetUser
+    }
+
+    // Check if user is SubAdmin
+    if (user.role !== "subAdmin") {
+        return sendResponse(res, 403, "Access denied. SubAdmin privileges required");
+    }
+
+    // Attach user details to request object
+    req.user = user;
+    next();
+};
+
+export const isAdminOrSubAdmin = async (req, res, next) => {
+    const user = await verifyAndGetUser(req, res);
+
+    if (!user) {
+        return; // Response already sent by verifyAndGetUser
+    }
+
+    // Check if user is Admin or SubAdmin
+    if (user.role !== "admin" && user.role !== "subAdmin") {
+        return sendResponse(res, 403, "Access denied. Admin or SubAdmin privileges required");
+    }
+
+    // Attach user details to request object
+    req.user = user;
+    next();
 };

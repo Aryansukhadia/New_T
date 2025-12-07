@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosResponse } from 'axios';
 
 // API Base URL
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL;
 
 // Create axios instance
 const apiInstance: AxiosInstance = axios.create({
@@ -32,11 +32,6 @@ apiInstance.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response?.status === 401) {
-            // Handle unauthorized - clear token and redirect to login
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        }
         return Promise.reject(error);
     }
 );

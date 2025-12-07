@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // USER TYPES
@@ -10,12 +11,21 @@ export interface UserResponse {
   userId: string;
   fullName: string;
   emailId: string;
-  roleId: string;
+  role: string;
   createdAt: string;
-  role: {
-    roleId: string;
-    roleName: string;
-  };
+}
+
+export interface UsersPaginatedResponse {
+  users: UserResponse[];
+  pagination: PaginationMeta;
+}
+
+export interface ChangePasswordRequest {
+  password: string;
+}
+
+export interface ResetPasswordRequest {
+  newPassword: string;
 }
 
 // ============================================
@@ -23,14 +33,95 @@ export interface UserResponse {
 // ============================================
 
 /**
- * Get All Users Service
- * GET /api/users
+ * Get Current User (Me) Service
+ * GET /api/users/me
  * 
- * @returns Promise with list of users
+ * Returns the authenticated user's details
+ * 
+ * @returns Promise with current user data
  */
-export const getUsersService = async (): Promise<ApiResponse<UserResponse[]>> => {
-  const response = await apiInstance.get<ApiResponse<UserResponse[]>>(
-    getApiUrl('getUsers')
+export const getMeService = async (): Promise<ApiResponse<UserResponse>> => {
+  const response = await apiInstance.get<ApiResponse<UserResponse>>(
+    getApiUrl('getMe')
+  );
+  return response.data;
+};
+
+/**
+ * Change Password Service
+ * POST /api/users/change-password
+ * 
+ * Changes the authenticated user's password (requires authentication)
+ * 
+ * @param passwordData - Object containing the new password
+ * @returns Promise with success message
+ */
+export const changePasswordService = async (
+  passwordData: ChangePasswordRequest
+): Promise<ApiResponse<null>> => {
+  const response = await apiInstance.post<ApiResponse<null>>(
+    getApiUrl('changePassword'),
+    passwordData
+  );
+  return response.data;
+};
+
+/**
+ * Reset Password Service
+ * POST /api/users/reset-password/:userId
+ * 
+ * Resets a user's password (requires admin or subAdmin role)
+ * 
+ * @param userId - User ID whose password needs to be reset
+ * @param passwordData - Object containing the new password
+ * @returns Promise with success message
+ */
+export const resetPasswordService = async (
+  userId: string,
+  passwordData: ResetPasswordRequest
+): Promise<ApiResponse<null>> => {
+  const response = await apiInstance.post<ApiResponse<null>>(
+    getApiUrl('resetPassword', { userId }),
+    passwordData
+  );
+  return response.data;
+};
+
+/**
+ * Get User Roles Service
+ * GET /api/users/roles
+ * 
+ * Returns available roles based on the authenticated user's role
+ * - SuperAdmin can create: admin
+ * - Admin can create: subAdmin
+ * - SubAdmin: no roles available
+ * 
+ * @returns Promise with array of available roles
+ */
+export const getUserRolesService = async (): Promise<ApiResponse<string[]>> => {
+  const response = await apiInstance.get<ApiResponse<string[]>>(
+    getApiUrl('getUserRoles')
+  );
+  return response.data;
+};
+
+/**
+ * Get All Users Service with Pagination
+ * GET /api/users?page=1&limit=10
+ *
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated users data
+ */
+export const getUsersService = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<UsersPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<UsersPaginatedResponse>>(
+    getApiUrl('getUsers'),
+    {
+      params: { page, limit }
+    }
   );
   return response.data;
 };

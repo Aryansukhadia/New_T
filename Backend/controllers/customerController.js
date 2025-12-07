@@ -53,16 +53,58 @@ export const addCustomer = async (req, res) => {
 
 export const getCustomers = async (req, res) => {
     try {
+        const {
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate pagination
+        if (pageNum < 1) {
+            return sendResponse(res, 400, "Page number must be at least 1");
+        }
+        if (limitNum < 1 || limitNum > 100) {
+            return sendResponse(res, 400, "Limit must be between 1 and 100");
+        }
+
+        // Build where clause
+        const where = {
+            isDeleted: false // Only get non-deleted customers
+        };
+
+        // Get total count for pagination
+        const totalCount = await prisma.customer.count({ where });
+
+        // Fetch customers with pagination
         const customers = await prisma.customer.findMany({
-            where: {
-                isDeleted: false // Only get non-deleted customers
-            },
+            where,
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limitNum
         });
 
-        return sendResponse(res, 200, "Customers fetched successfully", customers);
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPreviousPage = pageNum > 1;
+
+        return sendResponse(res, 200, "Customers fetched successfully", {
+            customers,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                limit: limitNum,
+                hasNextPage,
+                hasPreviousPage,
+            }
+        });
     } catch (error) {
         console.error("getCustomers error:", error);
         return sendResponse(res, 500, "Failed to fetch customers", { error: error.message });

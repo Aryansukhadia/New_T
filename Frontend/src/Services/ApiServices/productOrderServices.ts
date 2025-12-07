@@ -16,6 +16,34 @@ export interface ProductOrder {
     totalAmount: number | null;
 }
 
+export interface OrderItemDetail {
+    id: string;
+    itemType: 'custom' | 'readyMade';
+    quantity: number;
+    notes: string | null;
+    productVariant: {
+        id: string;
+        name: string;
+        imageUrl: string | null;
+        product: {
+            id: string;
+            name: string;
+        };
+    } | null;
+    readyMadeInventory: {
+        id: string;
+        name: string;
+        readyMade: {
+            id: string;
+            color: string;
+            imageUrl: string;
+            price: number;
+            sizeLabel: string | null;
+            sizeNumber: number | null;
+        } | null;
+    } | null;
+}
+
 export interface ProductOrderDetails {
     id: string;
     customerId: string;
@@ -25,6 +53,17 @@ export interface ProductOrderDetails {
     customerName: string | null;
     notes: string | null;
     totalAmount: number | null;
+    orderItems: OrderItemDetail[];
+}
+
+export interface OrderWorkPiecesResponse {
+    orderId: string;
+    workPieces: WorkPiece[];
+}
+
+export interface OrderItemWorkPiecesResponse {
+    orderId: string;
+    orderItem: OrderItemDetail;
     workPieces: WorkPiece[];
 }
 
@@ -53,9 +92,32 @@ export interface BookOrderRequest {
 }
 
 export interface OrderItem {
-    productId: string;
-    productVariantId: string;
+    itemType?: 'custom' | 'readyMade';
+    productId?: string;
+    productVariantId?: string;
+    readyMadeInventoryId?: string;
     quantity: number;
+}
+
+export interface AvailableReadyMadeItem {
+    id: string;
+    type: string;
+    name: string;
+    isDeleted: boolean;
+    createdBy: string;
+    updatedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+    readyMade: {
+        id: string;
+        inventoryId: string;
+        color: string;
+        imageUrl: string;
+        quantity: number;
+        price: number;
+        sizeLabel: string | null;
+        sizeNumber: number | null;
+    } | null;
 }
 
 export interface PaginatedOrdersResponse {
@@ -184,6 +246,53 @@ export const getWorkpieceMeasurementsService = async (
 ): Promise<ApiResponse<WorkpieceMeasurements>> => {
     const response = await apiInstance.get<ApiResponse<WorkpieceMeasurements>>(
         getApiUrl('getWorkpieceMeasurements', { workpieceId })
+    );
+    return response.data;
+};
+
+/**
+ * Get Available Ready-Made Items Service
+ * GET /api/productOrders/ready-made-items
+ * 
+ * @returns Promise with available ready-made items
+ */
+export const getAvailableReadyMadeItemsService = async (): Promise<ApiResponse<{ items: AvailableReadyMadeItem[] }>> => {
+    const response = await apiInstance.get<ApiResponse<{ items: AvailableReadyMadeItem[] }>>(
+        getApiUrl('getAvailableReadyMadeItems')
+    );
+    return response.data;
+};
+
+/**
+ * Get Order Work Pieces Service
+ * GET /api/productOrders/:id/workpieces
+ * 
+ * @param orderId - Order ID
+ * @returns Promise with order work pieces
+ */
+export const getOrderWorkPiecesService = async (
+    orderId: string
+): Promise<ApiResponse<OrderWorkPiecesResponse>> => {
+    const response = await apiInstance.get<ApiResponse<OrderWorkPiecesResponse>>(
+        getApiUrl('getOrderWorkPieces', { id: orderId })
+    );
+    return response.data;
+};
+
+/**
+ * Get Order Item Work Pieces Service
+ * GET /api/productOrders/:id/items/:itemId/workpieces
+ * 
+ * @param orderId - Order ID
+ * @param itemId - Order Item ID
+ * @returns Promise with order item and its work pieces
+ */
+export const getOrderItemWorkPiecesService = async (
+    orderId: string,
+    itemId: string
+): Promise<ApiResponse<OrderItemWorkPiecesResponse>> => {
+    const response = await apiInstance.get<ApiResponse<OrderItemWorkPiecesResponse>>(
+        getApiUrl('getOrderItemWorkPieces', { id: orderId, itemId })
     );
     return response.data;
 };

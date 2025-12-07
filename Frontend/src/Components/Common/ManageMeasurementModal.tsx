@@ -1,5 +1,16 @@
-import { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Button as MuiButton,
+} from '@mui/material';
+import {
+  Checkroom as CheckroomIcon,
+  ArrowForward as ArrowForwardIcon,
+  Edit as EditIcon,
+  Add as AddIcon,
+} from '@mui/icons-material';
 import Modal from './Modal';
 import {
   FormGroup,
@@ -13,151 +24,12 @@ import {
   editMeasurementService,
   addMeasurementService,
   type CustomerMeasurementResponse,
-  type TopMeasurement,
-  type BottomMeasurement,
   type EditMeasurementRequest,
   type AddMeasurementRequest,
 } from '../../Services/ApiServices';
 import { useToast } from '../../Utils/ToastContext';
-import { FaRuler, FaTshirt, FaLongArrowAltRight, FaEdit, FaPlus } from 'react-icons/fa';
 import type { Customer } from '../../Services/ApiServices';
 
-const ModalContent = styled.div`
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 8px;
-`;
-
-const MeasurementSection = styled.div`
-  margin-bottom: 24px;
-  padding: 20px;
-  background: #f9f9f9;
-  border-radius: 12px;
-  border: 2px solid #e0e0e0;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-`;
-
-const SectionTitle = styled.h3`
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  svg {
-    color: #667eea;
-  }
-`;
-
-const EditButton = styled.button`
-  padding: 8px 16px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  &:hover {
-    background: #5568d3;
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const GridContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-`;
-
-const MeasurementDisplay = styled.div`
-  background: white;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-`;
-
-const MeasurementRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const MeasurementLabel = styled.span`
-  font-weight: 600;
-  color: #666;
-  font-size: 14px;
-`;
-
-const MeasurementValue = styled.span`
-  color: #333;
-  font-size: 14px;
-  font-weight: 500;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 40px 20px;
-  color: #666;
-  background: white;
-  border-radius: 8px;
-  border: 2px dashed #e0e0e0;
-`;
-
-const EmptyStateText = styled.p`
-  margin: 0;
-  font-size: 14px;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 2px solid #e0e0e0;
-`;
-
-const CancelButton = styled.button`
-  padding: 12px 24px;
-  background: #f5f5f5;
-  color: #333;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
-  }
-`;
 
 interface ManageMeasurementModalProps {
   isOpen: boolean;
@@ -204,13 +76,7 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
     langot: 0,
   });
 
-  useEffect(() => {
-    if (isOpen && customer) {
-      fetchMeasurements();
-    }
-  }, [isOpen, customer]);
-
-  const fetchMeasurements = async () => {
+  const fetchMeasurements = useCallback(async () => {
     if (!customer) return;
 
     try {
@@ -218,7 +84,7 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
       const response = await getCustomerMeasurementsService(customer.customerId);
       if (response.success === 200 && response.data) {
         setMeasurements(response.data);
-        
+
         // Pre-fill form data if measurements exist
         if (response.data.topMeasurement) {
           setTopFormData({
@@ -232,7 +98,7 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
             neck: Number(response.data.topMeasurement.neck),
           });
         }
-        
+
         if (response.data.bottomMeasurement) {
           setBottomFormData({
             length: Number(response.data.bottomMeasurement.length),
@@ -254,7 +120,13 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [customer, showError]);
+
+  useEffect(() => {
+    if (isOpen && customer) {
+      fetchMeasurements();
+    }
+  }, [isOpen, customer, fetchMeasurements]);
 
   const handleTopFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -270,6 +142,16 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
       ...prev,
       [name]: parseFloat(value) || 0,
     }));
+  };
+
+  const handleSaveAll = async () => {
+    // Save whichever section(s) are currently in add/edit mode
+    if (isEditingTop || isAddingTop) {
+      await handleSaveTop();
+    }
+    if (isEditingBottom || isAddingBottom) {
+      await handleSaveBottom();
+    }
   };
 
   const handleSaveTop = async () => {
@@ -384,22 +266,57 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
       title={`Manage Measurements - ${customer?.fullName || ''}`}
       size="large"
     >
-      <ModalContent>
+      <Box
+        sx={{
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          padding: 1,
+        }}
+      >
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <Box sx={{ textAlign: 'center', padding: 5 }}>
             <LoadingSpinner />
-          </div>
+          </Box>
         ) : (
           <>
             {/* Top Measurements Section */}
-            <MeasurementSection>
-              <SectionHeader>
-                <SectionTitle>
-                  <FaTshirt />
+            <Paper
+              sx={{
+                marginBottom: 3,
+                padding: 2.5,
+                background: '#f9f9f9',
+                borderRadius: 1.5,
+                border: '2px solid #e0e0e0',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  component="h3"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#333',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.25,
+                    '& svg': {
+                      color: '#667eea',
+                    },
+                  }}
+                >
+                  <CheckroomIcon />
                   Top Measurements
-                </SectionTitle>
+                </Typography>
                 {!isEditingTop && !isAddingTop && (
-                  <EditButton
+                  <MuiButton
                     onClick={() => {
                       if (measurements?.topMeasurement) {
                         setIsEditingTop(true);
@@ -408,188 +325,245 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
                       }
                     }}
                     disabled={formLoading}
+                    startIcon={measurements?.topMeasurement ? <EditIcon /> : <AddIcon />}
+                    sx={{
+                      padding: '8px 16px',
+                      background: '#667eea',
+                      color: 'white',
+                      borderRadius: 1.5,
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        background: '#5568d3',
+                        transform: 'translateY(-1px)',
+                      },
+                      '&:disabled': {
+                        opacity: 0.6,
+                        transform: 'none',
+                      },
+                    }}
                   >
-                    {measurements?.topMeasurement ? (
-                      <>
-                        <FaEdit /> Edit
-                      </>
-                    ) : (
-                      <>
-                        <FaPlus /> Add
-                      </>
-                    )}
-                  </EditButton>
+                    {measurements?.topMeasurement ? 'Edit' : 'Add'}
+                  </MuiButton>
                 )}
-              </SectionHeader>
+              </Box>
 
               {isEditingTop || isAddingTop ? (
-                <div>
-                  <GridContainer>
-                    <FormGroup>
-                      <Label htmlFor="length">Length</Label>
-                      <Input
-                        type="number"
-                        id="length"
-                        name="length"
-                        value={topFormData.length}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="shoulder">Shoulder</Label>
-                      <Input
-                        type="number"
-                        id="shoulder"
-                        name="shoulder"
-                        value={topFormData.shoulder}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="sleeveLength">Sleeve Length</Label>
-                      <Input
-                        type="number"
-                        id="sleeveLength"
-                        name="sleeveLength"
-                        value={topFormData.sleeveLength}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="sleeveBottom">Sleeve Bottom</Label>
-                      <Input
-                        type="number"
-                        id="sleeveBottom"
-                        name="sleeveBottom"
-                        value={topFormData.sleeveBottom}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="chest">Chest</Label>
-                      <Input
-                        type="number"
-                        id="chest"
-                        name="chest"
-                        value={topFormData.chest}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="waist">Waist</Label>
-                      <Input
-                        type="number"
-                        id="waist"
-                        name="waist"
-                        value={topFormData.waist}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="hip">Hip</Label>
-                      <Input
-                        type="number"
-                        id="hip"
-                        name="hip"
-                        value={topFormData.hip}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="neck">Neck</Label>
-                      <Input
-                        type="number"
-                        id="neck"
-                        name="neck"
-                        value={topFormData.neck}
-                        onChange={handleTopFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                  </GridContainer>
-                  <ButtonContainer>
-                    <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                      Cancel
-                    </CancelButton>
-                    <Button onClick={handleSaveTop} disabled={formLoading}>
-                      {formLoading ? <LoadingSpinner /> : 'Save'}
-                    </Button>
-                  </ButtonContainer>
-                </div>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(3, 1fr)',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  <FormGroup>
+                    <Label htmlFor="length">Length</Label>
+                    <Input
+                      type="number"
+                      id="length"
+                      name="length"
+                      value={topFormData.length}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="shoulder">Shoulder</Label>
+                    <Input
+                      type="number"
+                      id="shoulder"
+                      name="shoulder"
+                      value={topFormData.shoulder}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="sleeveLength">Sleeve Length</Label>
+                    <Input
+                      type="number"
+                      id="sleeveLength"
+                      name="sleeveLength"
+                      value={topFormData.sleeveLength}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="sleeveBottom">Sleeve Bottom</Label>
+                    <Input
+                      type="number"
+                      id="sleeveBottom"
+                      name="sleeveBottom"
+                      value={topFormData.sleeveBottom}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="chest">Chest</Label>
+                    <Input
+                      type="number"
+                      id="chest"
+                      name="chest"
+                      value={topFormData.chest}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="waist">Waist</Label>
+                    <Input
+                      type="number"
+                      id="waist"
+                      name="waist"
+                      value={topFormData.waist}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="hip">Hip</Label>
+                    <Input
+                      type="number"
+                      id="hip"
+                      name="hip"
+                      value={topFormData.hip}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="neck">Neck</Label>
+                    <Input
+                      type="number"
+                      id="neck"
+                      name="neck"
+                      value={topFormData.neck}
+                      onChange={handleTopFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                </Box>
               ) : measurements?.topMeasurement ? (
-                <MeasurementDisplay>
-                  <MeasurementRow>
-                    <MeasurementLabel>Length:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.length)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Shoulder:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.shoulder)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Sleeve Length:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.sleeveLength)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Sleeve Bottom:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.sleeveBottom)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Chest:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.chest)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Waist:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.waist)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Hip:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.hip)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Neck:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.topMeasurement.neck)}"</MeasurementValue>
-                  </MeasurementRow>
-                </MeasurementDisplay>
+                <Paper
+                  sx={{
+                    background: 'white',
+                    padding: 2,
+                    borderRadius: 1,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Length:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.length)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Shoulder:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.shoulder)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Sleeve Length:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.sleeveLength)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Sleeve Bottom:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.sleeveBottom)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Chest:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.chest)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Waist:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.waist)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Hip:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.hip)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Neck:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.topMeasurement.neck)}"</Typography>
+                  </Box>
+                </Paper>
               ) : (
-                <EmptyState>
-                  <EmptyStateText>No top measurements found. Click "Add" to create new measurements.</EmptyStateText>
-                </EmptyState>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    padding: '40px 20px',
+                    color: '#666',
+                    background: 'white',
+                    borderRadius: 1,
+                    border: '2px dashed #e0e0e0',
+                  }}
+                >
+                  <Typography sx={{ margin: 0, fontSize: '14px' }}>
+                    No top measurements found. Click "Add" to create new measurements.
+                  </Typography>
+                </Box>
               )}
-            </MeasurementSection>
+            </Paper>
 
             {/* Bottom Measurements Section */}
-            <MeasurementSection>
-              <SectionHeader>
-                <SectionTitle>
-                  <FaLongArrowAltRight />
+            <Paper
+              sx={{
+                marginBottom: 3,
+                padding: 2.5,
+                background: '#f9f9f9',
+                borderRadius: 1.5,
+                border: '2px solid #e0e0e0',
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  component="h3"
+                  sx={{
+                    fontWeight: 600,
+                    color: '#333',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.25,
+                    '& svg': {
+                      color: '#667eea',
+                    },
+                  }}
+                >
+                  <ArrowForwardIcon />
                   Bottom Measurements
-                </SectionTitle>
+                </Typography>
                 {!isEditingBottom && !isAddingBottom && (
-                  <EditButton
+                  <MuiButton
                     onClick={() => {
                       if (measurements?.bottomMeasurement) {
                         setIsEditingBottom(true);
@@ -598,181 +572,244 @@ const ManageMeasurementModal: React.FC<ManageMeasurementModalProps> = ({
                       }
                     }}
                     disabled={formLoading}
+                    startIcon={measurements?.bottomMeasurement ? <EditIcon /> : <AddIcon />}
+                    sx={{
+                      padding: '8px 16px',
+                      background: '#667eea',
+                      color: 'white',
+                      borderRadius: 1.5,
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        background: '#5568d3',
+                        transform: 'translateY(-1px)',
+                      },
+                      '&:disabled': {
+                        opacity: 0.6,
+                        transform: 'none',
+                      },
+                    }}
                   >
-                    {measurements?.bottomMeasurement ? (
-                      <>
-                        <FaEdit /> Edit
-                      </>
-                    ) : (
-                      <>
-                        <FaPlus /> Add
-                      </>
-                    )}
-                  </EditButton>
+                    {measurements?.bottomMeasurement ? 'Edit' : 'Add'}
+                  </MuiButton>
                 )}
-              </SectionHeader>
+              </Box>
 
               {isEditingBottom || isAddingBottom ? (
-                <div>
-                  <GridContainer>
-                    <FormGroup>
-                      <Label htmlFor="bottom_length">Length</Label>
-                      <Input
-                        type="number"
-                        id="bottom_length"
-                        name="length"
-                        value={bottomFormData.length}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_waist">Waist</Label>
-                      <Input
-                        type="number"
-                        id="bottom_waist"
-                        name="waist"
-                        value={bottomFormData.waist}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_hip">Hip</Label>
-                      <Input
-                        type="number"
-                        id="bottom_hip"
-                        name="hip"
-                        value={bottomFormData.hip}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_thigh">Thigh</Label>
-                      <Input
-                        type="number"
-                        id="bottom_thigh"
-                        name="thigh"
-                        value={bottomFormData.thigh}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_knee">Knee</Label>
-                      <Input
-                        type="number"
-                        id="bottom_knee"
-                        name="knee"
-                        value={bottomFormData.knee}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_calf">Calf</Label>
-                      <Input
-                        type="number"
-                        id="bottom_calf"
-                        name="calf"
-                        value={bottomFormData.calf}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_bottom">Bottom</Label>
-                      <Input
-                        type="number"
-                        id="bottom_bottom"
-                        name="bottom"
-                        value={bottomFormData.bottom}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                    <FormGroup>
-                      <Label htmlFor="bottom_langot">Langot</Label>
-                      <Input
-                        type="number"
-                        id="bottom_langot"
-                        name="langot"
-                        value={bottomFormData.langot}
-                        onChange={handleBottomFormChange}
-                        step="0.01"
-                        min="0"
-                        disabled={formLoading}
-                      />
-                    </FormGroup>
-                  </GridContainer>
-                  <ButtonContainer>
-                    <CancelButton onClick={handleCancelEdit} disabled={formLoading}>
-                      Cancel
-                    </CancelButton>
-                    <Button onClick={handleSaveBottom} disabled={formLoading}>
-                      {formLoading ? <LoadingSpinner /> : 'Save'}
-                    </Button>
-                  </ButtonContainer>
-                </div>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(3, 1fr)',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  <FormGroup>
+                    <Label htmlFor="bottom_length">Length</Label>
+                    <Input
+                      type="number"
+                      id="bottom_length"
+                      name="length"
+                      value={bottomFormData.length}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_waist">Waist</Label>
+                    <Input
+                      type="number"
+                      id="bottom_waist"
+                      name="waist"
+                      value={bottomFormData.waist}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_hip">Hip</Label>
+                    <Input
+                      type="number"
+                      id="bottom_hip"
+                      name="hip"
+                      value={bottomFormData.hip}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_thigh">Thigh</Label>
+                    <Input
+                      type="number"
+                      id="bottom_thigh"
+                      name="thigh"
+                      value={bottomFormData.thigh}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_knee">Knee</Label>
+                    <Input
+                      type="number"
+                      id="bottom_knee"
+                      name="knee"
+                      value={bottomFormData.knee}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_calf">Calf</Label>
+                    <Input
+                      type="number"
+                      id="bottom_calf"
+                      name="calf"
+                      value={bottomFormData.calf}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_bottom">Bottom</Label>
+                    <Input
+                      type="number"
+                      id="bottom_bottom"
+                      name="bottom"
+                      value={bottomFormData.bottom}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor="bottom_langot">Langot</Label>
+                    <Input
+                      type="number"
+                      id="bottom_langot"
+                      name="langot"
+                      value={bottomFormData.langot}
+                      onChange={handleBottomFormChange}
+                      step="0.01"
+                      min="0"
+                      disabled={formLoading}
+                    />
+                  </FormGroup>
+                </Box>
               ) : measurements?.bottomMeasurement ? (
-                <MeasurementDisplay>
-                  <MeasurementRow>
-                    <MeasurementLabel>Length:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.length)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Waist:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.waist)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Hip:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.hip)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Thigh:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.thigh)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Knee:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.knee)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Calf:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.calf)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Bottom:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.bottom)}"</MeasurementValue>
-                  </MeasurementRow>
-                  <MeasurementRow>
-                    <MeasurementLabel>Langot:</MeasurementLabel>
-                    <MeasurementValue>{renderMeasurementValue(measurements.bottomMeasurement.langot)}"</MeasurementValue>
-                  </MeasurementRow>
-                </MeasurementDisplay>
+                <Paper
+                  sx={{
+                    background: 'white',
+                    padding: 2,
+                    borderRadius: 1,
+                    border: '1px solid #e0e0e0',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Length:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.length)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Waist:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.waist)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Hip:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.hip)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Thigh:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.thigh)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Knee:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.knee)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Calf:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.calf)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Bottom:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.bottom)}"</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                    <Typography sx={{ fontWeight: 600, color: '#666', fontSize: '14px' }}>Langot:</Typography>
+                    <Typography sx={{ color: '#333', fontSize: '14px', fontWeight: 500 }}>{renderMeasurementValue(measurements.bottomMeasurement.langot)}"</Typography>
+                  </Box>
+                </Paper>
               ) : (
-                <EmptyState>
-                  <EmptyStateText>No bottom measurements found. Click "Add" to create new measurements.</EmptyStateText>
-                </EmptyState>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    padding: '40px 20px',
+                    color: '#666',
+                    background: 'white',
+                    borderRadius: 1,
+                    border: '2px dashed #e0e0e0',
+                  }}
+                >
+                  <Typography sx={{ margin: 0, fontSize: '14px' }}>
+                    No bottom measurements found. Click "Add" to create new measurements.
+                  </Typography>
+                </Box>
               )}
-            </MeasurementSection>
+            </Paper>
+            {(isEditingTop || isAddingTop || isEditingBottom || isAddingBottom) && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1.5,
+                  justifyContent: 'flex-end',
+                  marginTop: 3,
+                  paddingTop: 2.5,
+                  borderTop: '2px solid #e0e0e0',
+                }}
+              >
+                <MuiButton
+                  onClick={handleCancelEdit}
+                  disabled={formLoading}
+                  sx={{
+                    padding: '12px 24px',
+                    background: '#f5f5f5',
+                    color: '#333',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: 2,
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    '&:hover': {
+                      background: '#e8e8e8',
+                      borderColor: '#ccc',
+                    },
+                  }}
+                >
+                  Cancel
+                </MuiButton>
+                <Button onClick={handleSaveAll} disabled={formLoading}>
+                  {formLoading ? <LoadingSpinner /> : 'Save'}
+                </Button>
+              </Box>
+            )}
           </>
         )}
-      </ModalContent>
+      </Box>
     </Modal>
   );
 };

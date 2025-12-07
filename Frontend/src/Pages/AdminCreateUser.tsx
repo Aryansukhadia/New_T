@@ -1,65 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import styled from 'styled-components';
+import { IconButton, InputAdornment, TextField, MenuItem } from '@mui/material';
 import {
   FormContainer,
   FormCard,
   FormTitle,
   FormSubtitle,
   Form,
-  FormGroup,
-  Label,
-  Input,
-  Select,
-  Button,
   LoadingSpinner,
 } from '../Components/Common/FormComponents';
 import { useToast } from '../Utils/ToastContext';
-import { createUserByAdminService, getRolesService, type Role } from '../Services/ApiServices';
+import { createUserByAdminService } from '../Services/ApiServices';
 import axios from 'axios';
-
-const PasswordInputWrapper = styled.div`
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
-`;
-
-const PasswordToggleButton = styled.button`
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-  transition: color 0.2s ease;
-  z-index: 1;
-  
-  &:hover {
-    color: #667eea;
-  }
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-  }
-  
-  svg {
-    font-size: 18px;
-  }
-`;
-
-const PasswordInput = styled(Input)`
-  padding-right: 45px;
-  box-sizing: border-box;
-  width: 100%;
-`;
+import MUICustomBtn from '../Components/Common/MUICustomBtn';
 
 const AdminCreateUser = () => {
   const navigate = useNavigate();
@@ -68,32 +22,12 @@ const AdminCreateUser = () => {
     fullName: '',
     emailId: '',
     password: '',
-    roleId: '',
+    role: '' as 'superAdmin' | 'admin' | 'subAdmin' | 'cutter' | 'stitcher' | 'finisher' | 'deliveryBoy' | 'accountant' | '',
   });
-  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingRoles, setLoadingRoles] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await getRolesService();
-        if (response.success === 200 && response.data) {
-          setRoles(response.data);
-        }
-      } catch (err) {
-        console.error('Error fetching roles:', err);
-        showError('Failed to load roles. Please refresh the page.', 'Error');
-      } finally {
-        setLoadingRoles(false);
-      }
-    };
-
-    fetchRoles();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -106,7 +40,12 @@ const AdminCreateUser = () => {
     setLoading(true);
 
     try {
-      const response = await createUserByAdminService(formData);
+      const response = await createUserByAdminService({
+        fullName: formData.fullName,
+        emailId: formData.emailId,
+        password: formData.password,
+        role: formData.role as 'superAdmin' | 'admin' | 'subAdmin' | 'cutter' | 'stitcher' | 'finisher' | 'deliveryBoy' | 'accountant',
+      });
 
       if (response.success === 201 && response.data) {
         showSuccess('User created successfully!', 'Success');
@@ -115,7 +54,7 @@ const AdminCreateUser = () => {
           fullName: '',
           emailId: '',
           password: '',
-          roleId: '',
+          role: '',
         });
       } else {
         showError(response.message || 'Failed to create user', 'Create Failed');
@@ -139,89 +78,196 @@ const AdminCreateUser = () => {
         <FormSubtitle>Admin - Create a new user account</FormSubtitle>
 
         <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="Enter full name"
-              required
-              disabled={loading}
-            />
-          </FormGroup>
+          <TextField
+            type="text"
+            id="fullName"
+            name="fullName"
+            label="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            placeholder="Enter full name"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="emailId">Email Address</Label>
-            <Input
-              type="email"
-              id="emailId"
-              name="emailId"
-              value={formData.emailId}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              required
-              disabled={loading}
-            />
-          </FormGroup>
+          <TextField
+            type="email"
+            id="emailId"
+            name="emailId"
+            label="Email Address"
+            value={formData.emailId}
+            onChange={handleChange}
+            placeholder="Enter email address"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <PasswordInputWrapper>
-              <PasswordInput
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a password"
-                required
-                disabled={loading}
-                minLength={6}
-              />
-              <PasswordToggleButton
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </PasswordToggleButton>
-            </PasswordInputWrapper>
-          </FormGroup>
+          <TextField
+            type={showPassword ? 'text' : 'password'}
+            id="password"
+            name="password"
+            label="Password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Create a password"
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            inputProps={{
+              minLength: 6,
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={loading}
+                    edge="end"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          />
 
-          <FormGroup>
-            <Label htmlFor="roleId">Role</Label>
-            <Select
-              id="roleId"
-              name="roleId"
-              value={formData.roleId}
-              onChange={handleChange}
-              required
-              disabled={loading || loadingRoles}
-            >
-              <option value="">Select a role</option>
-              {roles.map((role) => (
-                <option key={role.roleId} value={role.roleId}>
-                  {role.roleName}
-                </option>
-              ))}
-            </Select>
-          </FormGroup>
+          <TextField
+            select
+            id="role"
+            name="role"
+            label="Role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+            disabled={loading}
+            fullWidth
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                background: '#fafafa',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease',
+                '& fieldset': {
+                  borderColor: '#e0e0e0',
+                  borderWidth: 2,
+                },
+                '&:hover fieldset': {
+                  borderColor: '#ccc',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#667eea',
+                  boxShadow: '0 0 0 4px rgba(102, 126, 234, 0.1)',
+                },
+                '&.Mui-focused': {
+                  background: 'white',
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
+          >
+            <MenuItem value="">Select a role</MenuItem>
+            <MenuItem value="superAdmin">SuperAdmin</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+            <MenuItem value="subAdmin">SubAdmin</MenuItem>
+            <MenuItem value="cutter">Cutter</MenuItem>
+            <MenuItem value="stitcher">Stitcher</MenuItem>
+            <MenuItem value="finisher">Finisher</MenuItem>
+            <MenuItem value="deliveryBoy">Delivery Boy</MenuItem>
+            <MenuItem value="accountant">Accountant</MenuItem>
+          </TextField>
 
-          <Button type="submit" disabled={loading || loadingRoles}>
+          <MUICustomBtn
+            type="submit"
+            disabled={loading}
+            tooltip="Create new user account"
+            fullWidth
+          >
             {loading ? <LoadingSpinner /> : 'Create User'}
-          </Button>
+          </MUICustomBtn>
         </Form>
 
-        <Button
+        <MUICustomBtn
           onClick={() => navigate(-1)}
-          style={{ marginTop: '12px', background: '#6c757d' }}
+          tooltip="Go back to previous page"
+          variant="outlined"
+          color="secondary"
+          sx={{ marginTop: '12px' }}
+          fullWidth
         >
           Go Back
-        </Button>
+        </MUICustomBtn>
       </FormCard>
     </FormContainer>
   );

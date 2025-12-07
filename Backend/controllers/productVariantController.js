@@ -1,24 +1,31 @@
 import prisma from "../dbConnect/prismaClient.js";
 import sendResponse from "../utils/response.js";
+import { deleteUploadedFiles, handleImageUpload, deleteFilesByUrls, processUploadedImages, processImageUrlInput } from "../utils/fileUtils.js";
 
 export const addProductVariant = async (req, res) => {
     try {
-        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw } = req.body;
+        const { productId, name, description, imageUrl, productItemIds: productItemIdsRaw } = req.body;
 
         if (!productId || typeof productId !== "string" || productId.trim() === "") {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "productId is required");
         }
 
         if (!name || typeof name !== "string" || name.trim() === "") {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "name is required");
         }
 
         // Check if product exists
         const product = await prisma.product.findUnique({
-            where: { id: productId.trim() }
+            where: { id: productId.trim(), isDeleted: false }
         });
 
         if (!product) {
+            // Delete uploaded files if product not found
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 404, "Product not found");
         }
 
@@ -31,6 +38,8 @@ export const addProductVariant = async (req, res) => {
         });
 
         if (existingVariant) {
+            // Delete uploaded files if duplicate name
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 409, "Product variant with this name already exists for this product");
         }
 
@@ -57,28 +66,29 @@ export const addProductVariant = async (req, res) => {
                 });
 
                 if (productItems.length !== validProductItemIds.length) {
+                    // Delete uploaded files if product items not found
+                    deleteUploadedFiles(req.files);
                     return sendResponse(res, 404, "One or more product items not found");
                 }
             }
         }
         else {
+            // Delete uploaded files if productItemIds is required but not provided
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "productItemIds is required");
         }
 
-        // Handle photo: prioritize uploaded file, then provided URL
-        let finalPhotoUrl = null;
-        if (req.file) {
-            finalPhotoUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        } else if (photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "") {
-            finalPhotoUrl = photoUrl.trim();
-        }
+        // Handle images using generalized utility function (supports up to 5 images)
+        const finalImageUrl = handleImageUpload(req.files, imageUrl);
 
         const newProductVariant = await prisma.productVariant.create({
             data: {
                 productId: productId.trim(),
                 name: name.trim(),
                 description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-                photoUrl: finalPhotoUrl,
+                imageUrl: finalImageUrl,
+                createdBy: req.user.userId,
+                updatedBy: req.user.userId,
                 productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
                     ? {
                         connect: productItemIds
@@ -92,48 +102,88 @@ export const addProductVariant = async (req, res) => {
                 productItems: true
             }
         });
-        const data = {
-            productId: productId.trim(),
-            name: name.trim(),
-            description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            photoUrl: finalPhotoUrl,
-            productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
-                ? {
-                    connect: productItemIds
-                        .filter(id => typeof id === "string" && id.trim() !== "")
-                        .map(id => ({ id: id.trim() }))
-                }
-                : undefined
-        };
 
-        return sendResponse(res, 201, "Product variant created successfully", data);
+        // const data = {
+        //     productId: productId.trim(),
+        //     name: name.trim(),
+        //     description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
+        //     imageUrl: finalImageUrl,
+        //     productItems: productItemIds && Array.isArray(productItemIds) && productItemIds.length > 0
+        //         ? {
+        //             connect: productItemIds
+        //                 .filter(id => typeof id === "string" && id.trim() !== "")
+        //                 .map(id => ({ id: id.trim() }))
+        //         }
+        //         : undefined
+        // };
+
+        return sendResponse(res, 201, "Product variant created successfully", newProductVariant);
     } catch (error) {
-        console.error("addProductVariant error:", error);
+        // Delete uploaded files if database operation fails
+        deleteUploadedFiles(req.files);
         return sendResponse(res, 500, "Failed to create product variant", { error: error.message });
     }
 };
 
 export const getProductVariants = async (req, res) => {
     try {
-        const { productId } = req.query;
+        const {
+            productId,
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // Parse pagination parameters
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+
+        // Validate pagination
+        if (pageNum < 1) {
+            return sendResponse(res, 400, "Page number must be at least 1");
+        }
+        if (limitNum < 1 || limitNum > 100) {
+            return sendResponse(res, 400, "Limit must be between 1 and 100");
+        }
 
         const where = {};
         if (productId) {
             where.productId = productId;
         }
 
+        // Get total count for pagination
+        const totalCount = await prisma.productVariant.count({ where });
+
+        // Fetch product variants with pagination
         const productVariants = await prisma.productVariant.findMany({
-            where,
+            where: { ...where, isDeleted: false },
             include: {
                 product: true,
                 productItems: true
             },
             orderBy: {
                 createdAt: 'desc'
-            }
+            },
+            skip,
+            take: limitNum
         });
 
-        return sendResponse(res, 200, "Product variants fetched successfully", productVariants);
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPreviousPage = pageNum > 1;
+
+        return sendResponse(res, 200, "Product variants fetched successfully", {
+            productVariants,
+            pagination: {
+                currentPage: pageNum,
+                totalPages,
+                totalCount,
+                limit: limitNum,
+                hasNextPage,
+                hasPreviousPage,
+            }
+        });
     } catch (error) {
         console.error("getProductVariants error:", error);
         return sendResponse(res, 500, "Failed to fetch product variants", { error: error.message });
@@ -166,13 +216,17 @@ export const getProductVariantById = async (req, res) => {
 export const updateProductVariant = async (req, res) => {
     try {
         const { id } = req.params;
-        const { productId, name, description, photoUrl, productItemIds: productItemIdsRaw } = req.body;
+        const { productId, name, description, imageUrl, productItemIds: productItemIdsRaw, deletedImageUrls } = req.body;
 
         if (productId && (typeof productId !== "string" || productId.trim() === "")) {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "productId must be a valid string");
         }
 
         if (!name || typeof name !== "string" || name.trim() === "") {
+            // Delete uploaded files if validation fails
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 400, "name is required");
         }
 
@@ -182,6 +236,8 @@ export const updateProductVariant = async (req, res) => {
         });
 
         if (!existingVariant) {
+            // Delete uploaded files if variant not found
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 404, "Product variant not found");
         }
 
@@ -192,6 +248,8 @@ export const updateProductVariant = async (req, res) => {
             });
 
             if (!product) {
+                // Delete uploaded files if product not found
+                deleteUploadedFiles(req.files);
                 return sendResponse(res, 404, "Product not found");
             }
         }
@@ -207,6 +265,8 @@ export const updateProductVariant = async (req, res) => {
         });
 
         if (duplicateVariant) {
+            // Delete uploaded files if duplicate name
+            deleteUploadedFiles(req.files);
             return sendResponse(res, 409, "Product variant with this name already exists for this product");
         }
 
@@ -216,6 +276,8 @@ export const updateProductVariant = async (req, res) => {
             try {
                 productItemIds = JSON.parse(productItemIds);
             } catch (parseError) {
+                // Delete uploaded files if parsing fails
+                deleteUploadedFiles(req.files);
                 return sendResponse(res, 400, "Invalid productItemIds format");
             }
         }
@@ -233,23 +295,86 @@ export const updateProductVariant = async (req, res) => {
                 });
 
                 if (productItems.length !== validProductItemIds.length) {
+                    // Delete uploaded files if product items not found
+                    deleteUploadedFiles(req.files);
                     return sendResponse(res, 404, "One or more product items not found");
                 }
             }
         }
 
-        // Handle photo: prioritize uploaded file, then provided URL
-        let finalPhotoUrl;
-        if (req.file) {
-            finalPhotoUrl = `http://localhost:3000/uploads/${req.file.filename}`;
-        } else if (photoUrl && typeof photoUrl === "string" && photoUrl.trim() !== "") {
-            finalPhotoUrl = photoUrl.trim();
+        // Handle images using generalized utility function (supports up to 5 images)
+        // Handle deleted image URLs - delete files from server
+        let remainingOriginalImages = [];
+
+        if (deletedImageUrls) {
+            try {
+                const deletedUrls = JSON.parse(deletedImageUrls);
+                if (Array.isArray(deletedUrls)) {
+                    // Parse existing images
+                    let existingImages = [];
+                    if (existingVariant.imageUrl) {
+                        try {
+                            existingImages = JSON.parse(existingVariant.imageUrl);
+                            if (!Array.isArray(existingImages)) {
+                                existingImages = [existingVariant.imageUrl];
+                            }
+                        } catch {
+                            existingImages = [existingVariant.imageUrl];
+                        }
+                    }
+
+                    // Get remaining original images (not deleted)
+                    remainingOriginalImages = existingImages.filter(img => !deletedUrls.includes(img));
+
+                    // Delete files from server using utility function
+                    deleteFilesByUrls(deletedUrls);
+                }
+            } catch (err) {
+                console.error("Error parsing deletedImageUrls:", err);
+            }
+        } else {
+            // No deletions, keep all original images
+            if (existingVariant.imageUrl) {
+                try {
+                    remainingOriginalImages = JSON.parse(existingVariant.imageUrl);
+                    if (!Array.isArray(remainingOriginalImages)) {
+                        remainingOriginalImages = [existingVariant.imageUrl];
+                    }
+                } catch {
+                    remainingOriginalImages = [existingVariant.imageUrl];
+                }
+            }
+        }
+
+        // Handle images - combine new uploads with remaining original images
+        let finalImageUrl = null;
+        if (req.files && req.files.length > 0) {
+            // New files uploaded - combine with remaining original images
+            const newImageUrlsJson = processUploadedImages(req.files);
+            if (newImageUrlsJson) {
+                const newImageUrls = JSON.parse(newImageUrlsJson);
+                const allImages = [...remainingOriginalImages, ...newImageUrls];
+                finalImageUrl = allImages.length === 1 ? allImages[0] : JSON.stringify(allImages);
+            } else {
+                // No new images processed, use remaining original images
+                finalImageUrl = remainingOriginalImages.length === 1
+                    ? remainingOriginalImages[0]
+                    : JSON.stringify(remainingOriginalImages);
+            }
+        } else if (imageUrl !== undefined) {
+            // imageUrl provided - use it (should contain remaining original images)
+            finalImageUrl = processImageUrlInput(imageUrl);
+        } else if (remainingOriginalImages.length > 0) {
+            // No new uploads, no imageUrl provided, but we have remaining original images
+            finalImageUrl = remainingOriginalImages.length === 1
+                ? remainingOriginalImages[0]
+                : JSON.stringify(remainingOriginalImages);
         }
 
         const updateData = {
             name: name.trim(),
             description: description && typeof description === "string" && description.trim() !== "" ? description.trim() : null,
-            photoUrl: finalPhotoUrl,
+            imageUrl: finalImageUrl,
         };
 
         if (productId) {
@@ -286,6 +411,8 @@ export const updateProductVariant = async (req, res) => {
         return sendResponse(res, 200, "Product variant updated successfully", updatedProductVariant);
     } catch (error) {
         console.error("updateProductVariant error:", error);
+        // Delete uploaded files if database operation fails
+        deleteUploadedFiles(req.files);
         return sendResponse(res, 500, "Failed to update product variant", { error: error.message });
     }
 };
@@ -448,8 +575,12 @@ export const deleteProductVariant = async (req, res) => {
             return sendResponse(res, 400, "Cannot delete product variant that is used in orders.");
         }
 
-        await prisma.productVariant.delete({
-            where: { id }
+        await prisma.productVariant.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+                updatedBy: req.user.userId
+            }
         });
 
         return sendResponse(res, 200, "Product variant deleted successfully");

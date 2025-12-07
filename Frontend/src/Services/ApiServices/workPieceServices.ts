@@ -1,0 +1,158 @@
+import apiInstance from '../../Utils/ApiUtils';
+import type { ApiResponse } from '../../Utils/ApiUtils';
+import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
+
+// WorkPiece list item interface
+export interface WorkPieceListItem {
+  id: string;
+  currentStatus: string;
+  remarks: string | null;
+  createdAt: string;
+  productItem: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+  } | null;
+  assignedTo: {
+    userId: string;
+    fullName: string;
+  } | null;
+}
+
+// Response interface for paginated workpieces
+export interface WorkPiecesResponse {
+  workPieces: WorkPieceListItem[];
+  pagination: PaginationMeta;
+}
+
+// Get all workpieces with pagination
+export const getAllWorkPiecesService = async (
+  page: number = 1,
+  limit: number = 10,
+  status?: string
+): Promise<ApiResponse<WorkPiecesResponse>> => {
+  const url = getApiUrl('getWorkPieces');
+  const params: Record<string, string | number> = { page, limit };
+  if (status) {
+    params.status = status;
+  }
+  const response = await apiInstance.get<ApiResponse<WorkPiecesResponse>>(url, { params });
+  return response.data;
+};
+
+// Status transition services
+export const convertWorkPiecePendingToUnderCuttingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPiecePendingToUnderCutting', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceUnderCuttingToReadyToStitchService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceUnderCuttingToReadyToStitch', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceReadyToStitchToUnderStitchingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceReadyToStitchToUnderStitching', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceUnderStitchingToReadyToFinishingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceUnderStitchingToReadyToFinishing', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceReadyToFinishingToUnderFinishingService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceReadyToFinishingToUnderFinishing', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export const convertWorkPieceUnderFinishingToReadyToDeliverService = async (
+  workpieceId: string,
+  remarks?: string
+): Promise<ApiResponse<unknown>> => {
+  const url = getApiUrl('convertWorkPieceUnderFinishingToReadyToDeliver', { workpieceId });
+  const response = await apiInstance.patch<ApiResponse<unknown>>(url, { remarks });
+  return response.data;
+};
+
+export interface WorkPieceSummary {
+  workPieceStage: string;
+  orderDate: string | null;
+  productItem: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    createdAt: string;
+  };
+  lastUpdated: string | null;
+}
+
+export const getWorkPieceByIdService = async (
+  workpieceId: string
+): Promise<ApiResponse<WorkPieceSummary>> => {
+  const url = getApiUrl('getWorkPieceById', { workpieceId });
+  const response = await apiInstance.get<ApiResponse<WorkPieceSummary>>(url);
+  return response.data;
+};
+
+// WorkPiece Status History interfaces
+export interface WorkStageHistory {
+  id: string;
+  stage: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  remarks: string | null;
+  updatedBy: {
+    userId: string;
+    fullName: string;
+    emailId: string;
+  } | null;
+  duration: number | null; // Duration in hours
+  isCompleted: boolean;
+  isActive: boolean;
+}
+
+export interface WorkPieceStatusHistory {
+  workPiece: {
+    id: string;
+    currentStatus: string;
+    productItem: {
+      id: string;
+      name: string;
+    };
+  };
+  statusHistory: WorkStageHistory[];
+  totalStages: number;
+  completedStages: number;
+  activeStages: number;
+}
+
+// Get work piece status history
+export const getWorkPieceStatusHistoryService = async (
+  workpieceId: string
+): Promise<ApiResponse<WorkPieceStatusHistory>> => {
+  const url = getApiUrl('getWorkPieceStatusHistory', { workpieceId });
+  const response = await apiInstance.get<ApiResponse<WorkPieceStatusHistory>>(url);
+  return response.data;
+};

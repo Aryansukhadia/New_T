@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // PRODUCT TYPES
@@ -29,7 +30,7 @@ export interface ProductVariant {
   productId: string;
   name: string;
   description: string | null;
-  photoUrl: string | null;
+  imageUrl: string | null;
   createdAt: string;
   product?: Product;
   productItems?: ProductItem[];
@@ -39,7 +40,7 @@ export interface CreateProductVariantRequest {
   productId: string;
   name: string;
   description?: string | null;
-  photoUrl?: string | null;
+  imageUrl?: string | null;
   productItemIds?: string[];
 }
 
@@ -47,7 +48,7 @@ export interface UpdateProductVariantRequest {
   productId?: string;
   name?: string;
   description?: string | null;
-  photoUrl?: string | null;
+  imageUrl?: string | null;
   productItemIds?: string[];
 }
 
@@ -69,19 +70,42 @@ export interface UpdateProductItemRequest {
   imageUrl?: string | null;
 }
 
+export interface ProductsPaginatedResponse {
+  products: Product[];
+  pagination: PaginationMeta;
+}
+
+export interface ProductItemsPaginatedResponse {
+  productItems: ProductItem[];
+  pagination: PaginationMeta;
+}
+
+export interface ProductVariantsPaginatedResponse {
+  productVariants: ProductVariant[];
+  pagination: PaginationMeta;
+}
+
 // ============================================
 // PRODUCT SERVICES
 // ============================================
 
 /**
- * Get All Products Service
- * GET /api/products
- * 
- * @returns Promise with list of products
+ * Get All Products Service with Pagination
+ * GET /api/products?page=1&limit=10
+ *
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated products data
  */
-export const getProductsService = async (): Promise<ApiResponse<Product[]>> => {
-  const response = await apiInstance.get<ApiResponse<Product[]>>(
-    getApiUrl('getProducts')
+export const getProductsService = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<ProductsPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<ProductsPaginatedResponse>>(
+    getApiUrl('getProducts'),
+    {
+      params: { page, limit }
+    }
   );
   return response.data;
 };
@@ -159,19 +183,25 @@ export const deleteProductService = async (
 // ============================================
 
 /**
- * Get All Product Variants Service
- * GET /api/productVariants?productId=xxx
+ * Get All Product Variants Service with Pagination
+ * GET /api/productVariants?productId=xxx&page=1&limit=10
  * 
  * @param productId - Optional product ID filter
- * @returns Promise with list of product variants
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated product variants data
  */
 export const getProductVariantsService = async (
-  productId?: string
-): Promise<ApiResponse<ProductVariant[]>> => {
-  const url = productId
-    ? `${getApiUrl('getProductVariants')}?productId=${productId}`
-    : getApiUrl('getProductVariants');
-  const response = await apiInstance.get<ApiResponse<ProductVariant[]>>(url);
+  productId?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<ProductVariantsPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<ProductVariantsPaginatedResponse>>(
+    getApiUrl('getProductVariants'),
+    {
+      params: { productId, page, limit }
+    }
+  );
   return response.data;
 };
 
@@ -196,12 +226,12 @@ export const getProductVariantByIdService = async (
  * POST /api/productVariants
  * 
  * @param variantData - Product variant data to be created
- * @param photoFile - Optional photo file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with created product variant data
  */
 export const createProductVariantService = async (
   variantData: CreateProductVariantRequest,
-  photoFile?: File | null
+  imageFiles?: File[] | null
 ): Promise<ApiResponse<ProductVariant>> => {
   const formData = new FormData();
   formData.append('productId', variantData.productId);
@@ -209,13 +239,15 @@ export const createProductVariantService = async (
   if (variantData.description) {
     formData.append('description', variantData.description);
   }
-  if (variantData.photoUrl) {
-    formData.append('photoUrl', variantData.photoUrl);
+  if (variantData.imageUrl) {
+    formData.append('imageUrl', variantData.imageUrl);
   }
   // Always send productItemIds, even if empty array
   formData.append('productItemIds', JSON.stringify(variantData.productItemIds || []));
-  if (photoFile) {
-    formData.append('photo', photoFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
   }
 
   const response = await apiInstance.post<ApiResponse<ProductVariant>>(
@@ -236,13 +268,15 @@ export const createProductVariantService = async (
  * 
  * @param variantId - Product Variant ID
  * @param variantData - Product variant data to update
- * @param photoFile - Optional photo file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
+ * @param deletedImageUrls - Optional array of image URLs to delete
  * @returns Promise with updated product variant data
  */
 export const updateProductVariantService = async (
   variantId: string,
   variantData: UpdateProductVariantRequest,
-  photoFile?: File | null
+  imageFiles?: File[] | null,
+  deletedImageUrls?: string[] | null
 ): Promise<ApiResponse<ProductVariant>> => {
   const formData = new FormData();
   if (variantData.productId !== undefined) {
@@ -254,14 +288,19 @@ export const updateProductVariantService = async (
   if (variantData.description !== undefined) {
     formData.append('description', variantData.description || '');
   }
-  if (variantData.photoUrl !== undefined) {
-    formData.append('photoUrl', variantData.photoUrl || '');
+  if (variantData.imageUrl !== undefined) {
+    formData.append('imageUrl', variantData.imageUrl || '');
   }
   if (variantData.productItemIds !== undefined) {
     formData.append('productItemIds', JSON.stringify(variantData.productItemIds));
   }
-  if (photoFile) {
-    formData.append('photo', photoFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+  }
+  if (deletedImageUrls && deletedImageUrls.length > 0) {
+    formData.append('deletedImageUrls', JSON.stringify(deletedImageUrls));
   }
 
   const response = await apiInstance.put<ApiResponse<ProductVariant>>(
@@ -335,14 +374,22 @@ export const removeProductItemsFromVariantService = async (
 // ============================================
 
 /**
- * Get All Product Items Service
- * GET /api/productItems
- * 
- * @returns Promise with list of product items
+ * Get All Product Items Service with Pagination
+ * GET /api/productItems?page=1&limit=10
+ *
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated product items data
  */
-export const getProductItemsService = async (): Promise<ApiResponse<ProductItem[]>> => {
-  const response = await apiInstance.get<ApiResponse<ProductItem[]>>(
-    getApiUrl('getProductItems')
+export const getProductItemsService = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<ProductItemsPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<ProductItemsPaginatedResponse>>(
+    getApiUrl('getProductItems'),
+    {
+      params: { page, limit }
+    }
   );
   return response.data;
 };
@@ -368,20 +415,22 @@ export const getProductItemByIdService = async (
  * POST /api/productItems
  * 
  * @param productItemData - Product item data to be created
- * @param imageFile - Optional image file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with created product item data
  */
 export const createProductItemService = async (
   productItemData: CreateProductItemRequest,
-  imageFile?: File | null
+  imageFiles?: File[] | null
 ): Promise<ApiResponse<ProductItem>> => {
   const formData = new FormData();
   formData.append('name', productItemData.name);
   if (productItemData.imageUrl) {
     formData.append('imageUrl', productItemData.imageUrl);
   }
-  if (imageFile) {
-    formData.append('image', imageFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
   }
 
   const response = await apiInstance.post<ApiResponse<ProductItem>>(
@@ -402,13 +451,14 @@ export const createProductItemService = async (
  * 
  * @param productItemId - Product Item ID
  * @param productItemData - Product item data to update
- * @param imageFile - Optional image file to upload
+ * @param imageFiles - Optional array of image files to upload (max 5)
  * @returns Promise with updated product item data
  */
 export const updateProductItemService = async (
   productItemId: string,
   productItemData: UpdateProductItemRequest,
-  imageFile?: File | null
+  imageFiles?: File[] | null,
+  deletedImageUrls?: string[] | null
 ): Promise<ApiResponse<ProductItem>> => {
   const formData = new FormData();
   if (productItemData.name !== undefined) {
@@ -417,8 +467,13 @@ export const updateProductItemService = async (
   if (productItemData.imageUrl !== undefined) {
     formData.append('imageUrl', productItemData.imageUrl || '');
   }
-  if (imageFile) {
-    formData.append('image', imageFile);
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach(file => {
+      formData.append('images', file);
+    });
+  }
+  if (deletedImageUrls && deletedImageUrls.length > 0) {
+    formData.append('deletedImageUrls', JSON.stringify(deletedImageUrls));
   }
 
   const response = await apiInstance.put<ApiResponse<ProductItem>>(

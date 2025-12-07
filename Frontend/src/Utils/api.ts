@@ -1,4 +1,4 @@
-const NODEJS_BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL || 'http://localhost:3000/api';
+const NODEJS_BASE_URL = import.meta.env.VITE_NODEJS_BASE_URL;
 
 interface EndpointConfig {
     path: string;
@@ -45,6 +45,26 @@ export const API_CONFIG: ApiConfig = {
         // ============================================
         // USER ENDPOINTS
         // ============================================
+        getMe: {
+            path: '/users/me',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        changePassword: {
+            path: '/users/change-password',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        resetPassword: {
+            path: '/users/reset-password/{userId}',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getUserRoles: {
+            path: '/users/roles',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
         getUsers: {
             path: '/users',
             method: 'GET',
@@ -241,6 +261,87 @@ export const API_CONFIG: ApiConfig = {
         },
 
         // ============================================
+        // FABRIC INVENTORY ENDPOINTS
+        // ============================================
+        getFabricInventories: {
+            path: '/fabric-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getFabricInventoryById: {
+            path: '/fabric-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createFabricInventory: {
+            path: '/fabric-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateFabricInventory: {
+            path: '/fabric-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteFabricInventory: {
+            path: '/fabric-inventories/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        // Ready-Made Inventory Endpoints
+        getReadyMadeInventories: {
+            path: '/ready-made-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getReadyMadeInventoryById: {
+            path: '/ready-made-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createReadyMadeInventory: {
+            path: '/ready-made-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateReadyMadeInventory: {
+            path: '/ready-made-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteReadyMadeInventory: {
+            path: '/ready-made-inventories/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        // Accessory Inventory Endpoints
+        getAccessoryInventories: {
+            path: '/accessory-inventories',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getAccessoryInventoryById: {
+            path: '/accessory-inventories/{id}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        createAccessoryInventory: {
+            path: '/accessory-inventories',
+            method: 'POST',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        updateAccessoryInventory: {
+            path: '/accessory-inventories/{id}',
+            method: 'PUT',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        deleteAccessoryInventory: {
+            path: '/accessory-inventories/{id}',
+            method: 'DELETE',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
         // PRODUCT ORDER ENDPOINTS
         // ============================================
         getBookedOrders: {
@@ -260,6 +361,79 @@ export const API_CONFIG: ApiConfig = {
         },
         getWorkpieceMeasurements: {
             path: '/productOrders/workpiece/{workpieceId}/measurements',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getAvailableReadyMadeItems: {
+            path: '/productOrders/ready-made-items',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getOrderWorkPieces: {
+            path: '/productOrders/{id}/workpieces',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getOrderItemWorkPieces: {
+            path: '/productOrders/{id}/items/{itemId}/workpieces',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
+        // ITEM STATUS ENDPOINTS
+        // ============================================
+        convertPendingToCutting: {
+            path: '/itemStatuses/convert-pending-to-cutting',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+
+        // ============================================
+        // WORK PIECE ENDPOINTS
+        // ============================================
+        getWorkPieces: {
+            path: '/workPieces',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPiecePendingToUnderCutting: {
+            path: '/workPieces/{workpieceId}/convert-pending-to-under-cutting',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceUnderCuttingToReadyToStitch: {
+            path: '/workPieces/{workpieceId}/convert-under-cutting-to-ready-to-stitch',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceReadyToStitchToUnderStitching: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-stitch-to-under-stitching',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceUnderStitchingToReadyToFinishing: {
+            path: '/workPieces/{workpieceId}/convert-under-stitching-to-ready-to-finishing',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceReadyToFinishingToUnderFinishing: {
+            path: '/workPieces/{workpieceId}/convert-ready-to-finishing-to-under-finishing',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        convertWorkPieceUnderFinishingToReadyToDeliver: {
+            path: '/workPieces/{workpieceId}/convert-under-finishing-to-ready-to-deliver',
+            method: 'PATCH',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getWorkPieceById: {
+            path: '/workPieces/{workpieceId}',
+            method: 'GET',
+            baseUrl: NODEJS_BASE_URL,
+        },
+        getWorkPieceStatusHistory: {
+            path: '/workPieces/{workpieceId}/status-history',
             method: 'GET',
             baseUrl: NODEJS_BASE_URL,
         },

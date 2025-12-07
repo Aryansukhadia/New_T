@@ -1,6 +1,7 @@
 import apiInstance from '../../Utils/ApiUtils';
 import type { ApiResponse } from '../../Utils/ApiUtils';
 import { getApiUrl } from '../../Utils/api';
+import type { PaginationMeta } from './commonTypes';
 
 // ============================================
 // CUSTOMER TYPES
@@ -38,19 +39,32 @@ export interface UpdateCustomerRequest {
   reference?: string | null;
 }
 
+export interface CustomersPaginatedResponse {
+  customers: Customer[];
+  pagination: PaginationMeta;
+}
+
 // ============================================
 // CUSTOMER SERVICES
 // ============================================
 
 /**
- * Get All Customers Service
- * GET /api/customers
- * 
- * @returns Promise with list of customers
+ * Get All Customers Service with Pagination
+ * GET /api/customers?page=1&limit=10
+ *
+ * @param page - Page number (default: 1)
+ * @param limit - Number of items per page (default: 10)
+ * @returns Promise with paginated customers data
  */
-export const getCustomersService = async (): Promise<ApiResponse<Customer[]>> => {
-  const response = await apiInstance.get<ApiResponse<Customer[]>>(
-    getApiUrl('getCustomers')
+export const getCustomersService = async (
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponse<CustomersPaginatedResponse>> => {
+  const response = await apiInstance.get<ApiResponse<CustomersPaginatedResponse>>(
+    getApiUrl('getCustomers'),
+    {
+      params: { page, limit }
+    }
   );
   return response.data;
 };

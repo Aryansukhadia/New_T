@@ -1,37 +1,83 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import styled from 'styled-components';
+import { Box, useMediaQuery, useTheme, IconButton } from '@mui/material';
+import { Menu as MenuIcon } from '@mui/icons-material';
 import Sidebar from './Sidebar';
-
-const LayoutContainer = styled.div`
-  display: flex;
-  min-height: 100vh;
-  background: #f5f7fa;
-`;
-
-const MainContent = styled.main<{ sidebarWidth: number }>`
-  margin-left: ${props => props.sidebarWidth}px;
-  flex: 1;
-  padding: 24px;
-  transition: margin-left 0.3s ease;
-  min-height: 100vh;
-`;
+import ChangePasswordDialog from '../Dialogs/ChangePasswordDialog';
+import { getUserInfo } from '../../Services/ApiServices';
 
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const sidebarWidth = sidebarOpen ? 260 : 80;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg')); // lg = 1024px
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+
+  // Check if user needs to reset password on mount
+  useEffect(() => {
+    const userInfo = getUserInfo();
+    if (userInfo?.needToResetPassword === true) {
+      setShowPasswordDialog(true);
+    }
+  }, []);
+
+  // Close sidebar on mobile by default when screen size changes
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handlePasswordDialogClose = () => {
+    setShowPasswordDialog(false);
+  };
+
   return (
-    <LayoutContainer>
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <MainContent sidebarWidth={sidebarWidth}>
+    <Box
+      sx={{
+        display: 'flex',
+        overflow: 'hidden',
+      }}
+    >
+      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          transition: 'margin-left 0.3s ease',
+          minWidth: 0,
+          overflow: 'auto',
+          width: '100%',
+        }}
+      >
+        {isMobile && (
+          <Box sx={{ mb: 2 }}>
+            <IconButton
+              onClick={toggleSidebar}
+              sx={{
+                color: 'primary.main',
+                bgcolor: 'background.paper',
+                boxShadow: 1,
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Box>
+        )}
         <Outlet />
-      </MainContent>
-    </LayoutContainer>
+      </Box>
+
+      {/* Password Change Dialog - Forced if needToResetPassword is true */}
+      <ChangePasswordDialog
+        open={showPasswordDialog}
+        onClose={handlePasswordDialogClose}
+        isForced={true}
+      />
+    </Box>
   );
 };
 
