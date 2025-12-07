@@ -2,12 +2,17 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Use /tmp for Vercel serverless, local uploads directory otherwise
+const uploadsDir = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'uploads')
+    : path.join(__dirname, '..', 'uploads');
+
 // Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -29,7 +34,7 @@ const storage = multer.diskStorage({
 // File filter to accept only images
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    
+
     if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
