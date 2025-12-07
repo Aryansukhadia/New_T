@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import sendResponse from './utils/response.js';
 import pool, { connectDB } from './dbConnect/database.js';
@@ -18,7 +19,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Parse allowed origins from environment variable
-const allowedOrigins = process.env.FRONTEND_URLS.split(',').map(url => url.trim()) // Default fallback for development
+const allowedOrigins = process.env.FRONTEND_URLS
+    ? process.env.FRONTEND_URLS.split(',').map(url => url.trim())
+    : ['http://localhost:5173'] // Default fallback for development
 
 // CORS Configuration
 const corsOptions = {
@@ -43,38 +46,50 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Use /tmp for Vercel serverless, local uploads otherwise
+const uploadsDir = process.env.VERCEL
+    ? path.join(os.tmpdir(), 'uploads')
+    : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 // API routes
 app.use('/api', apiRoutes);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Initialize database connection
+let dbInitialized = false;
+const initializeDB = async () => {
+    if (!dbInitialized) {
+        const isConnected = await connectDB();
+        if (isConnected) {
+            console.log('Database connected successfully');
+            dbInitialized = true;
+        } else {
+            console.log('Database connection failed');
+        }
+    }
+};
+
 // Test route
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
+    await initializeDB();
     sendResponse(res, 200, 'Server is running......');
 });
-
-
-const isConnected = await connectDB();
-if (isConnected) {
-    console.log('Database connected successfully');
-} else {
-    console.log('Database connection failed');
-}
 
 // Database test route
 app.get('/db-test', async (req, res) => {
     try {
-        sendResponse(res, 200, 'Database connected successfully', isConnected);
+        await initializeDB();
+        sendResponse(res, 200, 'Database connected successfully', dbInitialized);
     } catch (error) {
         console.error('Database error:', error);
         sendResponse(res, 500, 'Database connection failed', { error: error.message });
     }
 });
 
-// Connect to database and start server
+// Connect to database and start server (for local development)
 const startServer = async () => {
-    await connectDB();
+    await initializeDB();
 
     app.listen(port, () => {
         console.log(`Server listening at http://localhost:${port}`);
@@ -82,4 +97,10 @@ const startServer = async () => {
     });
 };
 
-startServer();
+// Start server only in local development (not on Vercel)
+if (!process.env.VERCEL) {
+    startServer();
+}
+
+// Export the Express app for Vercel serverless
+export default app;
